@@ -1,8 +1,13 @@
 import streamlit as st
 import pandas as pd
+import sys
+import os
+
+# This forces the app to look in the current directory for the processors folder
+sys.path.append(os.path.dirname(__file__))
+
 from processors.pstat_logic import process_pstat
 from processors.cs_logic import process_cs
-
 # Page Configuration
 st.set_page_config(page_title="Gaucho Insights", layout="wide")
 
