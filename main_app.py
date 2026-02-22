@@ -2,15 +2,15 @@ import streamlit as st
 import pandas as pd
 import os
 
-# 1. Imports - Make sure you created mcdb_logic.py and chem_logic.py!
+# 1. Imports with "Loud" Errors
 try:
     from pstat_logic import process_pstat
     from cs_logic import process_cs
     from mcdb_logic import process_mcdb
     from chem_logic import process_chem
 except ImportError as e:
-    st.error(f"Import Error: {e}")
-    st.info("Ensure all .py logic files (pstat, cs, mcdb, chem) are in the root folder.")
+    st.error(f"🚨 CRITICAL IMPORT ERROR: {e}")
+    st.write("Current files the server sees:", os.listdir("."))
     st.stop()
 
 st.set_page_config(page_title="Gaucho Insights", layout="wide")
