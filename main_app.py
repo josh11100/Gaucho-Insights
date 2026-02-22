@@ -2,36 +2,45 @@ import streamlit as st
 import pandas as pd
 import os
 
-# 1. Direct Imports (Since files are now in the root folder)
+# 1. Imports
 try:
     from pstat_logic import process_pstat
     from cs_logic import process_cs
 except ImportError as e:
     st.error(f"Import Error: {e}")
-    st.info("Check if pstat_logic.py and cs_logic.py are in the root folder on GitHub.")
     st.stop()
 
 st.set_page_config(page_title="Gaucho Insights", layout="wide")
 
 @st.cache_data
 def load_data():
-    # Points to the CSV inside the 'data' folder
+    # Points to your 'data' folder
     csv_path = os.path.join('data', 'courseGrades.csv')
     
-    # Diagnostic: Helpful if things still go wrong
     if not os.path.exists(csv_path):
-        st.error(f"Could not find CSV at {csv_path}")
-        if os.path.exists('data'):
-            st.info(f"Files inside 'data' folder: {os.listdir('data')}")
-        else:
-            st.info("The folder 'data' does not seem to exist in the root directory.")
+        st.error(f"File not found at {csv_path}")
         st.stop()
-    
+        
     df = pd.read_csv(csv_path)
+    
+    # --- CLEANING & SORTING LOGIC ---
     df['dept'] = df['dept'].str.strip()
-    # Clean up spacing: 'PSTAT   10' -> 'PSTAT 10'
     df['course'] = df['course'].str.replace(r'\s+', ' ', regex=True).str.strip()
-    return df
+    
+    # Create a helper column to sort Quarters (Winter < Spring < Summer < Fall)
+    q_map = {'WINTER': 1, 'SPRING': 2, 'SUMMER': 3, 'FALL': 4}
+    
+    # Split "WINTER 2024" into ["WINTER", "2024"]
+    quarter_split = df['quarter'].str.split(' ', expand=True)
+    df['q_name'] = quarter_split[0]
+    df['q_year'] = pd.to_numeric(quarter_split[1])
+    df['q_val'] = df['q_name'].map(q_map)
+    
+    # Sort by Year (Descending) then Quarter Value (Descending)
+    df = df.sort_values(by=['q_year', 'q_val'], ascending=False)
+    
+    # Remove the helper columns before returning
+    return df.drop(columns=['q_name', 'q_year', 'q_val'])
 
 def main():
     st.title("📊 Gaucho Insights: UCSB Grade Distribution")
@@ -40,10 +49,8 @@ def main():
         df = load_data()
     except Exception as e:
         st.error(f"Error loading CSV: {e}")
-        st.info("Ensure 'courseGrades.csv' is in your main GitHub folder (not inside a subfolder).")
         return
 
-    # Sidebar
     st.sidebar.header("Navigation")
     mode = st.sidebar.selectbox("Choose Department", ["PSTAT Analysis", "CS Analysis"])
     course_query = st.sidebar.text_input("Enter Course Number (e.g., 10, 120A)", "").strip()
@@ -52,29 +59,30 @@ def main():
         dept_prefix = "PSTAT"
         data = process_pstat(df)
     else:
-        dept_prefix = "CMPSC"
+        dept_prefix = "CMPSC" # Or "CS" depending on your CSV
         data = process_cs(df)
 
-    # --- THE SEARCH FIX (EXACT MATCH) ---
     if course_query:
         target = f"{dept_prefix} {course_query.upper()}"
-        # Using '==' prevents "10" from matching "110"
         data = data[data['course'] == target]
         
         if data.empty:
             st.warning(f"No exact match found for '{target}'.")
 
-    # Display Results
-    st.header(f"Results for {dept_prefix}")
+    st.header(f"Results for {dept_prefix} (Sorted by Most Recent)")
     if not data.empty:
+        # Metrics
         st.metric("Average GPA", f"{data['avgGPA'].mean():.2f}")
+        
+        # Displaying the DataFrame - it is already sorted from load_data
         st.dataframe(data, use_container_width=True)
         
+        # Chart
         st.subheader("Professor Comparison")
         prof_chart = data.groupby('instructor')['avgGPA'].mean().sort_values()
         st.bar_chart(prof_chart)
     else:
-        st.info("Use the sidebar to search for a specific course number.")
+        st.info("Enter a course number in the sidebar to begin.")
 
 if __name__ == "__main__":
     main()
