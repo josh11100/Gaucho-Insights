@@ -15,12 +15,19 @@ st.set_page_config(page_title="Gaucho Insights", layout="wide")
 
 @st.cache_data
 def load_data():
-    # Diagnostic: This will show us exactly what the Cloud Server sees
-    # You can remove these next 2 lines once the CSV is working
-    if not os.path.exists('courseGrades.csv'):
-        st.warning(f"Current Directory Files: {os.listdir('.')}")
+    # Points to the CSV inside the 'data' folder
+    csv_path = os.path.join('data', 'courseGrades.csv')
     
-    df = pd.read_csv('courseGrades.csv')
+    # Diagnostic: Helpful if things still go wrong
+    if not os.path.exists(csv_path):
+        st.error(f"Could not find CSV at {csv_path}")
+        if os.path.exists('data'):
+            st.info(f"Files inside 'data' folder: {os.listdir('data')}")
+        else:
+            st.info("The folder 'data' does not seem to exist in the root directory.")
+        st.stop()
+    
+    df = pd.read_csv(csv_path)
     df['dept'] = df['dept'].str.strip()
     # Clean up spacing: 'PSTAT   10' -> 'PSTAT 10'
     df['course'] = df['course'].str.replace(r'\s+', ' ', regex=True).str.strip()
