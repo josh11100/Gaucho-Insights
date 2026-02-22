@@ -1,23 +1,35 @@
 import streamlit as st
 import pandas as pd
+import os
 
-# We removed the 'processors.' prefix because the files are now in the same folder
+# 1. Direct Imports (Since files are now in the root folder)
 try:
     from pstat_logic import process_pstat
     from cs_logic import process_cs
 except ImportError as e:
     st.error(f"Import Error: {e}")
+    st.info("Check if pstat_logic.py and cs_logic.py are in the root folder on GitHub.")
     st.stop()
 
-# Page Configuration
 st.set_page_config(page_title="Gaucho Insights", layout="wide")
 
 @st.cache_data
 def load_data():
-    """Load and clean data once."""
-    df = pd.read_csv('courseGrades.csv')
+    # Points to the CSV inside the 'data' folder
+    csv_path = os.path.join('data', 'courseGrades.csv')
+    
+    # Diagnostic: Helpful if things still go wrong
+    if not os.path.exists(csv_path):
+        st.error(f"Could not find CSV at {csv_path}")
+        if os.path.exists('data'):
+            st.info(f"Files inside 'data' folder: {os.listdir('data')}")
+        else:
+            st.info("The folder 'data' does not seem to exist in the root directory.")
+        st.stop()
+    
+    df = pd.read_csv(csv_path)
     df['dept'] = df['dept'].str.strip()
-    # This cleans up the course names so 'PSTAT   10' becomes 'PSTAT 10'
+    # Clean up spacing: 'PSTAT   10' -> 'PSTAT 10'
     df['course'] = df['course'].str.replace(r'\s+', ' ', regex=True).str.strip()
     return df
 
@@ -26,16 +38,16 @@ def main():
     
     try:
         df = load_data()
-    except FileNotFoundError:
-        st.error("CSV file 'courseGrades.csv' not found. Please upload it to your GitHub.")
+    except Exception as e:
+        st.error(f"Error loading CSV: {e}")
+        st.info("Ensure 'courseGrades.csv' is in your main GitHub folder (not inside a subfolder).")
         return
 
-    # Sidebar Navigation
+    # Sidebar
     st.sidebar.header("Navigation")
     mode = st.sidebar.selectbox("Choose Department", ["PSTAT Analysis", "CS Analysis"])
     course_query = st.sidebar.text_input("Enter Course Number (e.g., 10, 120A)", "").strip()
 
-    # Routing based on selection
     if mode == "PSTAT Analysis":
         dept_prefix = "PSTAT"
         data = process_pstat(df)
@@ -43,34 +55,26 @@ def main():
         dept_prefix = "CMPSC"
         data = process_cs(df)
 
-    # --- EXACT MATCH LOGIC ---
+    # --- THE SEARCH FIX (EXACT MATCH) ---
     if course_query:
-        # Construct exact string: e.g., "PSTAT 10"
         target = f"{dept_prefix} {course_query.upper()}"
-        
-        # This fixes the "10 vs 110" bug by using '=='
+        # Using '==' prevents "10" from matching "110"
         data = data[data['course'] == target]
         
         if data.empty:
-            st.warning(f"No exact match found for '{target}'. Check your course number.")
+            st.warning(f"No exact match found for '{target}'.")
 
     # Display Results
     st.header(f"Results for {dept_prefix}")
     if not data.empty:
-        col1, col2 = st.columns(2)
-        with col1:
-            st.metric("Total Sections", len(data))
-        with col2:
-            st.metric("Average GPA", f"{data['avgGPA'].mean():.2f}")
-
+        st.metric("Average GPA", f"{data['avgGPA'].mean():.2f}")
         st.dataframe(data, use_container_width=True)
         
-        # Simple Visualization
         st.subheader("Professor Comparison")
         prof_chart = data.groupby('instructor')['avgGPA'].mean().sort_values()
         st.bar_chart(prof_chart)
     else:
-        st.info("Use the sidebar to search for a specific course (e.g., type '10' for PSTAT 10).")
+        st.info("Use the sidebar to search for a specific course number.")
 
 if __name__ == "__main__":
     main()
