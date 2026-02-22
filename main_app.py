@@ -2,79 +2,97 @@ import streamlit as st
 import pandas as pd
 import os
 
-# 1. Direct Imports (Since files are now in the root folder)
+# 1. Imports - Make sure you created mcdb_logic.py and chem_logic.py!
 try:
     from pstat_logic import process_pstat
     from cs_logic import process_cs
+    from mcdb_logic import process_mcdb
+    from chem_logic import process_chem
 except ImportError as e:
     st.error(f"Import Error: {e}")
-    st.info("Check if pstat_logic.py and cs_logic.py are in the root folder on GitHub.")
+    st.info("Ensure all .py logic files (pstat, cs, mcdb, chem) are in the root folder.")
     st.stop()
 
 st.set_page_config(page_title="Gaucho Insights", layout="wide")
 
 @st.cache_data
 def load_data():
-    # Points to the CSV inside the 'data' folder
     csv_path = os.path.join('data', 'courseGrades.csv')
-    
-    # Diagnostic: Helpful if things still go wrong
     if not os.path.exists(csv_path):
-        st.error(f"Could not find CSV at {csv_path}")
-        if os.path.exists('data'):
-            st.info(f"Files inside 'data' folder: {os.listdir('data')}")
-        else:
-            st.info("The folder 'data' does not seem to exist in the root directory.")
+        st.error(f"File not found at {csv_path}")
         st.stop()
-    
+        
     df = pd.read_csv(csv_path)
     df['dept'] = df['dept'].str.strip()
-    # Clean up spacing: 'PSTAT   10' -> 'PSTAT 10'
     df['course'] = df['course'].str.replace(r'\s+', ' ', regex=True).str.strip()
-    return df
+    
+    # Chronological Sorting (Recent First)
+    q_map = {'WINTER': 1, 'SPRING': 2, 'SUMMER': 3, 'FALL': 4}
+    df['temp_q'] = df['quarter'].str.upper().str.split(' ')
+    df['q_year'] = pd.to_numeric(df['temp_q'].str[1])
+    df['q_val'] = df['temp_q'].str[0].map(q_map)
+    df = df.sort_values(by=['q_year', 'q_val'], ascending=False)
+    
+    return df.drop(columns=['temp_q', 'q_year', 'q_val'])
 
 def main():
     st.title("📊 Gaucho Insights: UCSB Grade Distribution")
     
-    try:
-        df = load_data()
-    except Exception as e:
-        st.error(f"Error loading CSV: {e}")
-        st.info("Ensure 'courseGrades.csv' is in your main GitHub folder (not inside a subfolder).")
-        return
+    df = load_data()
 
-    # Sidebar
-    st.sidebar.header("Navigation")
-    mode = st.sidebar.selectbox("Choose Department", ["PSTAT Analysis", "CS Analysis"])
-    course_query = st.sidebar.text_input("Enter Course Number (e.g., 10, 120A)", "").strip()
-
-    if mode == "PSTAT Analysis":
-        dept_prefix = "PSTAT"
-        data = process_pstat(df)
+    # --- THE TASK BAR (SIDEBAR) ---
+    st.sidebar.header("Department Selection")
+    
+    # Adding MCDB and CHEM to the dropdown menu
+    options = ["PSTAT", "CS", "MCDB", "CHEM", "All Departments"]
+    mode = st.sidebar.selectbox("Choose Department", options)
+    
+    # Mapping the Sidebar labels to the actual Department Codes in your CSV
+    prefix_map = {
+        "PSTAT": "PSTAT", 
+        "CS": "CMPSC",   # Change to "CS" if your CSV uses that instead
+        "MCDB": "MCDB", 
+        "CHEM": "CHEM"
+    }
+    
+    # Dynamic Search Input
+    if mode == "All Departments":
+        st.sidebar.write("🔍 **Global Search**")
+        course_query = st.sidebar.text_input("Full Name (e.g., MATH 3A)", "").strip().upper()
+        data = df.copy()
     else:
-        dept_prefix = "CMPSC"
-        data = process_cs(df)
+        st.sidebar.write(f"🔍 **{mode} Search**")
+        example = "1A" if mode == "CHEM" or mode == "MCDB" else "10"
+        course_query = st.sidebar.text_input(f"Enter Course Number (e.g., {example})", "").strip().upper()
+        
+        # Route to the correct logic file
+        if mode == "PSTAT": data = process_pstat(df)
+        elif mode == "CS": data = process_cs(df)
+        elif mode == "MCDB": data = process_mcdb(df)
+        elif mode == "CHEM": data = process_chem(df)
 
-    # --- THE SEARCH FIX (EXACT MATCH) ---
+    # --- FILTERING LOGIC ---
     if course_query:
-        target = f"{dept_prefix} {course_query.upper()}"
-        # Using '==' prevents "10" from matching "110"
-        data = data[data['course'] == target]
+        if mode == "All Departments":
+            data = data[data['course'] == course_query]
+        else:
+            target = f"{prefix_map[mode]} {course_query}"
+            data = data[data['course'] == target]
         
         if data.empty:
-            st.warning(f"No exact match found for '{target}'.")
+            st.warning(f"No match for '{course_query}' in {mode}. Try another number.")
 
-    # Display Results
-    st.header(f"Results for {dept_prefix}")
+    # --- DISPLAY ---
+    st.header(f"Results: {mode}")
     if not data.empty:
-        st.metric("Average GPA", f"{data['avgGPA'].mean():.2f}")
+        st.metric("Avg GPA", f"{data['avgGPA'].mean():.2f}")
         st.dataframe(data, use_container_width=True)
         
-        st.subheader("Professor Comparison")
+        st.subheader("Professor GPA Comparison")
         prof_chart = data.groupby('instructor')['avgGPA'].mean().sort_values()
         st.bar_chart(prof_chart)
     else:
-        st.info("Use the sidebar to search for a specific course number.")
+        st.info(f"Please enter a course number to see the {mode} distribution.")
 
 if __name__ == "__main__":
     main()
