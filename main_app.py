@@ -111,4 +111,4 @@ def main():
     
     tab1, tab2, tab3 = st.tabs([
         "💎 Top 10 (All Levels)", 
-        "🐣 Top 10
+        "🐣 Top 10"
