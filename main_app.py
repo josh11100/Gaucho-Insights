@@ -44,6 +44,7 @@ def load_and_query_data():
     df_sorted = pd.read_sql_query(GET_RECENT_LECTURES, conn)
     easiest_df = pd.read_sql_query(GET_EASIEST_CLASSES, conn)
     lower_div_df = pd.read_sql_query(GET_EASIEST_LOWER_DIV, conn)
+    dept_df = pd.read_sql_query(GET_EASIEST_DEPTS, conn)
     
     conn.close()
     return df_sorted, easiest_df, lower_div_df
@@ -52,10 +53,11 @@ def main():
     st.title("📊 Gaucho Insights: UCSB Grade Distribution")
     st.markdown("Historical data powered by SQLite. *Outliers (4.0 avg) and Independent Studies (198+) excluded.*")
     
-    # Get all three DataFrames
-    df, easiest_df, lower_div_df = load_and_query_data()
+    # Receive the four DataFrames from the cached function
+    # Make sure your load_and_query_data() returns: df, easiest_df, lower_div_df, dept_df
+    df, easiest_df, lower_div_df, dept_df = load_and_query_data()
 
-    # --- SIDEBAR ---
+    # --- SIDEBAR SELECTION ---
     st.sidebar.header("Navigation")
     options = ["PSTAT", "CS", "MCDB", "CHEM", "All Departments"]
     mode = st.sidebar.selectbox("Choose Department", options)
@@ -67,6 +69,7 @@ def main():
         data = df.copy()
     else:
         course_query = st.sidebar.text_input(f"Enter {mode} Number (e.g., 10)", "").strip().upper()
+        # Logic processing
         if mode == "PSTAT": data = process_pstat(df)
         elif mode == "CS": data = process_cs(df)
         elif mode == "MCDB": data = process_mcdb(df)
@@ -77,45 +80,62 @@ def main():
         if mode == "All Departments":
             data = data[data['course'].str.contains(course_query, case=False, na=False)]
         else:
+            # Matches prefix + number (e.g., PSTAT 120A)
             pattern = rf"{prefix_map[mode]}\s+{course_query}"
             data = data[data['course'].str.contains(pattern, case=False, na=False, regex=True)]
 
-    # --- MAIN DISPLAY ---
+    # --- RESULTS DISPLAY ---
     st.header(f"Results for {mode}")
     
     if not data.empty:
+        # Metrics Row
         m1, m2, m3 = st.columns(3)
         m1.metric("Avg GPA", f"{data['avgGPA'].mean():.2f}")
         m2.metric("Classes Found", len(data))
         m3.metric("Professors", len(data['instructor'].unique()))
 
+        # Historical Table
         st.subheader("Historical Records (Newest First)")
+        # We hide internal SQL columns (q_year, etc.) so the user sees a clean table
         display_df = data.drop(columns=['q_year', 'q_rank', 'course_num'], errors='ignore')
         st.dataframe(display_df, use_container_width=True)
         
+        # Instructor Chart
         st.subheader("Instructor Performance")
         prof_chart = data.groupby('instructor')['avgGPA'].mean().sort_values()
         st.bar_chart(prof_chart)
     else:
-        st.info("Enter a course number in the sidebar to begin searching.")
+        st.info("Enter a course number in the sidebar to view historical distribution.")
 
-    # --- LEADERBOARDS ---
+    # --- LEADERBOARDS (The Hall of Fame) ---
     st.divider()
-    st.subheader("🏆 Course Leaderboards")
+    st.subheader("🏆 University Leaderboards")
+    st.write("Calculated across all available UCSB historical data.")
     
-    tab1, tab2 = st.tabs(["Top 10 (All Levels)", "Top 10 (Lower Div < 98)"])
+    # Create Tabs for different insights
+    tab1, tab2, tab3 = st.tabs([
+        "💎 Top 10 (All Levels)", 
+        "🐣 Top 10 (Lower Div < 98)", 
+        "🏢 Easiest Departments"
+    ])
     
     with tab1:
-        st.write("Easiest overall courses based on historical averages:")
+        st.markdown("**Easiest overall courses** (Lectures only, < 4.0 GPA)")
         t1_display = easiest_df.copy()
         t1_display.columns = ['Course Name', 'Average GPA']
         st.table(t1_display)
 
     with tab2:
-        st.write("Easiest introductory and GE courses:")
+        st.markdown("**Easiest introductory courses** (Numbered under 98)")
         t2_display = lower_div_df.copy()
         t2_display.columns = ['Course Name', 'Average GPA']
         st.table(t2_display)
+
+    with tab3:
+        st.markdown("**Departments with highest grading averages** (Min. 20 classes)")
+        t3_display = dept_df.copy()
+        t3_display.columns = ['Department', 'Avg GPA', 'Total Classes Analyzed']
+        st.table(t3_display)
 
 if __name__ == "__main__":
     main()
