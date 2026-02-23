@@ -14,7 +14,7 @@ SELECT
     course, 
     ROUND(AVG(avgGPA), 2) as mean_gpa
 FROM courses
-WHERE course_num < 100 
+WHERE course_num < 99
   AND avgGPA < 4.0
 GROUP BY course
 HAVING COUNT(*) > 3
