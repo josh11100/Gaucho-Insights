@@ -37,3 +37,17 @@ HAVING COUNT(*) > 3
 ORDER BY mean_gpa DESC
 LIMIT 10;
 """
+
+GET_EASIEST_DEPTS = """
+SELECT 
+    dept, 
+    ROUND(AVG(avgGPA), 2) as dept_avg_gpa,
+    COUNT(*) as total_records
+FROM courses
+WHERE course_num < 198 
+  AND avgGPA < 4.0
+GROUP BY dept
+HAVING total_records > 20  -- Ensures we only show departments with enough data
+ORDER BY dept_avg_gpa DESC
+LIMIT 5;
+"""
