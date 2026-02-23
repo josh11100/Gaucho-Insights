@@ -91,7 +91,7 @@ def main():
         with col3:
             st.metric("Total Records", len(data))
 
-        st.dataframe(data.drop(columns=['course_num']), use_container_width=True)
+        st.dataframe(data, use_container_width=True)
         
         # Comparison Chart
         st.subheader("Instructor Comparison")
