@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import os
 import sqlite3
-from queries import GET_RECENT_LECTURES, GET_EASIEST_CLASSES
+from queries import GET_RECENT_LECTURES, GET_EASIEST_CLASSES, GET_EASIEST_LOWER_DIV
 
 # 1. Logic Imports
 try:
@@ -34,13 +34,15 @@ def load_and_query_data():
     df_raw.drop(columns=['temp_split'], errors='ignore').to_sql('courses', conn, index=False, if_exists='replace')
     
     # !!! THIS IS THE PART THAT USES YOUR SQL FILE !!!
+# Run all three queries
     df_sorted = pd.read_sql_query(GET_RECENT_LECTURES, conn)
     easiest_df = pd.read_sql_query(GET_EASIEST_CLASSES, conn)
+    lower_div_df = pd.read_sql_query(GET_EASIEST_LOWER_DIV, conn) # <--- New
     
     conn.close()
     
-    # Return ONLY the results from the SQL queries
-    return df_sorted, easiest_df
+    # Return all three
+    return df_sorted, easiest_df, lower_div_df df_sorted, easiest_df
     
 def main():
     st.title("📊 Gaucho Insights: UCSB Grade Distribution")
