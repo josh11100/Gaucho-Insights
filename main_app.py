@@ -96,11 +96,17 @@ def main():
         elif mode == "CHEM": data = process_chem(df)
 
     # --- FILTERING ---
+# --- FILTERING (Strict Number Matching) ---
     if course_query:
         if mode == "All Departments":
-            data = data[data['course'].str.contains(course_query, case=False, na=False)]
+            # This regex looks for the query as a standalone word
+            # Example: Searching "JAPAN 1" won't match "JAPAN 114"
+            pattern = rf"\b{course_query}\b"
+            data = data[data['course'].str.contains(pattern, case=False, na=False, regex=True)]
         else:
-            pattern = rf"{prefix_map[mode]}\s+{course_query}"
+            # This regex looks for the specific Department Prefix + Exact Number
+            # \s+ matches any space, \b matches the end of the number
+            pattern = rf"{prefix_map[mode]}\s+{course_query}\b"
             data = data[data['course'].str.contains(pattern, case=False, na=False, regex=True)]
 
     # --- RESULTS DISPLAY (The main organized table) ---
