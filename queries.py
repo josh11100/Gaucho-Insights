@@ -1,7 +1,7 @@
 # queries.py
 
 # --- QUERY 1: THE MAIN TABLE ---
-# Chronological sort: Newest years and Fall quarters at the top.
+# Sorts by year and quarter rank so newest classes appear first.
 GET_RECENT_LECTURES = """
 SELECT * FROM courses 
 WHERE course_num < 198 
@@ -9,7 +9,7 @@ ORDER BY q_year DESC, q_rank DESC;
 """
 
 # --- QUERY 2: ALL UNDERGRAD HALL OF FAME ---
-# Filters out 4.0s and requires at least 4 instances (COUNT > 3).
+# Excludes 4.0s and independent studies. Requires at least 4 instances.
 GET_EASIEST_CLASSES = """
 SELECT 
     course, 
@@ -24,7 +24,7 @@ LIMIT 10;
 """
 
 # --- QUERY 3: LOWER DIV HALL OF FAME (< 98) ---
-# Specifically targets classes under 98 (Introductory/GE level).
+# Targets introductory/GE courses specifically.
 GET_EASIEST_LOWER_DIV = """
 SELECT 
     course, 
@@ -38,6 +38,8 @@ ORDER BY mean_gpa DESC
 LIMIT 10;
 """
 
+# --- QUERY 4: EASIEST DEPARTMENTS ---
+# Groups by department to find the most generous grading areas.
 GET_EASIEST_DEPTS = """
 SELECT 
     dept, 
@@ -47,7 +49,7 @@ FROM courses
 WHERE course_num < 198 
   AND avgGPA < 4.0
 GROUP BY dept
-HAVING total_records > 20  -- Ensures we only show departments with enough data
+HAVING total_records > 20
 ORDER BY dept_avg_gpa DESC
 LIMIT 5;
 """
