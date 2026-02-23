@@ -16,37 +16,19 @@ st.set_page_config(page_title="Gaucho Insights", layout="wide")
 
 @st.cache_data
 def load_data():
-    # ... (your existing code to find the CSV)
+    # 1. Define the variable FIRST
+    csv_path = os.path.join('data', 'courseGrades.csv')
     
+    # 2. Check if it exists (Safety check)
+    if not os.path.exists(csv_path):
+        st.error(f"File not found at {csv_path}")
+        st.stop()
+        
+    # 3. NOW you can use it
     df = pd.read_csv(csv_path)
     
-    # 1. Clean up column names and text
-    df['dept'] = df['dept'].str.strip()
-    df['course'] = df['course'].str.replace(r'\s+', ' ', regex=True).str.strip()
-    
-    # 2. Extract Course Number and filter out 198+ (as we discussed)
-    df['course_num'] = df['course'].str.extract(r'(\d+)').astype(float)
-    df = df[df['course_num'] < 198]
-
-    # 3. CHRONOLOGICAL REVERSE SORT (Newest Year at Top)
-    # We map quarters to numbers so Fall (4) is "higher" than Winter (1)
-    q_order = {'FALL': 4, 'SUMMER': 3, 'SPRING': 2, 'WINTER': 1}
-    
-    # Split "FALL 2022" into ['FALL', '2022']
-    df['temp_split'] = df['quarter'].str.upper().str.split(' ')
-    
-    # Extract year as a number
-    df['q_year'] = pd.to_numeric(df['temp_split'].str[1])
-    # Extract quarter rank (Fall=4, etc.)
-    df['q_rank'] = df['temp_split'].str[0].map(q_order)
-
-    # SORT: ascending=False puts 2022 above 2009, and FALL above WINTER
-    df = df.sort_values(by=['q_year', 'q_rank'], ascending=[False, False])
-
-    # 4. Clean up: Drop all helper columns so they don't show up in the table
-    df = df.drop(columns=['course_num', 'temp_split', 'q_year', 'q_rank'])
-    
-
+    # ... the rest of your cleaning and sorting code
+    return df
 def main():
     st.title("📊 Gaucho Insights: UCSB Grade Distribution")
     
