@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 import os
+from pandasql import sqldf  # <--- New Import
+from queries import GET_RECENT_LECTURES  # <--- New Import
 
 # 1. Logic Imports
 try:
@@ -14,6 +16,9 @@ except ImportError as e:
 
 st.set_page_config(page_title="Gaucho Insights", layout="wide")
 
+# Helper for SQL queries
+pysqldf = lambda q: sqldf(q, globals())
+
 @st.cache_data
 def load_data():
     csv_path = os.path.join('data', 'courseGrades.csv')
@@ -24,35 +29,30 @@ def load_data():
         
     df = pd.read_csv(csv_path)
     
-    # --- CLEANING & FORMATTING ---
+    # --- PRE-PROCESSING FOR SQL ---
     df['dept'] = df['dept'].str.strip()
-    # Normalize spacing: 'PSTAT  120A' -> 'PSTAT 120A'
     df['course'] = df['course'].str.replace(r'\s+', ' ', regex=True).str.strip()
     
-    # --- OUTLIER FILTER (Remove 198, 199, 200+) ---
-    # Extract the first set of digits from the course string
+    # Extract numeric part for the 198+ filter
     df['course_num'] = df['course'].str.extract(r'(\d+)').astype(float)
-    # Keep only standard undergraduate lecture/lab courses
-    df = df[df['course_num'] < 198]
     
-    # --- CHRONOLOGICAL SORTING (Newest at Top) ---
+    # Map quarters to numbers so SQL can sort them (Fall=4, Winter=1)
     q_order = {'FALL': 4, 'SUMMER': 3, 'SPRING': 2, 'WINTER': 1}
-    
-    # Split 'FALL 2024' into ['FALL', '2024']
     df['temp_split'] = df['quarter'].str.upper().str.split(' ')
-    # Create helper columns for sorting
     df['q_year'] = pd.to_numeric(df['temp_split'].str[1])
     df['q_rank'] = df['temp_split'].str[0].map(q_order)
     
-    # Sort Descending (True for Year, True for Quarter Rank)
-    df = df.sort_values(by=['q_year', 'q_rank'], ascending=[False, False])
+    # --- SQL EXECUTION ---
+    # This runs the query from queries.py
+    # It filters out 198+ and sorts newest to oldest
+    df = pysqldf(GET_RECENT_LECTURES)
     
     # Cleanup helper columns before returning to app
-    return df.drop(columns=['course_num', 'temp_split', 'q_year', 'q_rank'])
+    return df.drop(columns=['course_num', 'temp_split', 'q_year', 'q_rank'], errors='ignore')
 
 def main():
     st.title("📊 Gaucho Insights: UCSB Grade Distribution")
-    st.markdown("Discover historical grade trends for undergraduate courses.")
+    st.markdown("Discover historical grade trends using SQL-powered filtering.")
     
     df = load_data()
 
@@ -61,7 +61,6 @@ def main():
     options = ["PSTAT", "CS", "MCDB", "CHEM", "All Departments"]
     mode = st.sidebar.selectbox("Choose Department", options)
     
-    # Map selection to CSV codes
     prefix_map = {
         "PSTAT": "PSTAT", 
         "CS": "CMPSC", 
@@ -77,7 +76,6 @@ def main():
     else:
         course_query = st.sidebar.text_input(f"Enter {mode} Number (e.g., 10, 120)", "").strip().upper()
         
-        # Route to logic processors
         if mode == "PSTAT": data = process_pstat(df)
         elif mode == "CS": data = process_cs(df)
         elif mode == "MCDB": data = process_mcdb(df)
@@ -86,10 +84,8 @@ def main():
     # --- FUZZY FILTERING ---
     if course_query:
         if mode == "All Departments":
-            # Search anywhere in the course string
             data = data[data['course'].str.contains(course_query, case=False, na=False)]
         else:
-            # Pattern matches Dept Prefix + Number (e.g., 'PSTAT 120')
             pattern = rf"{prefix_map[mode]}\s+{course_query}"
             data = data[data['course'].str.contains(pattern, case=False, na=False, regex=True)]
 
@@ -97,22 +93,18 @@ def main():
     st.header(f"Results for {mode}")
     
     if not data.empty:
-        # Top-level stats
         m1, m2, m3 = st.columns(3)
         m1.metric("Avg GPA", f"{data['avgGPA'].mean():.2f}")
         m2.metric("Total Quarters", len(data))
         m3.metric("Unique Professors", len(data['instructor'].unique()))
         
-        # Data Table
-        st.subheader("Historical Records (Newest First)")
+        st.subheader("Historical Records (Sorted by SQL: Newest First)")
         st.dataframe(data, use_container_width=True)
         
-        # Visualization
         st.subheader("Instructor GPA Comparison")
         prof_avg = data.groupby('instructor')['avgGPA'].mean().sort_values()
         st.bar_chart(prof_avg)
         
-        # Export Option
         st.download_button(
             label="📥 Download Results as CSV",
             data=data.to_csv(index=False),
@@ -121,7 +113,7 @@ def main():
         )
     else:
         st.info("Enter a course number in the sidebar to view data.")
-        st.warning("Note: Courses numbered 198 and higher are hidden.")
+        st.warning("Note: Courses numbered 198 and higher are hidden via SQL filter.")
 
 if __name__ == "__main__":
     main()
