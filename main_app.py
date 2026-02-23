@@ -21,8 +21,8 @@ def load_data():
     
     # Try common locations in order
     candidate_paths = [
-        os.path.join(base_dir, "data", "grades.csv"),
-        os.path.join(base_dir, "grades.csv"),
+        os.path.join(base_dir, "data", "courseGrades.csv"),
+        os.path.join(base_dir, "courseGrades.csv"),
     ]
     
     csv_path = None
