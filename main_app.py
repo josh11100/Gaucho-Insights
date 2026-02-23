@@ -19,39 +19,29 @@ st.set_page_config(page_title="Gaucho Insights", layout="wide")
 @st.cache_data
 def load_and_query_data():
     csv_path = os.path.join('data', 'courseGrades.csv')
-    if not os.path.exists(csv_path):
-        st.error("CSV file not found.")
-        st.stop()
-        
     df_raw = pd.read_csv(csv_path)
     
-    # --- PRE-PROCESSING ---
-    df_raw['dept'] = df_raw['dept'].str.strip()
-    df_raw['course'] = df_raw['course'].str.replace(r'\s+', ' ', regex=True).str.strip()
+    # --- PRE-PROCESSING (Setup for SQL) ---
     df_raw['course_num'] = df_raw['course'].str.extract(r'(\d+)').astype(float)
-    
     q_order = {'FALL': 4, 'SUMMER': 3, 'SPRING': 2, 'WINTER': 1}
     temp_split = df_raw['quarter'].str.upper().str.split(' ')
     df_raw['q_year'] = pd.to_numeric(temp_split.str[1], errors='coerce').fillna(0).astype(int)
     df_raw['q_rank'] = temp_split.str[0].map(q_order).fillna(0).astype(int)
 
-    # --- SQLITE WORKFLOW (Internal) ---
-    # Create the connection locally inside the function
+    # --- SQL EXECUTION ---
     conn = sqlite3.connect(':memory:', check_same_thread=False)
-    
-    # Drop temp_split list so it doesn't crash SQLite
+    # Important: We name the table 'courses' so it matches your SQL 'FROM courses'
     df_raw.drop(columns=['temp_split'], errors='ignore').to_sql('courses', conn, index=False, if_exists='replace')
     
-    # Run both queries while the connection is open
+    # !!! THIS IS THE PART THAT USES YOUR SQL FILE !!!
     df_sorted = pd.read_sql_query(GET_RECENT_LECTURES, conn)
     easiest_df = pd.read_sql_query(GET_EASIEST_CLASSES, conn)
     
-    # Close the connection so we don't return an unserializable object
     conn.close()
     
-    # Return both clean DataFrames
+    # Return ONLY the results from the SQL queries
     return df_sorted, easiest_df
-
+    
 def main():
     st.title("📊 Gaucho Insights: UCSB Grade Distribution")
     st.markdown("Historical data powered by SQLite. Standard undergraduate courses only.")
