@@ -20,9 +20,10 @@ SELECT
     ROUND(AVG(avgGPA), 2) as mean_gpa
 FROM courses
 WHERE course_num < 198 
-  AND avgGPA < 4.0        -- <--- Filter out the unrealistic 4.0s
+  AND avgGPA < 4.0          -- Filter out individual 4.0 entries
 GROUP BY course
-HAVING COUNT(*) > 3      -- Must have been taught at least 3 times
+HAVING COUNT(*) > 3         -- Must have been taught at least 3 times
+   AND mean_gpa < 4.0       -- Double check the final average isn't 4.0
 ORDER BY mean_gpa DESC
 LIMIT 10;
 """
