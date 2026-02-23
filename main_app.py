@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import os
 import sqlite3
-from queries import GET_RECENT_LECTURES
+from queries import GET_RECENT_LECTURES, GET_EASIEST_CLASSES
 
 # 1. Logic Imports
 try:
@@ -17,74 +17,59 @@ except ImportError as e:
 st.set_page_config(page_title="Gaucho Insights", layout="wide")
 
 @st.cache_data
-def load_data():
+def load_and_query_data():
     csv_path = os.path.join('data', 'courseGrades.csv')
-    
     if not os.path.exists(csv_path):
-        st.error(f"File not found at {csv_path}.")
+        st.error("CSV file not found.")
         st.stop()
         
     df_raw = pd.read_csv(csv_path)
     
-    # --- PRE-PROCESSING ---
+    # --- PRE-PROCESSING FOR SQL ---
     df_raw['dept'] = df_raw['dept'].str.strip()
     df_raw['course'] = df_raw['course'].str.replace(r'\s+', ' ', regex=True).str.strip()
     df_raw['course_num'] = df_raw['course'].str.extract(r'(\d+)').astype(float)
     
+    # Ensure Year and Rank are Integers for proper SQL sorting
     q_order = {'FALL': 4, 'SUMMER': 3, 'SPRING': 2, 'WINTER': 1}
-    # Create the temp split to extract year/rank
     temp_split = df_raw['quarter'].str.upper().str.split(' ')
-    df_raw['q_year'] = pd.to_numeric(temp_split.str[1])
-    df_raw['q_rank'] = temp_split.str[0].map(q_order)
+    df_raw['q_year'] = pd.to_numeric(temp_split.str[1], errors='coerce').fillna(0).astype(int)
+    df_raw['q_rank'] = temp_split.str[0].map(q_order).fillna(0).astype(int)
 
-    # --- THE CRITICAL FIX ---
-    # SQLite hates Python lists. We must NOT include the split list in to_sql.
-    # We also ensure no empty/NaN values crash the insert.
-    df_for_sql = df_raw.copy()
-    
     # --- SQLITE WORKFLOW ---
     conn = sqlite3.connect(':memory:', check_same_thread=False)
+    # Write to SQL but exclude 'temp_split' (lists crash SQLite)
+    df_raw.drop(columns=['temp_split'], errors='ignore').to_sql('courses', conn, index=False, if_exists='replace')
     
-    # We only send columns that SQLite understands (Strings and Numbers)
-    df_for_sql.to_sql('courses', conn, index=False, if_exists='replace')
+    # Execute primary sort query
+    df_sorted = pd.read_sql_query(GET_RECENT_LECTURES, conn)
     
-    df_final = pd.read_sql_query(GET_RECENT_LECTURES, conn)
-    conn.close()
-    
-    # Drop the helper columns from the final result so the user doesn't see them
-    return df_final.drop(columns=['course_num', 'q_year', 'q_rank'], errors='ignore')
+    return df_sorted, conn
+
 def main():
     st.title("📊 Gaucho Insights: UCSB Grade Distribution")
-    st.markdown("Historical data powered by SQLite. Standard undergraduate courses only.")
     
-    df = load_data()
+    # Load data and keep the SQL connection active for the Hall of Fame
+    df, conn = load_and_query_data()
 
     # --- SIDEBAR SELECTION ---
     st.sidebar.header("Navigation")
     options = ["PSTAT", "CS", "MCDB", "CHEM", "All Departments"]
     mode = st.sidebar.selectbox("Choose Department", options)
     
-    prefix_map = {
-        "PSTAT": "PSTAT", 
-        "CS": "CMPSC", 
-        "MCDB": "MCDB", 
-        "CHEM": "CHEM"
-    }
+    prefix_map = {"PSTAT": "PSTAT", "CS": "CMPSC", "MCDB": "MCDB", "CHEM": "CHEM"}
     
-    # --- SEARCH LOGIC ---
     if mode == "All Departments":
-        st.sidebar.info("Search full course name (e.g., MATH 3A)")
-        course_query = st.sidebar.text_input("Global Search", "").strip().upper()
+        course_query = st.sidebar.text_input("Global Search (e.g., MATH 3A)", "").strip().upper()
         data = df.copy()
     else:
-        course_query = st.sidebar.text_input(f"Enter {mode} Number (e.g., 10, 120)", "").strip().upper()
-        
+        course_query = st.sidebar.text_input(f"Enter {mode} Number (e.g., 120)", "").strip().upper()
         if mode == "PSTAT": data = process_pstat(df)
         elif mode == "CS": data = process_cs(df)
         elif mode == "MCDB": data = process_mcdb(df)
         elif mode == "CHEM": data = process_chem(df)
 
-    # --- FUZZY FILTERING ---
+    # --- FILTERING ---
     if course_query:
         if mode == "All Departments":
             data = data[data['course'].str.contains(course_query, case=False, na=False)]
@@ -96,34 +81,38 @@ def main():
     st.header(f"Results for {mode}")
     
     if not data.empty:
-        # Layout metrics
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            st.metric("Avg GPA", f"{data['avgGPA'].mean():.2f}")
-        with col2:
-            st.metric("Classes Found", len(data))
-        with col3:
-            st.metric("Unique Professors", len(data['instructor'].unique()))
+        m1, m2, m3 = st.columns(3)
+        m1.metric("Avg GPA", f"{data['avgGPA'].mean():.2f}")
+        m2.metric("Classes Found", len(data))
+        m3.metric("Professors", len(data['instructor'].unique()))
 
-        # Data Table
-        st.subheader("Historical Grades (Newest First)")
-        st.dataframe(data, use_container_width=True)
+        st.subheader("Historical Records (Newest First)")
+        # We drop the internal SQL columns here so they are hidden from the user
+        display_df = data.drop(columns=['q_year', 'q_rank', 'course_num'], errors='ignore')
+        st.dataframe(display_df, use_container_width=True)
         
-        # Comparison Chart
         st.subheader("Instructor Performance")
         prof_chart = data.groupby('instructor')['avgGPA'].mean().sort_values()
         st.bar_chart(prof_chart)
-        
-        # Export Button
-        st.download_button(
-            label="📥 Download Results as CSV",
-            data=data.to_csv(index=False),
-            file_name=f"{mode}_grades.csv",
-            mime="text/csv",
-        )
     else:
-        st.info("Enter a course to see historical grade distributions.")
-        st.warning("Note: Graduate and research units (198+) are excluded.")
+        st.info("Enter a course number to begin.")
+
+    # --- SQL HALL OF FAME ---
+    st.divider()
+    st.subheader("🏆 The 'GPA Booster' Hall of Fame")
+    st.write("The top 10 easiest courses based on historical averages (SQL Calculated):")
+
+    # Run the second query from queries.py
+    try:
+        easiest_df = pd.read_sql_query(GET_EASIEST_CLASSES, conn)
+        # Clean up the column name for the UI
+        easiest_df.columns = ['Course Name', 'Average GPA']
+        st.table(easiest_df)
+    except Exception as e:
+        st.error(f"SQL Error in Hall of Fame: {e}")
+
+    # Close connection at the very end
+    conn.close()
 
 if __name__ == "__main__":
     main()
