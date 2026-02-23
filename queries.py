@@ -28,17 +28,16 @@ ORDER BY mean_gpa DESC
 LIMIT 10;
 """
 
-# --- OPTIONAL QUERY 3: TOP PROFESSORS ---
-# You can use this later if you want to add a 'Best Professors' section
-GET_TOP_PROFS = """
+
+GET_EASIEST_LOWER_DIV = """
 SELECT 
-    instructor, 
-    ROUND(AVG(avgGPA), 2) as avg_gpa,
-    COUNT(*) as total_quarters
+    course, 
+    ROUND(AVG(avgGPA), 2) as mean_gpa
 FROM courses
-WHERE course_num < 198
-GROUP BY instructor
-HAVING total_quarters > 5
-ORDER BY avg_gpa DESC
+WHERE course_num < 98 
+  AND avgGPA < 4.0
+GROUP BY course
+HAVING COUNT(*) > 3
+ORDER BY mean_gpa DESC
 LIMIT 10;
 """
