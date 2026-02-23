@@ -12,14 +12,17 @@ ORDER BY q_year DESC, q_rank DESC;
 # --- QUERY 2: THE HALL OF FAME ---
 # This query calculates the average GPA for every unique course.
 # It filters out 198+ classes to keep the results realistic.
+# queries.py
+
 GET_EASIEST_CLASSES = """
 SELECT 
     course, 
     ROUND(AVG(avgGPA), 2) as mean_gpa
 FROM courses
-WHERE course_num < 198
+WHERE course_num < 198 
+  AND avgGPA < 4.0        -- <--- Filter out the unrealistic 4.0s
 GROUP BY course
-HAVING COUNT(*) > 3  -- Ensures the class has been taught at least 3 times
+HAVING COUNT(*) > 3      -- Must have been taught at least 3 times
 ORDER BY mean_gpa DESC
 LIMIT 10;
 """
