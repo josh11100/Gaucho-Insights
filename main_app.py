@@ -22,27 +22,31 @@ def load_data():
         st.stop()
         
     df = pd.read_csv(csv_path)
+    
+    # 1. Standard Cleaning
     df['dept'] = df['dept'].str.strip()
     df['course'] = df['course'].str.replace(r'\s+', ' ', regex=True).str.strip()
     
-    # --- GLOBAL FILTER: REMOVE 198, 199, AND GRAD COURSES ---
-    # Extract the number part of the course string
+    # 2. Filter out non-real classes (198, 199, 200+)
     df['course_num'] = df['course'].str.extract(r'(\d+)').astype(float)
-    
-    # Keep only standard undergraduate lecture/lab courses
     df = df[df['course_num'] < 198]
     
-    # --- OPTIONAL: Categorize for better visualization ---
-    df['Level'] = df['course_num'].apply(lambda x: 'Lower Div' if x < 100 else 'Upper Div')
-    
-    # --- CHRONOLOGICAL SORTING ---
+    # 3. CHRONOLOGICAL SORTING (NEWEST AT TOP)
+    # Mapping quarters so Fall (4) is "greater" than Winter (1)
     q_map = {'WINTER': 1, 'SPRING': 2, 'SUMMER': 3, 'FALL': 4}
+    
+    # Split "FALL 2022" into list
     df['temp_q'] = df['quarter'].str.upper().str.split(' ')
+    
+    # Extract Year (e.g., 2022) and Quarter (e.g., 4)
     df['q_year'] = pd.to_numeric(df['temp_q'].str[1])
     df['q_val'] = df['temp_q'].str[0].map(q_map)
+    
+    # SORTING: ascending=False makes 2022 appear before 2009
     df = df.sort_values(by=['q_year', 'q_val'], ascending=False)
     
-    return df.drop(columns=['temp_q', 'q_year', 'q_val'])
+    # Clean up the helper columns so the user doesn't see them
+    return df.drop(columns=['course_num', 'temp_q', 'q_year', 'q_val'])
 
 def main():
     st.title("📊 Gaucho Insights: UCSB Grade Distribution")
