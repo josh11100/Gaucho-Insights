@@ -1,8 +1,8 @@
 import streamlit as st
 import pandas as pd
 import os
-from pandasql import sqldf  # <--- New Import
-from queries import GET_RECENT_LECTURES  # <--- New Import
+import sqlite3
+from queries import GET_RECENT_LECTURES
 
 # 1. Logic Imports
 try:
@@ -16,9 +16,6 @@ except ImportError as e:
 
 st.set_page_config(page_title="Gaucho Insights", layout="wide")
 
-# Helper for SQL queries
-pysqldf = lambda q: sqldf(q, globals())
-
 @st.cache_data
 def load_data():
     csv_path = os.path.join('data', 'courseGrades.csv')
@@ -27,32 +24,40 @@ def load_data():
         st.error(f"File not found at {csv_path}. Ensure it is in the 'data' folder on GitHub.")
         st.stop()
         
-    df = pd.read_csv(csv_path)
+    # Read raw data
+    df_raw = pd.read_csv(csv_path)
     
     # --- PRE-PROCESSING FOR SQL ---
-    df['dept'] = df['dept'].str.strip()
-    df['course'] = df['course'].str.replace(r'\s+', ' ', regex=True).str.strip()
+    df_raw['dept'] = df_raw['dept'].str.strip()
+    df_raw['course'] = df_raw['course'].str.replace(r'\s+', ' ', regex=True).str.strip()
     
-    # Extract numeric part for the 198+ filter
-    df['course_num'] = df['course'].str.extract(r'(\d+)').astype(float)
+    # Extract numeric part for course filtering
+    df_raw['course_num'] = df_raw['course'].str.extract(r'(\d+)').astype(float)
     
-    # Map quarters to numbers so SQL can sort them (Fall=4, Winter=1)
+    # Create sort keys for the SQL engine
     q_order = {'FALL': 4, 'SUMMER': 3, 'SPRING': 2, 'WINTER': 1}
-    df['temp_split'] = df['quarter'].str.upper().str.split(' ')
-    df['q_year'] = pd.to_numeric(df['temp_split'].str[1])
-    df['q_rank'] = df['temp_split'].str[0].map(q_order)
+    df_raw['temp_split'] = df_raw['quarter'].str.upper().str.split(' ')
+    df_raw['q_year'] = pd.to_numeric(df_raw['temp_split'].str[1])
+    df_raw['q_rank'] = df_raw['temp_split'].str[0].map(q_order)
+
+    # --- SQLITE WORKFLOW ---
+    # Create connection to in-memory database
+    conn = sqlite3.connect(':memory:', check_same_thread=False)
     
-    # --- SQL EXECUTION ---
-    # This runs the query from queries.py
-    # It filters out 198+ and sorts newest to oldest
-    df = pysqldf(GET_RECENT_LECTURES)
+    # Load the dataframe into a SQL table named 'courses'
+    df_raw.to_sql('courses', conn, index=False, if_exists='replace')
     
-    # Cleanup helper columns before returning to app
-    return df.drop(columns=['course_num', 'temp_split', 'q_year', 'q_rank'], errors='ignore')
+    # Run the SQL query from queries.py
+    df_final = pd.read_sql_query(GET_RECENT_LECTURES, conn)
+    
+    conn.close()
+    
+    # Cleanup helper columns used for sorting before returning
+    return df_final.drop(columns=['course_num', 'temp_split', 'q_year', 'q_rank'], errors='ignore')
 
 def main():
     st.title("📊 Gaucho Insights: UCSB Grade Distribution")
-    st.markdown("Discover historical grade trends using SQL-powered filtering.")
+    st.markdown("Historical data powered by SQLite. Standard undergraduate courses only.")
     
     df = load_data()
 
@@ -93,27 +98,34 @@ def main():
     st.header(f"Results for {mode}")
     
     if not data.empty:
-        m1, m2, m3 = st.columns(3)
-        m1.metric("Avg GPA", f"{data['avgGPA'].mean():.2f}")
-        m2.metric("Total Quarters", len(data))
-        m3.metric("Unique Professors", len(data['instructor'].unique()))
-        
-        st.subheader("Historical Records (Sorted by SQL: Newest First)")
+        # Layout metrics
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("Avg GPA", f"{data['avgGPA'].mean():.2f}")
+        with col2:
+            st.metric("Classes Found", len(data))
+        with col3:
+            st.metric("Unique Professors", len(data['instructor'].unique()))
+
+        # Data Table
+        st.subheader("Historical Grades (Newest First)")
         st.dataframe(data, use_container_width=True)
         
-        st.subheader("Instructor GPA Comparison")
-        prof_avg = data.groupby('instructor')['avgGPA'].mean().sort_values()
-        st.bar_chart(prof_avg)
+        # Comparison Chart
+        st.subheader("Instructor Performance")
+        prof_chart = data.groupby('instructor')['avgGPA'].mean().sort_values()
+        st.bar_chart(prof_chart)
         
+        # Export Button
         st.download_button(
             label="📥 Download Results as CSV",
             data=data.to_csv(index=False),
-            file_name=f"{mode}_filtered_grades.csv",
-            mime="text/csv"
+            file_name=f"{mode}_grades.csv",
+            mime="text/csv",
         )
     else:
-        st.info("Enter a course number in the sidebar to view data.")
-        st.warning("Note: Courses numbered 198 and higher are hidden via SQL filter.")
+        st.info("Enter a course to see historical grade distributions.")
+        st.warning("Note: Graduate and research units (198+) are excluded.")
 
 if __name__ == "__main__":
     main()
