@@ -111,4 +111,27 @@ def main():
     
     tab1, tab2, tab3 = st.tabs([
         "💎 Top 10 (All Levels)", 
-        "🐣 Top 10"
+        "🐣 Top 10 (Lower Div < 98)", 
+        "🏢 Easiest Departments"
+    ])
+    
+    with tab1:
+        st.markdown("**Easiest overall courses** (Average < 4.0)")
+        t1_display = easiest_df.copy()
+        t1_display.columns = ['Course Name', 'Average GPA']
+        st.table(t1_display)
+
+    with tab2:
+        st.markdown("**Easiest introductory courses** (Numbered under 98)")
+        t2_display = lower_div_df.copy()
+        t2_display.columns = ['Course Name', 'Average GPA']
+        st.table(t2_display)
+
+    with tab3:
+        st.markdown("**Departments with highest grading averages** (Min. 20 classes)")
+        t3_display = dept_df.copy()
+        t3_display.columns = ['Department', 'Avg GPA', 'Total Classes Found']
+        st.table(t3_display)
+
+if __name__ == "__main__":
+    main()
