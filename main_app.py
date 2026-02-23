@@ -25,32 +25,39 @@ def load_and_query_data():
         
     df_raw = pd.read_csv(csv_path)
     
-    # --- PRE-PROCESSING FOR SQL ---
+    # --- PRE-PROCESSING ---
     df_raw['dept'] = df_raw['dept'].str.strip()
     df_raw['course'] = df_raw['course'].str.replace(r'\s+', ' ', regex=True).str.strip()
     df_raw['course_num'] = df_raw['course'].str.extract(r'(\d+)').astype(float)
     
-    # Ensure Year and Rank are Integers for proper SQL sorting
     q_order = {'FALL': 4, 'SUMMER': 3, 'SPRING': 2, 'WINTER': 1}
     temp_split = df_raw['quarter'].str.upper().str.split(' ')
     df_raw['q_year'] = pd.to_numeric(temp_split.str[1], errors='coerce').fillna(0).astype(int)
     df_raw['q_rank'] = temp_split.str[0].map(q_order).fillna(0).astype(int)
 
-    # --- SQLITE WORKFLOW ---
+    # --- SQLITE WORKFLOW (Internal) ---
+    # Create the connection locally inside the function
     conn = sqlite3.connect(':memory:', check_same_thread=False)
-    # Write to SQL but exclude 'temp_split' (lists crash SQLite)
+    
+    # Drop temp_split list so it doesn't crash SQLite
     df_raw.drop(columns=['temp_split'], errors='ignore').to_sql('courses', conn, index=False, if_exists='replace')
     
-    # Execute primary sort query
+    # Run both queries while the connection is open
     df_sorted = pd.read_sql_query(GET_RECENT_LECTURES, conn)
+    easiest_df = pd.read_sql_query(GET_EASIEST_CLASSES, conn)
     
-    return df_sorted, conn
+    # Close the connection so we don't return an unserializable object
+    conn.close()
+    
+    # Return both clean DataFrames
+    return df_sorted, easiest_df
 
 def main():
     st.title("📊 Gaucho Insights: UCSB Grade Distribution")
+    st.markdown("Historical data powered by SQLite. Standard undergraduate courses only.")
     
-    # Load data and keep the SQL connection active for the Hall of Fame
-    df, conn = load_and_query_data()
+    # Receive the two DataFrames from the cached function
+    df, easiest_df = load_and_query_data()
 
     # --- SIDEBAR SELECTION ---
     st.sidebar.header("Navigation")
@@ -87,7 +94,7 @@ def main():
         m3.metric("Professors", len(data['instructor'].unique()))
 
         st.subheader("Historical Records (Newest First)")
-        # We drop the internal SQL columns here so they are hidden from the user
+        # Hide the helper columns from the final user table
         display_df = data.drop(columns=['q_year', 'q_rank', 'course_num'], errors='ignore')
         st.dataframe(display_df, use_container_width=True)
         
@@ -95,24 +102,20 @@ def main():
         prof_chart = data.groupby('instructor')['avgGPA'].mean().sort_values()
         st.bar_chart(prof_chart)
     else:
-        st.info("Enter a course number to begin.")
+        st.info("Enter a course number in the sidebar to begin.")
 
     # --- SQL HALL OF FAME ---
     st.divider()
     st.subheader("🏆 The 'GPA Booster' Hall of Fame")
     st.write("The top 10 easiest courses based on historical averages (SQL Calculated):")
 
-    # Run the second query from queries.py
-    try:
-        easiest_df = pd.read_sql_query(GET_EASIEST_CLASSES, conn)
-        # Clean up the column name for the UI
-        easiest_df.columns = ['Course Name', 'Average GPA']
-        st.table(easiest_df)
-    except Exception as e:
-        st.error(f"SQL Error in Hall of Fame: {e}")
-
-    # Close connection at the very end
-    conn.close()
+    if not easiest_df.empty:
+        # Create a display copy and rename for the user
+        easiest_display = easiest_df.copy()
+        easiest_display.columns = ['Course Name', 'Average GPA']
+        st.table(easiest_display)
+    else:
+        st.warning("No data found for the Hall of Fame.")
 
 if __name__ == "__main__":
     main()
