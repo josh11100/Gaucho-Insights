@@ -1,18 +1,8 @@
 # queries.py
 
-# Query to get standard undergraduate classes sorted by newest year first
+# Query using actual SQLite syntax
 GET_RECENT_LECTURES = """
-SELECT * FROM df 
+SELECT * FROM courses 
 WHERE course_num < 198 
-ORDER BY q_year DESC, q_rank DESC
-"""
-
-# Example for later
-GET_TOP_PROFS = """
-SELECT instructor, AVG(avgGPA) as mean_gpa
-FROM df
-GROUP BY instructor
-HAVING COUNT(*) > 5
-ORDER BY mean_gpa DESC
-LIMIT 10
+ORDER BY q_year DESC, q_rank DESC;
 """
