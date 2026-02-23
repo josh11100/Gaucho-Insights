@@ -16,7 +16,7 @@ try:
     from mcdb_logic import process_mcdb
     from chem_logic import process_chem
 except ImportError as e:
-    st.error(f"🚨 Logic File Missing: {e}")
+    st.error(f"(＿ ＿*) Z z z Logic File Missing: {e}")
     st.stop()
 
 st.set_page_config(page_title="Gaucho Insights", layout="wide")
@@ -59,14 +59,14 @@ def load_and_query_data():
     return df_sorted, lower_div_df, upper_div_df, dept_df
 
 def main():
-    st.title("📊 Gaucho Insights: UCSB Grade Distribution")
+    st.title("(｡•̀ᴗ-)✧ Gaucho Insights: UCSB Grade Distribution")
     
     # Load all data sources
     df, lower_div_df, upper_div_df, dept_df = load_and_query_data()
 
     # --- LEADERBOARD EXPANDER (The "Unfold" Section) ---
-    with st.expander("🏆 View University Leaderboards (Top 10 GPA Boosters)", expanded=False):
-        tab1, tab2, tab3 = st.tabs(["🐣 Lower Div (<100)", "🎓 Upper Div (100-197)", "🏢 Easiest Depts"])
+    with st.expander("°˖✧◝(⁰▿⁰)◜✧˖° View University Leaderboards (Top 10 GPA Boosters)", expanded=False):
+        tab1, tab2, tab3 = st.tabs(["(─‿‿─)♡ Lower Div (<100)", "(⌒_⌒;) Upper Div (100-197)", "( ﾉ･o･ )ﾉ Easiest Depts"])
         
         with tab1:
             st.table(lower_div_df.rename(columns={'course': 'Course', 'mean_gpa': 'Avg GPA'}))
