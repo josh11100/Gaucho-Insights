@@ -26,15 +26,23 @@ def load_data():
     df['dept'] = df['dept'].str.strip()
     df['course'] = df['course'].str.replace(r'\s+', ' ', regex=True).str.strip()
     
-    # Chronological Sorting (Recent First)
+    # --- FILTER OUT NON-LECTURE COURSES (198, 199, 200+) ---
+    # This extracts the digits from the course name (e.g., '120' from 'PSTAT 120A')
+    df['course_num'] = df['course'].str.extract(r'(\d+)').astype(float)
+    
+    # Only keep courses between 1 and 197
+    df = df[df['course_num'] < 198]
+    
+    # --- CHRONOLOGICAL SORTING ---
     q_map = {'WINTER': 1, 'SPRING': 2, 'SUMMER': 3, 'FALL': 4}
     df['temp_q'] = df['quarter'].str.upper().str.split(' ')
     df['q_year'] = pd.to_numeric(df['temp_q'].str[1])
     df['q_val'] = df['temp_q'].str[0].map(q_map)
     df = df.sort_values(by=['q_year', 'q_val'], ascending=False)
     
-    return df.drop(columns=['temp_q', 'q_year', 'q_val'])
-
+    # Drop helper columns before returning
+    return df.drop(columns=['course_num', 'temp_q', 'q_year', 'q_val'])
+    
 def main():
     st.title("📊 Gaucho Insights: UCSB Grade Distribution")
     
