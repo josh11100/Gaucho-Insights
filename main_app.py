@@ -2,15 +2,14 @@ import streamlit as st
 import pandas as pd
 import os
 
-# 1. Imports with "Loud" Errors
+# 1. Imports
 try:
     from pstat_logic import process_pstat
     from cs_logic import process_cs
     from mcdb_logic import process_mcdb
     from chem_logic import process_chem
 except ImportError as e:
-    st.error(f"🚨 CRITICAL IMPORT ERROR: {e}")
-    st.write("Current files the server sees:", os.listdir("."))
+    st.error(f"Logic File Missing: {e}")
     st.stop()
 
 st.set_page_config(page_title="Gaucho Insights", layout="wide")
@@ -26,12 +25,15 @@ def load_data():
     df['dept'] = df['dept'].str.strip()
     df['course'] = df['course'].str.replace(r'\s+', ' ', regex=True).str.strip()
     
-    # --- FILTER OUT NON-LECTURE COURSES (198, 199, 200+) ---
-    # This extracts the digits from the course name (e.g., '120' from 'PSTAT 120A')
+    # --- GLOBAL FILTER: REMOVE 198, 199, AND GRAD COURSES ---
+    # Extract the number part of the course string
     df['course_num'] = df['course'].str.extract(r'(\d+)').astype(float)
     
-    # Only keep courses between 1 and 197
+    # Keep only standard undergraduate lecture/lab courses
     df = df[df['course_num'] < 198]
+    
+    # --- OPTIONAL: Categorize for better visualization ---
+    df['Level'] = df['course_num'].apply(lambda x: 'Lower Div' if x < 100 else 'Upper Div')
     
     # --- CHRONOLOGICAL SORTING ---
     q_map = {'WINTER': 1, 'SPRING': 2, 'SUMMER': 3, 'FALL': 4}
@@ -40,67 +42,59 @@ def load_data():
     df['q_val'] = df['temp_q'].str[0].map(q_map)
     df = df.sort_values(by=['q_year', 'q_val'], ascending=False)
     
-    # Drop helper columns before returning
-    return df.drop(columns=['course_num', 'temp_q', 'q_year', 'q_val'])
-    
+    return df.drop(columns=['temp_q', 'q_year', 'q_val'])
+
 def main():
     st.title("📊 Gaucho Insights: UCSB Grade Distribution")
     
     df = load_data()
 
-    # --- THE TASK BAR (SIDEBAR) ---
+    # --- SIDEBAR ---
     st.sidebar.header("Department Selection")
-    
-    # Adding MCDB and CHEM to the dropdown menu
     options = ["PSTAT", "CS", "MCDB", "CHEM", "All Departments"]
     mode = st.sidebar.selectbox("Choose Department", options)
     
-    # Mapping the Sidebar labels to the actual Department Codes in your CSV
-    prefix_map = {
-        "PSTAT": "PSTAT", 
-        "CS": "CMPSC",   # Change to "CS" if your CSV uses that instead
-        "MCDB": "MCDB", 
-        "CHEM": "CHEM"
-    }
+    prefix_map = {"PSTAT": "PSTAT", "CS": "CMPSC", "MCDB": "MCDB", "CHEM": "CHEM"}
     
-    # Dynamic Search Input
     if mode == "All Departments":
-        st.sidebar.write("🔍 **Global Search**")
-        course_query = st.sidebar.text_input("Full Name (e.g., MATH 3A)", "").strip().upper()
+        course_query = st.sidebar.text_input("Global Search (e.g. MATH 3A)", "").strip().upper()
         data = df.copy()
     else:
-        st.sidebar.write(f"🔍 **{mode} Search**")
-        example = "1A" if mode == "CHEM" or mode == "MCDB" else "10"
-        course_query = st.sidebar.text_input(f"Enter Course Number (e.g., {example})", "").strip().upper()
-        
-        # Route to the correct logic file
+        course_query = st.sidebar.text_input(f"Enter {mode} Number (e.g. 1A, 120)", "").strip().upper()
         if mode == "PSTAT": data = process_pstat(df)
         elif mode == "CS": data = process_cs(df)
         elif mode == "MCDB": data = process_mcdb(df)
         elif mode == "CHEM": data = process_chem(df)
 
-    # --- FILTERING LOGIC ---
+    # --- FUZZY FILTERING ---
     if course_query:
         if mode == "All Departments":
-            data = data[data['course'] == course_query]
+            data = data[data['course'].str.contains(course_query, case=False, na=False)]
         else:
-            target = f"{prefix_map[mode]} {course_query}"
-            data = data[data['course'] == target]
-        
-        if data.empty:
-            st.warning(f"No match for '{course_query}' in {mode}. Try another number.")
+            pattern = rf"{prefix_map[mode]}\s+{course_query}"
+            data = data[data['course'].str.contains(pattern, case=False, na=False, regex=True)]
 
     # --- DISPLAY ---
-    st.header(f"Results: {mode}")
+    st.header(f"Viewing: {mode}")
+    
     if not data.empty:
-        st.metric("Avg GPA", f"{data['avgGPA'].mean():.2f}")
-        st.dataframe(data, use_container_width=True)
+        # Layout metrics
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("Avg GPA", f"{data['avgGPA'].mean():.2f}")
+        with col2:
+            st.metric("Classes Found", len(data['course'].unique()))
+        with col3:
+            st.metric("Total Records", len(data))
+
+        st.dataframe(data.drop(columns=['course_num']), use_container_width=True)
         
-        st.subheader("Professor GPA Comparison")
+        # Comparison Chart
+        st.subheader("Instructor Comparison")
         prof_chart = data.groupby('instructor')['avgGPA'].mean().sort_values()
         st.bar_chart(prof_chart)
     else:
-        st.info(f"Please enter a course number to see the {mode} distribution.")
+        st.info("Search for a course to begin.")
 
 if __name__ == "__main__":
     main()
