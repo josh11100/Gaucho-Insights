@@ -16,37 +16,37 @@ st.set_page_config(page_title="Gaucho Insights", layout="wide")
 
 @st.cache_data
 def load_data():
-    csv_path = os.path.join('data', 'courseGrades.csv')
-    if not os.path.exists(csv_path):
-        st.error(f"File not found at {csv_path}")
-        st.stop()
-        
+    # ... (your existing code to find the CSV)
+    
     df = pd.read_csv(csv_path)
     
-    # 1. Standard Cleaning
+    # 1. Clean up column names and text
     df['dept'] = df['dept'].str.strip()
     df['course'] = df['course'].str.replace(r'\s+', ' ', regex=True).str.strip()
     
-    # 2. Filter out non-real classes (198, 199, 200+)
+    # 2. Extract Course Number and filter out 198+ (as we discussed)
     df['course_num'] = df['course'].str.extract(r'(\d+)').astype(float)
     df = df[df['course_num'] < 198]
+
+    # 3. CHRONOLOGICAL REVERSE SORT (Newest Year at Top)
+    # We map quarters to numbers so Fall (4) is "higher" than Winter (1)
+    q_order = {'FALL': 4, 'SUMMER': 3, 'SPRING': 2, 'WINTER': 1}
     
-    # 3. CHRONOLOGICAL SORTING (NEWEST AT TOP)
-    # Mapping quarters so Fall (4) is "greater" than Winter (1)
-    q_map = {'WINTER': 1, 'SPRING': 2, 'SUMMER': 3, 'FALL': 4}
+    # Split "FALL 2022" into ['FALL', '2022']
+    df['temp_split'] = df['quarter'].str.upper().str.split(' ')
     
-    # Split "FALL 2022" into list
-    df['temp_q'] = df['quarter'].str.upper().str.split(' ')
+    # Extract year as a number
+    df['q_year'] = pd.to_numeric(df['temp_split'].str[1])
+    # Extract quarter rank (Fall=4, etc.)
+    df['q_rank'] = df['temp_split'].str[0].map(q_order)
+
+    # SORT: ascending=False puts 2022 above 2009, and FALL above WINTER
+    df = df.sort_values(by=['q_year', 'q_rank'], ascending=[False, False])
+
+    # 4. Clean up: Drop all helper columns so they don't show up in the table
+    df = df.drop(columns=['course_num', 'temp_split', 'q_year', 'q_rank'])
     
-    # Extract Year (e.g., 2022) and Quarter (e.g., 4)
-    df['q_year'] = pd.to_numeric(df['temp_q'].str[1])
-    df['q_val'] = df['temp_q'].str[0].map(q_map)
-    
-    # SORTING: ascending=False makes 2022 appear before 2009
-    df = df.sort_values(by=['q_year', 'q_val'], ascending=False)
-    
-    # Clean up the helper columns so the user doesn't see them
-    return df.drop(columns=['course_num', 'temp_q', 'q_year', 'q_val'])
+    return df
 
 def main():
     st.title("📊 Gaucho Insights: UCSB Grade Distribution")
