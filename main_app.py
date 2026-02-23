@@ -46,7 +46,6 @@ def load_data():
     # 4. Clean up: Drop all helper columns so they don't show up in the table
     df = df.drop(columns=['course_num', 'temp_split', 'q_year', 'q_rank'])
     
-    return df
 
 def main():
     st.title("📊 Gaucho Insights: UCSB Grade Distribution")
