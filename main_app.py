@@ -4,8 +4,8 @@ import os
 import sqlite3
 from queries import (
     GET_RECENT_LECTURES, 
-    GET_EASIEST_CLASSES, 
     GET_EASIEST_LOWER_DIV, 
+    GET_EASIEST_UPPER_DIV, 
     GET_EASIEST_DEPTS
 )
 
@@ -25,7 +25,7 @@ st.set_page_config(page_title="Gaucho Insights", layout="wide")
 def load_and_query_data():
     csv_path = os.path.join('data', 'courseGrades.csv')
     if not os.path.exists(csv_path):
-        st.error("CSV file not found in 'data/' folder.")
+        st.error("CSV file not found.")
         st.stop()
         
     df_raw = pd.read_csv(csv_path)
@@ -42,24 +42,23 @@ def load_and_query_data():
 
     # --- SQLITE WORKFLOW ---
     conn = sqlite3.connect(':memory:', check_same_thread=False)
-    # Drop temp_split (list objects crash SQLite)
     df_raw.drop(columns=['temp_split'], errors='ignore').to_sql('courses', conn, index=False, if_exists='replace')
     
-    # Run all 4 queries
+    # Run the 4 queries
     df_sorted = pd.read_sql_query(GET_RECENT_LECTURES, conn)
-    easiest_df = pd.read_sql_query(GET_EASIEST_CLASSES, conn)
     lower_div_df = pd.read_sql_query(GET_EASIEST_LOWER_DIV, conn)
+    upper_div_df = pd.read_sql_query(GET_EASIEST_UPPER_DIV, conn)
     dept_df = pd.read_sql_query(GET_EASIEST_DEPTS, conn)
     
     conn.close()
-    return df_sorted, easiest_df, lower_div_df, dept_df
+    return df_sorted, lower_div_df, upper_div_df, dept_df
 
 def main():
     st.title("📊 Gaucho Insights: UCSB Grade Distribution")
-    st.markdown("Historical data powered by SQLite. *Standard undergraduate courses only.*")
+    st.markdown("*Outliers (4.0 avg) and Independent Studies (198+) are automatically excluded from leaderboards.*")
     
-    # Load all 4 dataframes from the cached function
-    df, easiest_df, lower_div_df, dept_df = load_and_query_data()
+    # Load 4 dataframes
+    df, lower_div_df, upper_div_df, dept_df = load_and_query_data()
 
     # --- SIDEBAR ---
     st.sidebar.header("Navigation")
@@ -72,7 +71,7 @@ def main():
         course_query = st.sidebar.text_input("Global Search (e.g., MATH 3A)", "").strip().upper()
         data = df.copy()
     else:
-        course_query = st.sidebar.text_input(f"Enter {mode} Number (e.g., 120)", "").strip().upper()
+        course_query = st.sidebar.text_input(f"Enter {mode} Number (e.g., 10)", "").strip().upper()
         if mode == "PSTAT": data = process_pstat(df)
         elif mode == "CS": data = process_cs(df)
         elif mode == "MCDB": data = process_mcdb(df)
@@ -110,25 +109,25 @@ def main():
     st.subheader("🏆 University Leaderboards")
     
     tab1, tab2, tab3 = st.tabs([
-        "💎 Top 10 (All Levels)", 
-        "🐣 Top 10 (Lower Div < 98)", 
+        "🐣 Easiest Lower Div (< 100)", 
+        "🎓 Easiest Upper Div (100-197)", 
         "🏢 Easiest Departments"
     ])
     
     with tab1:
-        st.markdown("**Easiest overall courses** (Average < 4.0)")
-        t1_display = easiest_df.copy()
+        st.markdown("**Top 10 Introductory/GE Courses**")
+        t1_display = lower_div_df.copy()
         t1_display.columns = ['Course Name', 'Average GPA']
         st.table(t1_display)
 
     with tab2:
-        st.markdown("**Easiest introductory courses** (Numbered under 98)")
-        t2_display = lower_div_df.copy()
+        st.markdown("**Top 10 Major-Level Courses**")
+        t2_display = upper_div_df.copy()
         t2_display.columns = ['Course Name', 'Average GPA']
         st.table(t2_display)
 
     with tab3:
-        st.markdown("**Departments with highest grading averages** (Min. 20 classes)")
+        st.markdown("**Top 5 Departments by Average GPA** (Min. 20 records)")
         t3_display = dept_df.copy()
         t3_display.columns = ['Department', 'Avg GPA', 'Total Classes Found']
         st.table(t3_display)
