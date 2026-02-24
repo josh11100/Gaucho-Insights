@@ -2,15 +2,27 @@ import streamlit as st
 import pandas as pd
 import os
 import sqlite3
+
+# 1. Database Queries Import
 from queries import (
     GET_RECENT_LECTURES, 
     GET_EASIEST_LOWER_DIV, 
     GET_EASIEST_UPPER_DIV, 
-    GET_EASIEST_DEPTS,  # Added missing comma here
-    GET_BEST_GE_PROFS,    # Ensure this matches your name in queries.py
+    GET_EASIEST_DEPTS, 
+    GET_BEST_GE_PROFS
 )
 
-# ... (Logic Imports remain the same) ...
+# 2. Logic File Imports
+try:
+    import pstat_logic
+    import cs_logic
+    import mcdb_logic
+    import chem_logic
+except ImportError as e:
+    st.error(f"(＿ ＿*) Z z z Logic File Missing: {e}")
+    st.stop()
+
+st.set_page_config(page_title="Gaucho Insights", layout="wide")
 
 @st.cache_data
 def load_and_query_data():
@@ -40,21 +52,19 @@ def load_and_query_data():
     lower_div_df = pd.read_sql_query(GET_EASIEST_LOWER_DIV, conn)
     upper_div_df = pd.read_sql_query(GET_EASIEST_UPPER_DIV, conn)
     dept_df = pd.read_sql_query(GET_EASIEST_DEPTS, conn)
-    ge_profs_df = pd.read_sql_query(GET_BEST_GE_PROFS, conn) # Added this query
+    ge_profs_df = pd.read_sql_query(GET_BEST_GE_PROFS, conn)
     
     conn.close()
-    # Return all 5 DataFrames
     return df_sorted, lower_div_df, upper_div_df, dept_df, ge_profs_df
 
 def main():
     st.title("(｡•̀ᴗ-)✧ Gaucho Insights: UCSB Grade Distribution")
     
-    # Load all 5 data sources (Unpack all 5 here!)
+    # Load all 5 data sources
     df, lower_div_df, upper_div_df, dept_df, ge_profs_df = load_and_query_data()
 
     # --- LEADERBOARD EXPANDER ---
-    with st.expander("°˖✧◝(⁰▿⁰)◜✧˖° View University Leaderboards", expanded=False):
-        # Added the 4th tab for GE Professors
+    with st.expander("°˖✧◝(⁰▿⁰)◜✧˖° View University Leaderboards (Top 10 GPA Boosters)", expanded=False):
         tab1, tab2, tab3, tab4 = st.tabs([
             "(─‿‿─)♡ Lower Div", 
             "(⌒_⌒;) Upper Div", 
@@ -70,6 +80,7 @@ def main():
             st.table(dept_df.rename(columns={'dept': 'Department', 'dept_avg_gpa': 'Avg GPA', 'total_records': 'Count'}))
         with tab4:
             st.table(ge_profs_df.rename(columns={'instructor': 'Professor', 'avg_instructor_gpa': 'Avg GPA', 'classes_taught': 'Records'}))
+
     st.divider()
 
     # --- SIDEBAR ---
@@ -79,32 +90,34 @@ def main():
     
     prefix_map = {"PSTAT": "PSTAT", "CS": "CMPSC", "MCDB": "MCDB", "CHEM": "CHEM"}
     
-    # Search logic
-    if mode == "All Departments":
-        course_query = st.sidebar.text_input("Global Search (e.g., MATH 3A)", "").strip().upper()
-        data = df.copy() # df is already sorted by GET_RECENT_LECTURES
-    else:
-        course_query = st.sidebar.text_input(f"Enter {mode} Number (e.g., 10)", "").strip().upper()
-        if mode == "PSTAT": data = process_pstat(df)
-        elif mode == "CS": data = process_cs(df)
-        elif mode == "MCDB": data = process_mcdb(df)
-        elif mode == "CHEM": data = process_chem(df)
+    # Initialize data from the SQL-sorted main table
+    data = df.copy()
 
-    # --- FILTERING ---
-# --- FILTERING (Strict Number Matching) ---
+    # Apply Logic based on Department Selection
+    if mode == "PSTAT": 
+        data = pstat_logic.process_pstat(data)
+    elif mode == "CS": 
+        data = cs_logic.process_cs(data)
+    elif mode == "MCDB": 
+        data = mcdb_logic.process_mcdb(data)
+    elif mode == "CHEM": 
+        data = chem_logic.process_chem(data)
+
+    # Specific Course Search
+    course_query = st.sidebar.text_input("Course Number (e.g., 1 or 120A)", "").strip().upper()
+
+    # --- STRICT FILTERING (Regex) ---
     if course_query:
         if mode == "All Departments":
-            # This regex looks for the query as a standalone word
-            # Example: Searching "JAPAN 1" won't match "JAPAN 114"
+            # Matches exact word/number sequence
             pattern = rf"\b{course_query}\b"
-            data = data[data['course'].str.contains(pattern, case=False, na=False, regex=True)]
         else:
-            # This regex looks for the specific Department Prefix + Exact Number
-            # \s+ matches any space, \b matches the end of the number
+            # Matches Dept Prefix + Exact Number
             pattern = rf"{prefix_map[mode]}\s+{course_query}\b"
-            data = data[data['course'].str.contains(pattern, case=False, na=False, regex=True)]
+            
+        data = data[data['course'].str.contains(pattern, case=False, na=False, regex=True)]
 
-    # --- RESULTS DISPLAY (The main organized table) ---
+    # --- RESULTS DISPLAY ---
     st.header(f"Results for {mode}")
     
     if not data.empty:
@@ -114,7 +127,7 @@ def main():
         m3.metric("Professors", len(data['instructor'].unique()))
 
         st.subheader("Historical Records (Sorted by Most Recent)")
-        # Show the data organized by your first SQL query
+        # Remove helper columns for a cleaner UI
         display_df = data.drop(columns=['q_year', 'q_rank', 'course_num'], errors='ignore')
         st.dataframe(display_df, use_container_width=True)
         
