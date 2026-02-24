@@ -6,20 +6,11 @@ from queries import (
     GET_RECENT_LECTURES, 
     GET_EASIEST_LOWER_DIV, 
     GET_EASIEST_UPPER_DIV, 
-    GET_EASIEST_DEPTS
+    GET_EASIEST_DEPTS,  # Added missing comma here
+    GET_BEST_GE_PROFS    # Ensure this matches your name in queries.py
 )
 
-# 1. Logic Imports
-try:
-    from pstat_logic import process_pstat
-    from cs_logic import process_cs
-    from mcdb_logic import process_mcdb
-    from chem_logic import process_chem
-except ImportError as e:
-    st.error(f"(＿ ＿*) Z z z Logic File Missing: {e}")
-    st.stop()
-
-st.set_page_config(page_title="Gaucho Insights", layout="wide")
+# ... (Logic Imports remain the same) ...
 
 @st.cache_data
 def load_and_query_data():
@@ -33,10 +24,8 @@ def load_and_query_data():
     # --- PRE-PROCESSING ---
     df_raw['dept'] = df_raw['dept'].str.strip()
     df_raw['course'] = df_raw['course'].str.replace(r'\s+', ' ', regex=True).str.strip()
-    # Extract number for SQL filtering (e.g., '120A' -> 120)
     df_raw['course_num'] = df_raw['course'].str.extract(r'(\d+)').astype(float)
     
-    # Setup Quarter Sorting
     q_order = {'FALL': 4, 'SUMMER': 3, 'SPRING': 2, 'WINTER': 1}
     temp_split = df_raw['quarter'].str.upper().str.split(' ')
     df_raw['q_year'] = pd.to_numeric(temp_split.str[1], errors='coerce').fillna(0).astype(int)
@@ -44,37 +33,43 @@ def load_and_query_data():
 
     # --- SQLITE WORKFLOW ---
     conn = sqlite3.connect(':memory:', check_same_thread=False)
-    # Drop list columns before SQL export
     df_raw.drop(columns=['temp_split'], errors='ignore').to_sql('courses', conn, index=False, if_exists='replace')
     
-    # QUERY #1: The main organized table (Newest First)
+    # Run all 5 queries
     df_sorted = pd.read_sql_query(GET_RECENT_LECTURES, conn)
-    
-    # LEADERSBOARDS
     lower_div_df = pd.read_sql_query(GET_EASIEST_LOWER_DIV, conn)
     upper_div_df = pd.read_sql_query(GET_EASIEST_UPPER_DIV, conn)
     dept_df = pd.read_sql_query(GET_EASIEST_DEPTS, conn)
+    ge_profs_df = pd.read_sql_query(GET_BEST_GE_PROFS, conn) # Added this query
     
     conn.close()
-    return df_sorted, lower_div_df, upper_div_df, dept_df
+    # Return all 5 DataFrames
+    return df_sorted, lower_div_df, upper_div_df, dept_df, ge_profs_df
 
 def main():
     st.title("(｡•̀ᴗ-)✧ Gaucho Insights: UCSB Grade Distribution")
     
-    # Load all data sources
-    df, lower_div_df, upper_div_df, dept_df = load_and_query_data()
+    # Load all 5 data sources (Unpack all 5 here!)
+    df, lower_div_df, upper_div_df, dept_df, ge_profs_df = load_and_query_data()
 
-    # --- LEADERBOARD EXPANDER (The "Unfold" Section) ---
-    with st.expander("°˖✧◝(⁰▿⁰)◜✧˖° View University Leaderboards (Top 10 GPA Boosters)", expanded=False):
-        tab1, tab2, tab3 = st.tabs(["(─‿‿─)♡ Lower Div (<100)", "(⌒_⌒;) Upper Div (100-197)", "( ﾉ･o･ )ﾉ Easiest Depts"])
+    # --- LEADERBOARD EXPANDER ---
+    with st.expander("°˖✧◝(⁰▿⁰)◜✧˖° View University Leaderboards", expanded=False):
+        # Added the 4th tab for GE Professors
+        tab1, tab2, tab3, tab4 = st.tabs([
+            "(─‿‿─)♡ Lower Div", 
+            "(⌒_⌒;) Upper Div", 
+            "( ﾉ･o･ )ﾉ Depts",
+            "(¬‿¬) Best GE Profs"
+        ])
         
         with tab1:
             st.table(lower_div_df.rename(columns={'course': 'Course', 'mean_gpa': 'Avg GPA'}))
         with tab2:
             st.table(upper_div_df.rename(columns={'course': 'Course', 'mean_gpa': 'Avg GPA'}))
         with tab3:
-            st.table(dept_df.rename(columns={'dept': 'Department', 'dept_avg_gpa': 'Avg GPA', 'total_records': 'Classes Found'}))
-
+            st.table(dept_df.rename(columns={'dept': 'Department', 'dept_avg_gpa': 'Avg GPA', 'total_records': 'Count'}))
+        with tab4:
+            st.table(ge_profs_df.rename(columns={'instructor': 'Professor', 'avg_instructor_gpa': 'Avg GPA', 'classes_taught': 'Records'}))
     st.divider()
 
     # --- SIDEBAR ---
