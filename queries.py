@@ -51,3 +51,17 @@ HAVING total_records > 20
 ORDER BY dept_avg_gpa DESC
 LIMIT 5;
 """
+
+GET_BEST_GE_PROF = """
+SELECT
+  instructor,
+  ROUND(AVG(avgGPA), 2) AS avg_instructor_gpa,
+  COUNT(*) as classes_taught
+FROM courses
+WHERE course_num < 99
+  AND avg GPA < 4.0
+GROUP BY instructor
+HAVING classes_taught >= 3
+ORDER BY avg_instructor_gpa DESC
+LIMIT 5;
+"""
