@@ -7,7 +7,7 @@ from queries import (
     GET_EASIEST_LOWER_DIV, 
     GET_EASIEST_UPPER_DIV, 
     GET_EASIEST_DEPTS,  # Added missing comma here
-    GET_BEST_GE_PROFS    # Ensure this matches your name in queries.py
+    GET_BEST_GE_PROFS,    # Ensure this matches your name in queries.py
 )
 
 # ... (Logic Imports remain the same) ...
