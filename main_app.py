@@ -38,12 +38,10 @@ def load_and_clean_data():
         year_val = 0
         all_text = " ".join([str(val) for val in row.values])
         
-        # 4-digit year search
         four_digit = re.findall(r'\b(20\d{2})\b', all_text)
         if four_digit:
             year_val = int(four_digit[0])
         else:
-            # 2-digit year search (handles F24, 24W, etc)
             two_digit = re.findall(r'\b(\d{2})\b|([A-Z](\d{2}))|((\d{2})[A-Z])', all_text)
             if two_digit:
                 flattened = [g for groups in two_digit for g in groups if g and len(g) == 2]
@@ -101,9 +99,7 @@ def main():
 
         st.markdown("---")
 
-        display_limit = 24
-        rows = data.head(display_limit)
-        
+        rows = data.head(24)
         for i in range(0, len(rows), 2):
             grid_cols = st.columns(2)
             for j in range(2):
@@ -120,8 +116,14 @@ def main():
                             
                             c1, c2 = st.columns([1, 1.5])
                             with c1:
-                                vibe = "(✿◠‿◠) EASY A" if row[gpa_col] >= 3.5 else "(╥﹏╥) WEED-OUT" if row[gpa_col] <= 2.8 else "⚖️ BALANCED"
-                                st.write(vibe)
+                                if row[gpa_col] >= 3.5:
+                                    vibe, label = "(✿◠‿◠)", "EASY A"
+                                elif row[gpa_col] <= 2.8:
+                                    vibe, label = "(╥﹏╥)", "WEED-OUT"
+                                else:
+                                    vibe, label = "(￣ー￣)ｂ", "BALANCED"
+                                
+                                st.write(f"{vibe} **{label}**")
                                 st.write(f"**GPA:** {row[gpa_col]:.2f}")
                                 st.write(f"**Term:** {row.get('quarter', '???')}")
                             
@@ -135,9 +137,9 @@ def main():
                                              template="plotly_dark", height=120)
                                 fig.update_layout(margin=dict(l=0, r=0, t=0, b=0), showlegend=False,
                                                   paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
-                                st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False}, key=f"fixed_chart_{idx}")
+                                st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False}, key=f"grid_{idx}")
     else:
-        st.info("┐(~ー~;)┌ No courses found. Try a different search.")
+        st.info("┐(~ー~;)┌ No courses found.")
 
 if __name__ == "__main__":
     main()
