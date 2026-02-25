@@ -26,8 +26,6 @@ st.set_page_config(page_title="Gaucho Insights", layout="wide")
 @st.cache_data
 def load_and_query_data():
     csv_path = os.path.join('data', 'courseGrades.csv')
-    rmp_path = os.path.join('data', 'rmp_ratings.csv')
-    
     if not os.path.exists(csv_path):
         st.error(f"❌ CSV not found at {csv_path}")
         st.stop()
@@ -35,41 +33,38 @@ def load_and_query_data():
     df_raw = pd.read_csv(csv_path)
     df_raw.columns = [str(c).strip().lower() for c in df_raw.columns]
     
-    # --- CLEANING ---
+    # --- DYNAMIC YEAR DISCOVERY ---
+    # We scan all columns to find where the year is hiding
+    def find_year_value(row):
+        for val in row:
+            # Look for 2010-2029 anywhere in the data
+            match = re.search(r'(20[1-2]\d)', str(val))
+            if match: return int(match.group(1))
+        return 0
+
+    if 'year' not in df_raw.columns:
+        df_raw['year'] = df_raw.apply(find_year_value, axis=1)
+
+    # Standard Cleaning
     df_raw['instructor'] = df_raw['instructor'].astype(str).str.upper().str.strip()
     df_raw['quarter'] = df_raw['quarter'].astype(str).str.upper().str.strip()
-    df_raw['dept'] = df_raw['dept'].astype(str).str.upper().str.strip()
     df_raw['course'] = df_raw['course'].astype(str).str.upper().str.strip()
     
-    # --- ULTRA-AGGRESSIVE YEAR EXTRACTOR ---
-    def deep_extract_year(q_str):
-        # 1. Try to find a 4-digit year (2024)
-        match4 = re.search(r'(20\d{2})', q_str)
-        if match4: return int(match4.group(1))
-        
-        # 2. Try to find a 2-digit year (24)
-        match2 = re.search(r'(\d{2})', q_str)
-        if match2: 
-            val = int(match2.group(1))
-            # Only convert if it's a reasonable year (between 10 and 30)
-            return 2000 + val if 10 <= val <= 30 else val
-            
-        return "Unknown" # Return a string so we see it in the table instead of 0
-
-    df_raw['year'] = df_raw['quarter'].apply(deep_extract_year)
-    df_raw['q_year'] = pd.to_numeric(df_raw['year'], errors='coerce').fillna(0)
+    # Identify the GPA column
+    gpa_col = next((c for c in ['avggpa', 'avg_gpa', 'avg gpa'] if c in df_raw.columns), None)
     
+    # Numeric formatting for GPA and Grades
+    for col in [gpa_col, 'a', 'b', 'c', 'd', 'f']:
+        if col and col in df_raw.columns:
+            df_raw[col] = pd.to_numeric(df_raw[col], errors='coerce').fillna(0)
+
+    # SQL compatibility
+    df_raw['q_year'] = df_raw['year']
     q_order = {'FALL': 4, 'SUMMER': 3, 'SPRING': 2, 'WINTER': 1}
     df_raw['q_rank'] = df_raw['quarter'].apply(lambda x: next((q_order[q] for q in q_order if q in x), 0))
     df_raw['course_num'] = df_raw['course'].str.extract(r'(\d+)').astype(float).fillna(0)
 
-    # --- NUMERIC FIXES ---
-    gpa_col = 'avggpa' if 'avggpa' in df_raw.columns else 'avg_gpa'
-    for col in [gpa_col, 'a', 'b', 'c', 'd', 'f']:
-        if col in df_raw.columns:
-            df_raw[col] = pd.to_numeric(df_raw[col], errors='coerce').fillna(0)
-
-    # --- SQLITE ---
+    # SQLite Workflow
     conn = sqlite3.connect(':memory:', check_same_thread=False)
     df_raw.to_sql('courses', conn, index=False, if_exists='replace')
     results = (
@@ -80,11 +75,11 @@ def load_and_query_data():
         pd.read_sql_query(GET_BEST_GE_PROFS, conn)
     )
     conn.close()
-    return results
+    return results, gpa_col
 
 def main():
     st.title("(｡•̀ᴗ-)✧ Gaucho Insights")
-    df, lower_div_df, upper_div_df, dept_df, ge_profs_df = load_and_query_data()
+    (df, l_div, u_div, depts, ge_profs), gpa_col = load_and_query_data()
 
     st.sidebar.header("🔍 Filters")
     mode = st.sidebar.selectbox("Department", ["All Departments", "PSTAT", "CS", "MCDB", "CHEM"])
@@ -101,20 +96,15 @@ def main():
     if prof_q: data = data[data['instructor'].str.contains(prof_q, na=False)]
 
     if not data.empty:
-        gpa_col = 'avggpa' if 'avggpa' in data.columns else 'avg_gpa'
+        # --- THE REQUESTED LAYOUT ---
+        # 1. Course | 2. Instructor | 3. GPA | 4. Year | 5. Quarter | 6. A | 7. B ...
+        display_order = ['course', 'instructor', gpa_col, 'year', 'quarter', 'a', 'b', 'c', 'd', 'f']
+        existing = [c for c in display_order if c in data.columns]
         
-        # --- NEW ORDER: Course, Instructor, GPA, Quarter, Year, then Grades ---
-        display_cols = ['course', 'instructor', gpa_col, 'quarter', 'year', 'a', 'b', 'c', 'd', 'f']
-        existing_cols = [c for c in display_cols if c in data.columns]
+        final_df = data[existing].sort_values(by=['year', gpa_col], ascending=[False, False])
         
-        final_df = data[existing_cols].copy()
-        
-        # Sort by Year (treating it as numeric where possible) and GPA
-        data['sort_year'] = pd.to_numeric(data['year'], errors='coerce').fillna(0)
-        final_df = final_df.loc[data.sort_values(by=['sort_year', gpa_col], ascending=[False, False]).index]
-        
-        # Final formatting for the UI
-        final_df.columns = [c.replace('_', ' ').title() if c != 'avggpa' else 'Avg GPA' for c in final_df.columns]
+        # Clean up column names for display
+        final_df.columns = [c.replace('_', ' ').title() if c != gpa_col else 'Avg GPA' for c in final_df.columns]
 
         st.dataframe(final_df, use_container_width=True)
     else:
