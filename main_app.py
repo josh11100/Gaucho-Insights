@@ -37,7 +37,6 @@ def load_and_clean_data():
     def get_time_score(row):
         year_val = 0
         all_text = " ".join([str(val) for val in row.values])
-        
         four_digit = re.findall(r'\b(20\d{2})\b', all_text)
         if four_digit:
             year_val = int(four_digit[0])
@@ -54,7 +53,6 @@ def load_and_clean_data():
         elif any(x in q_str for x in ["SUMMER", "M"]): q_weight = 3
         elif any(x in q_str for x in ["SPRING", "S"]): q_weight = 2
         elif any(x in q_str for x in ["WINTER", "W"]): q_weight = 1
-        
         return year_val, q_weight
 
     time_df = df.apply(lambda r: pd.Series(get_time_score(r)), axis=1)
@@ -62,6 +60,7 @@ def load_and_clean_data():
     df['q_weight'] = time_df[1].astype(int)
     
     gpa_col = next((c for c in ['avggpa', 'avg_gpa', 'avg gpa'] if c in df.columns), 'avggpa')
+    # Ensure grade columns are numeric
     for col in [gpa_col, 'a', 'b', 'c', 'd', 'f']:
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
@@ -124,19 +123,32 @@ def main():
                                     vibe, label = "(￣ー￣)ｂ", "BALANCED"
                                 
                                 st.write(f"{vibe} **{label}**")
-                                st.write(f"**GPA:** {row[gpa_col]:.2f}")
+                                st.write(f"**Avg GPA:** {row[gpa_col]:.2f}")
+                                
+                                # Calculate total students in this row
+                                total_students = int(row['a'] + row['b'] + row['c'] + row['d'] + row['f'])
+                                st.write(f"**Total Students:** {total_students}")
                                 st.write(f"**Term:** {row.get('quarter', '???')}")
                             
                             with c2:
-                                grade_df = pd.DataFrame({
+                                # Data frame using raw student counts instead of percent
+                                grade_counts = pd.DataFrame({
                                     'Grade': ['A', 'B', 'C', 'D', 'F'],
-                                    'Percent': [row['a'], row['b'], row['c'], row['d'], row['f']]
+                                    'Count': [row['a'], row['b'], row['c'], row['d'], row['f']]
                                 })
-                                fig = px.bar(grade_df, x='Grade', y='Percent', color='Grade',
+                                
+                                fig = px.bar(grade_counts, x='Grade', y='Count', color='Grade',
                                              color_discrete_map={'A':'#00CCFF','B':'#3498db','C':'#FFD700','D':'#e67e22','F':'#e74c3c'},
-                                             template="plotly_dark", height=120)
-                                fig.update_layout(margin=dict(l=0, r=0, t=0, b=0), showlegend=False,
-                                                  paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+                                             template="plotly_dark", height=140)
+                                
+                                fig.update_layout(
+                                    margin=dict(l=0, r=0, t=10, b=0), 
+                                    showlegend=False,
+                                    paper_bgcolor='rgba(0,0,0,0)', 
+                                    plot_bgcolor='rgba(0,0,0,0)',
+                                    yaxis_title="Students",
+                                    xaxis_title=None
+                                )
                                 st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False}, key=f"grid_{idx}")
     else:
         st.info("┐(~ー~;)┌ No courses found.")
