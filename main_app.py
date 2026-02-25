@@ -35,7 +35,6 @@ def load_and_query_data():
         st.stop()
         
     df_raw = pd.read_csv(csv_path)
-    # Standardize column names to lowercase to prevent mapping errors
     df_raw.columns = [str(c).strip().lower() for c in df_raw.columns]
     
     # --- BASIC CLEANING ---
@@ -44,21 +43,23 @@ def load_and_query_data():
     df_raw['dept'] = df_raw['dept'].astype(str).str.upper().str.strip()
     df_raw['course'] = df_raw['course'].astype(str).str.upper().str.strip()
     
-    # Force GPA and Grades to Numeric
-    # We check for both 'avggpa' and 'avg_gpa' just in case
+    # Numeric Conversion
     gpa_col = 'avggpa' if 'avggpa' in df_raw.columns else 'avg_gpa'
-    for col in [gpa_col, 'a', 'b', 'c', 'd', 'f', 'nletterstudents']:
+    for col in [gpa_col, 'a', 'b', 'c', 'd', 'f']:
         if col in df_raw.columns:
             df_raw[col] = pd.to_numeric(df_raw[col], errors='coerce').fillna(0)
 
-    # --- YEAR & RANKING (For SQL Queries) ---
-    # Using a simple split; assumes format like "FALL 2024"
-    df_raw['q_year'] = df_raw['quarter'].str.extract(r'(\d{4})').fillna(0).astype(int)
+    # --- THE YEAR FIX ---
+    # This extracts '2023' from 'FALL 2023' and puts it in its own column
+    df_raw['year'] = df_raw['quarter'].str.extract(r'(\d{4})').fillna(0).astype(int)
+    # Required for your SQL queries in queries.py
+    df_raw['q_year'] = df_raw['year']
+    
     q_order = {'FALL': 4, 'SUMMER': 3, 'SPRING': 2, 'WINTER': 1}
     df_raw['q_rank'] = df_raw['quarter'].apply(lambda x: next((q_order[q] for q in q_order if q in x), 0))
     df_raw['course_num'] = df_raw['course'].str.extract(r'(\d+)').astype(float).fillna(0)
 
-    # --- RMP INTEGRATION ---
+    # --- RMP ---
     if os.path.exists(rmp_path):
         try:
             rmp_df = pd.read_csv(rmp_path)
@@ -69,7 +70,7 @@ def load_and_query_data():
             df_raw = pd.merge(df_raw, rmp_df[['match_key', 'rmp_rating']], on="match_key", how="left")
         except: pass
 
-    # --- SQLITE WORKFLOW ---
+    # --- SQLITE ---
     conn = sqlite3.connect(':memory:', check_same_thread=False)
     df_raw.to_sql('courses', conn, index=False, if_exists='replace')
     
@@ -85,11 +86,8 @@ def load_and_query_data():
 
 def main():
     st.title("(｡•̀ᴗ-)✧ Gaucho Insights")
-    
-    # Load data from the cached function
     df, lower_div_df, upper_div_df, dept_df, ge_profs_df = load_and_query_data()
 
-    # --- SEARCH ---
     st.sidebar.header("🔍 Filters")
     mode = st.sidebar.selectbox("Department", ["All Departments", "PSTAT", "CS", "MCDB", "CHEM"])
     course_q = st.sidebar.text_input("Course #", "").strip().upper()
@@ -104,35 +102,28 @@ def main():
     if course_q: data = data[data['course'].str.contains(course_q, na=False)]
     if prof_q: data = data[data['instructor'].str.contains(prof_q, na=False)]
 
-    # --- MAIN DISPLAY ---
     if not data.empty:
-        # 1. Metrics
-        col_gpa = 'avggpa' if 'avggpa' in data.columns else 'avg_gpa'
-        m1, m2 = st.columns(2)
-        m1.metric("Avg GPA", f"{data[col_gpa].mean():.2f}")
-        m2.metric("Records", len(data))
+        gpa_col = 'avggpa' if 'avggpa' in data.columns else 'avg_gpa'
+        
+        # --- ORDERED COLUMN SELECTION ---
+        # We explicitly add 'year' here so it shows up in the table
+        display_cols = ['year', 'quarter', 'course', 'instructor', gpa_col, 'a', 'b', 'c', 'd', 'f']
+        
+        if 'rmp_rating' in data.columns:
+            display_cols.append('rmp_rating')
+            
+        # Filter for only what actually exists to prevent errors
+        existing_cols = [c for c in display_cols if c in data.columns]
+        
+        # Sorting: Newest years at the top
+        final_df = data[existing_cols].sort_values(by=['year', gpa_col], ascending=[False, False])
+        
+        # Cleanup column names for the user (capitalize them)
+        final_df.columns = [c.replace('_', ' ').title() if c != 'avgGPA' else 'Avg GPA' for c in final_df.columns]
 
-        # 2. Reordered Table
-        # We put Course, Instructor, and GPA first. Everything else follows.
-        important_cols = ['course', 'instructor', col_gpa, 'quarter']
-        grade_cols = ['a', 'b', 'c', 'd', 'f']
-        rmp_cols = ['rmp_rating'] if 'rmp_rating' in data.columns else []
-        
-        # Combine them in order
-        all_cols = important_cols + grade_cols + rmp_cols
-        # Only include columns that actually exist in the CSV
-        existing_cols = [c for c in all_cols if c in data.columns]
-        
-        display_df = data[existing_cols].copy()
-        
-        # Sort by Quarter Year (q_year) and GPA
-        if 'q_year' in data.columns:
-            display_df['sort_year'] = data['q_year']
-            display_df = display_df.sort_values(by=['sort_year', col_gpa], ascending=[False, False]).drop(columns=['sort_year'])
-
-        st.dataframe(display_df, use_container_width=True)
+        st.dataframe(final_df, use_container_width=True)
     else:
-        st.info("No records found. Try searching for a different course!")
+        st.info("No records found.")
 
 if __name__ == "__main__":
     main()
