@@ -35,30 +35,47 @@ def load_and_query_data():
         
     df_raw = pd.read_csv(csv_path)
     
-    # --- PRE-PROCESSING ---
-    df_raw['dept'] = df_raw['dept'].str.strip()
-    df_raw['course'] = df_raw['course'].str.replace(r'\s+', ' ', regex=True).str.strip()
-    df_raw['instructor'] = df_raw['instructor'].str.strip().upper() # Ensure uppercase for matching
+    # --- 1. CLEAN COLUMN NAMES ---
+    # This prevents errors if your CSV header has spaces like " instructor" or "INSTRUCTOR"
+    df_raw.columns = df_raw.columns.str.strip().str.lower()
+    
+    # Check if the column actually exists to prevent further crashes
+    if 'instructor' not in df_raw.columns:
+        st.error(f"Critical Error: Column 'instructor' not found. Available columns are: {list(df_raw.columns)}")
+        st.stop()
+
+    # --- 2. DATA PRE-PROCESSING ---
+    # Convert to string and fill empty values to prevent AttributeError
+    df_raw['dept'] = df_raw['dept'].fillna('').astype(str).str.strip()
+    df_raw['course'] = df_raw['course'].fillna('').astype(str).str.replace(r'\s+', ' ', regex=True).str.strip()
+    df_raw['instructor'] = df_raw['instructor'].fillna('').astype(str).str.strip().upper()
+    
+    # Extract course number for SQL filtering (e.g., 'PSTAT 120A' -> 120.0)
     df_raw['course_num'] = df_raw['course'].str.extract(r'(\d+)').astype(float)
     
-    # Setup Quarter Sorting
+    # Setup Quarter Sorting Logic
     q_order = {'FALL': 4, 'SUMMER': 3, 'SPRING': 2, 'WINTER': 1}
-    temp_split = df_raw['quarter'].str.upper().str.split(' ')
+    # We use .astype(str) here too just in case 'quarter' has numeric issues
+    temp_split = df_raw['quarter'].astype(str).str.upper().str.split(' ')
     df_raw['q_year'] = pd.to_numeric(temp_split.str[1], errors='coerce').fillna(0).astype(int)
     df_raw['q_rank'] = temp_split.str[0].map(q_order).fillna(0).astype(int)
 
-    # --- RMP INTEGRATION ---
+    # --- 3. RMP INTEGRATION ---
     if os.path.exists(rmp_path):
         rmp_df = pd.read_csv(rmp_path)
-        rmp_df['instructor'] = rmp_df['instructor'].str.strip().upper()
-        # Merge Grade Data with RMP Data
-        df_raw = pd.merge(df_raw, rmp_df, on="instructor", how="left")
+        # Normalize RMP names for the merge
+        rmp_df.columns = rmp_df.columns.str.strip().str.lower()
+        if 'instructor' in rmp_df.columns:
+            rmp_df['instructor'] = rmp_df['instructor'].fillna('').astype(str).str.strip().upper()
+            # Merge Grade Data with RMP Data (Join on Instructor Name)
+            df_raw = pd.merge(df_raw, rmp_df, on="instructor", how="left")
 
-    # --- SQLITE WORKFLOW ---
+    # --- 4. SQLITE WORKFLOW ---
     conn = sqlite3.connect(':memory:', check_same_thread=False)
+    # Drop helper list columns that SQLite can't handle
     df_raw.drop(columns=['temp_split'], errors='ignore').to_sql('courses', conn, index=False, if_exists='replace')
     
-    # Run Leaderboard & Display Queries
+    # Run the 5 Key Queries from queries.py
     df_sorted = pd.read_sql_query(GET_RECENT_LECTURES, conn)
     lower_div_df = pd.read_sql_query(GET_EASIEST_LOWER_DIV, conn)
     upper_div_df = pd.read_sql_query(GET_EASIEST_UPPER_DIV, conn)
@@ -66,6 +83,8 @@ def load_and_query_data():
     ge_profs_df = pd.read_sql_query(GET_BEST_GE_PROFS, conn)
     
     conn.close()
+    
+    # Return all 5 dataframes to be unpacked in main()
     return df_sorted, lower_div_df, upper_div_df, dept_df, ge_profs_df
 
 def main():
