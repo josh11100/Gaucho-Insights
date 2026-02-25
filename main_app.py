@@ -12,7 +12,7 @@ try:
         GET_EASIEST_UPPER_DIV, GET_EASIEST_DEPTS, GET_BEST_GE_PROFS
     )
 except ImportError:
-    st.error("❌ 'queries.py' missing! Ensure it is in the same folder.")
+    st.error("❌ 'queries.py' missing!")
     st.stop()
 
 # 2. Logic File Imports
@@ -44,41 +44,42 @@ def load_and_query_data():
     if 'year' not in df_raw.columns:
         df_raw['year'] = df_raw.apply(find_year_value, axis=1)
 
-    # Standard Cleaning
     df_raw['instructor'] = df_raw['instructor'].astype(str).str.upper().str.strip()
     df_raw['quarter'] = df_raw['quarter'].astype(str).str.upper().str.strip()
     df_raw['course'] = df_raw['course'].astype(str).str.upper().str.strip()
     
-    # Identify GPA column variations
     gpa_col = next((c for c in ['avggpa', 'avg_gpa', 'avg gpa'] if c in df_raw.columns), None)
     
     for col in [gpa_col, 'a', 'b', 'c', 'd', 'f']:
         if col and col in df_raw.columns:
             df_raw[col] = pd.to_numeric(df_raw[col], errors='coerce').fillna(0)
 
-    # SQL Setup compatibility
+    # Required for SQL/Logic compatibility
     df_raw['q_year'] = df_raw['year']
     q_order = {'FALL': 4, 'SUMMER': 3, 'SPRING': 2, 'WINTER': 1}
     df_raw['q_rank'] = df_raw['quarter'].apply(lambda x: next((q_order[q] for q in q_order if q in x), 0))
     df_raw['course_num'] = df_raw['course'].str.extract(r'(\d+)').astype(float).fillna(0)
 
-    # SQLite Workflow
+    # Run the SQL queries for leaderboards while we have the connection open
     conn = sqlite3.connect(':memory:', check_same_thread=False)
     df_raw.to_sql('courses', conn, index=False, if_exists='replace')
-    results = (
-        pd.read_sql_query(GET_RECENT_LECTURES, conn),
-        pd.read_sql_query(GET_EASIEST_LOWER_DIV, conn),
-        pd.read_sql_query(GET_EASIEST_UPPER_DIV, conn),
-        pd.read_sql_query(GET_EASIEST_DEPTS, conn),
-        pd.read_sql_query(GET_BEST_GE_PROFS, conn)
-    )
+    
+    leaderboards = {
+        "recent": pd.read_sql_query(GET_RECENT_LECTURES, conn),
+        "lower": pd.read_sql_query(GET_EASIEST_LOWER_DIV, conn),
+        "upper": pd.read_sql_query(GET_EASIEST_UPPER_DIV, conn),
+        "depts": pd.read_sql_query(GET_EASIEST_DEPTS, conn),
+        "ge": pd.read_sql_query(GET_BEST_GE_PROFS, conn)
+    }
     conn.close()
-    return results, gpa_col
+    
+    return df_raw, leaderboards, gpa_col
 
 def main():
     st.title("(｡•̀ᴗ-)✧ Gaucho Insights")
-    (df_results, gpa_col) = load_and_query_data()
-    (l_div, u_div, depts, ge_profs) = df_results[0:4] # Adjusted unpacking
+    
+    # Load data once
+    full_df, leaderboards, gpa_col = load_and_query_data()
 
     # Sidebar
     st.sidebar.header("🔍 Filters")
@@ -86,9 +87,8 @@ def main():
     course_q = st.sidebar.text_input("Course #", "").strip().upper()
     prof_q = st.sidebar.text_input("Professor", "").strip().upper()
     
-    # Cache management - use the SQL result for filtering
-    data = pd.read_sql_query("SELECT * FROM courses", sqlite3.connect(':memory:')) # Simplified for the full file
-    
+    # Filter the main dataframe
+    data = full_df.copy()
     if mode == "PSTAT": data = pstat_logic.process_pstat(data)
     elif mode == "CS": data = cs_logic.process_cs(data)
     elif mode == "MCDB": data = mcdb_logic.process_mcdb(data)
@@ -128,10 +128,14 @@ def main():
         
         final_df = data[existing].sort_values(by=['year', gpa_col], ascending=[False, False])
         
-        # UI Cleanup
-        final_df.columns = [c.replace('_', ' ').title() if c != gpa_col else 'Avg GPA' for c in final_df.columns]
-        st.dataframe(final_df.style.background_gradient(subset=['Avg GPA'], cmap="RdYlGn"), use_container_width=True)
-
+        # Display table with formatting
+        final_df_disp = final_df.copy()
+        final_df_disp.columns = [c.replace('_', ' ').title() if c != gpa_col else 'Avg GPA' for c in final_df_disp.columns]
+        
+        st.dataframe(
+            final_df_disp.style.background_gradient(subset=['Avg GPA'], cmap="RdYlGn"), 
+            use_container_width=True
+        )
     else:
         st.info("No records found.")
 
