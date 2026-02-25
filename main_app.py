@@ -30,10 +30,33 @@ def load_and_clean_data():
     df = pd.read_csv(csv_path)
     df.columns = [str(c).strip().lower() for c in df.columns]
     
-    for col in ['instructor', 'quarter', 'course', 'dept']:
+    # Standardize basic text columns
+    text_cols = ['instructor', 'quarter', 'course', 'dept']
+    for col in text_cols:
         if col in df.columns:
             df[col] = df[col].astype(str).str.upper().str.strip()
 
+    # Determine GPA column name
+    gpa_col = next((c for c in ['avggpa', 'avg_gpa', 'avg gpa'] if c in df.columns), 'avggpa')
+    
+    # Ensure grade columns are numeric before grouping
+    for col in [gpa_col, 'a', 'b', 'c', 'd', 'f']:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
+
+    # --- THE STUDENT COUNT FIX ---
+    # We group by the main identifiers to combine discussion sections into one Lecture
+    group_cols = ['instructor', 'quarter', 'course', 'dept']
+    df = df.groupby(group_cols).agg({
+        gpa_col: 'mean',
+        'a': 'sum',
+        'b': 'sum',
+        'c': 'sum',
+        'd': 'sum',
+        'f': 'sum'
+    }).reset_index()
+
+    # --- YEAR & SEASON LOGIC ---
     def get_time_score(row):
         year_val = 0
         all_text = " ".join([str(val) for val in row.values])
@@ -58,12 +81,6 @@ def load_and_clean_data():
     time_df = df.apply(lambda r: pd.Series(get_time_score(r)), axis=1)
     df['year_val'] = time_df[0].astype(int)
     df['q_weight'] = time_df[1].astype(int)
-    
-    gpa_col = next((c for c in ['avggpa', 'avg_gpa', 'avg gpa'] if c in df.columns), 'avggpa')
-    # Ensure grade columns are numeric
-    for col in [gpa_col, 'a', 'b', 'c', 'd', 'f']:
-        if col in df.columns:
-            df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
             
     return df, gpa_col
 
@@ -71,6 +88,7 @@ def main():
     st.title("(つ▀¯▀ )つ GAUCHO INSIGHTS ⊂(▀¯▀⊂ )")
     full_df, gpa_col = load_and_clean_data()
 
+    # Sidebar UI
     st.sidebar.header("🔍 FILTERS")
     mode = st.sidebar.selectbox("DEPARTMENT", ["All Departments", "PSTAT", "CS", "MCDB", "CHEM"])
     course_q = st.sidebar.text_input("COURSE #").strip().upper()
@@ -86,6 +104,7 @@ def main():
     if prof_q: data = data[data['instructor'].str.contains(prof_q, na=False)]
 
     if not data.empty:
+        # Sort by most recent
         data = data.sort_values(by=['year_val', 'q_weight', gpa_col], ascending=[False, False, False])
 
         st.markdown("### (◕‿◕✿) Top Rated in Selection")
@@ -98,7 +117,10 @@ def main():
 
         st.markdown("---")
 
-        rows = data.head(24)
+        # The Card Grid
+        display_limit = 24
+        rows = data.head(display_limit)
+        
         for i in range(0, len(rows), 2):
             grid_cols = st.columns(2)
             for j in range(2):
@@ -113,7 +135,7 @@ def main():
                             st.markdown(f"#### {year_label} | {row['course']}")
                             st.caption(f"Instructor: **{row['instructor']}**")
                             
-                            c1, c2 = st.columns([1, 1.5])
+                            c1, c2 = st.columns([1, 1.2])
                             with c1:
                                 if row[gpa_col] >= 3.5:
                                     vibe, label = "(✿◠‿◠)", "EASY A"
@@ -122,33 +144,24 @@ def main():
                                 else:
                                     vibe, label = "(￣ー￣)ｂ", "BALANCED"
                                 
+                                total_s = int(row['a'] + row['b'] + row['c'] + row['d'] + row['f'])
                                 st.write(f"{vibe} **{label}**")
                                 st.write(f"**Avg GPA:** {row[gpa_col]:.2f}")
-                                
-                                # Calculate total students in this row
-                                total_students = int(row['a'] + row['b'] + row['c'] + row['d'] + row['f'])
-                                st.write(f"**Total Students:** {total_students}")
+                                st.write(f"**Students:** {total_s}")
                                 st.write(f"**Term:** {row.get('quarter', '???')}")
                             
                             with c2:
-                                # Data frame using raw student counts instead of percent
+                                # Data for the count-based graph
                                 grade_counts = pd.DataFrame({
                                     'Grade': ['A', 'B', 'C', 'D', 'F'],
                                     'Count': [row['a'], row['b'], row['c'], row['d'], row['f']]
                                 })
-                                
                                 fig = px.bar(grade_counts, x='Grade', y='Count', color='Grade',
                                              color_discrete_map={'A':'#00CCFF','B':'#3498db','C':'#FFD700','D':'#e67e22','F':'#e74c3c'},
                                              template="plotly_dark", height=140)
-                                
-                                fig.update_layout(
-                                    margin=dict(l=0, r=0, t=10, b=0), 
-                                    showlegend=False,
-                                    paper_bgcolor='rgba(0,0,0,0)', 
-                                    plot_bgcolor='rgba(0,0,0,0)',
-                                    yaxis_title="Students",
-                                    xaxis_title=None
-                                )
+                                fig.update_layout(margin=dict(l=0, r=0, t=10, b=0), showlegend=False,
+                                                  paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+                                                  yaxis_title=None, xaxis_title=None)
                                 st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False}, key=f"grid_{idx}")
     else:
         st.info("┐(~ー~;)┌ No courses found.")
