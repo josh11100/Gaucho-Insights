@@ -30,7 +30,6 @@ def load_and_clean_data():
     df = pd.read_csv(csv_path)
     df.columns = [str(c).strip().lower() for c in df.columns]
     
-    # Clean text columns
     text_cols = ['instructor', 'quarter', 'course', 'dept']
     for col in text_cols:
         if col in df.columns:
@@ -38,68 +37,45 @@ def load_and_clean_data():
 
     gpa_col = next((c for c in ['avggpa', 'avg_gpa', 'avg gpa'] if c in df.columns), 'avggpa')
     
-    # Convert grades and GPA to numbers
     for col in [gpa_col, 'a', 'b', 'c', 'd', 'f']:
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
 
-    # --- THE BIG AGGREGATION ---
-    # Combine discussion sections into one lecture view
+    # Aggregation to combine sections
     group_cols = ['instructor', 'quarter', 'course', 'dept']
     df = df.groupby(group_cols).agg({
         gpa_col: 'mean',
-        'a': 'sum',
-        'b': 'sum',
-        'c': 'sum',
-        'd': 'sum',
-        'f': 'sum'
+        'a': 'sum', 'b': 'sum', 'c': 'sum', 'd': 'sum', 'f': 'sum'
     }).reset_index()
 
-    # --- MINIMUM STUDENT FILTER ---
-    # Filter out ghost data or tiny independent studies
     df = df[(df['a'] + df['b'] + df['c'] + df['d'] + df['f']) >= 15]
 
-    # --- SMART YEAR & QUARTER DETECTIVE ---
     def get_time_score(row):
         year_val = 0
         q_weight = 0
         q_str = str(row.get('quarter', '')).upper().strip()
         
-        # 1. Handle UCSB 5-digit Codes (e.g., 20244)
         if len(q_str) == 5 and q_str.isdigit():
-            year_val = int(q_str[:4]) # First 4 digits are the year
-            q_code = q_str[4]         # Last digit is the quarter
-            if q_code == '4': q_weight = 4   # Fall
-            elif q_code == '3': q_weight = 3 # Summer
-            elif q_code == '2': q_weight = 2 # Spring
-            elif q_code == '1': q_weight = 1 # Winter
-            
-        # 2. Handle Text (e.g., "FALL 2024" or "F24")
+            year_val = int(q_str[:4])
+            q_code = q_str[4]
+            q_weight = int(q_code) if q_code in '1234' else 0
         else:
-            # Prioritize 4-digit years (2021-2030) to avoid the "20" bug
             four_digit = re.findall(r'\b(202[1-9]|2030)\b', q_str)
             if four_digit:
                 year_val = int(four_digit[0])
             else:
-                # Look for 2-digit years, ignoring standalone "20" if possible
                 two_digit = re.findall(r'(\d{2})', q_str)
                 if two_digit:
-                    # Filter for numbers likely to be years (21-35)
                     year_nums = [int(n) for n in two_digit if 21 <= int(n) <= 35]
-                    if year_nums:
-                        year_val = 2000 + year_nums[-1]
-                    else:
-                        year_val = 2000 + int(two_digit[-1])
+                    year_val = 2000 + year_nums[-1] if year_nums else 2000 + int(two_digit[-1])
             
-            # Weighted seasons for sorting
-            if any(x in q_str for x in ["FALL", " F"]): q_weight = 4
-            elif any(x in q_str for x in ["SUMMER", " M"]): q_weight = 3
-            elif any(x in q_str for x in ["SPRING", " S"]): q_weight = 2
-            elif any(x in q_str for x in ["WINTER", " W"]): q_weight = 1
+            if "FALL" in q_str or " F" in q_str: q_weight = 4
+            elif "SUMMER" in q_str or " M" in q_str: q_weight = 3
+            elif "SPRING" in q_str or " S" in q_str: q_weight = 2
+            elif "WINTER" in q_str or " W" in q_str: q_weight = 1
             
         return year_val, q_weight
 
-    # Apply the time logic
     time_results = df.apply(lambda r: pd.Series(get_time_score(r)), axis=1)
     df['year_val'] = time_results[0].astype(int)
     df['q_weight'] = time_results[1].astype(int)
@@ -125,7 +101,6 @@ def main():
     if prof_q: data = data[data['instructor'].str.contains(prof_q, na=False)]
 
     if not data.empty:
-        # Sort by Year (Newest First), then Season, then GPA
         data = data.sort_values(by=['year_val', 'q_weight', gpa_col], ascending=[False, False, False])
 
         st.markdown("### (◕‿◕✿) Top Rated in Selection")
@@ -138,8 +113,7 @@ def main():
 
         st.markdown("---")
 
-        # Grid view
-        rows = data.head(30) # Showing more results at once
+        rows = data.head(30)
         for i in range(0, len(rows), 2):
             grid_cols = st.columns(2)
             for j in range(2):
@@ -148,26 +122,25 @@ def main():
                     row = rows.iloc[idx]
                     with grid_cols[j]:
                         with st.container(border=True):
+                            # --- YEAR AND COURSE HEADER ---
                             y_val = int(row['year_val'])
-                            year_label = str(y_val) if y_val > 0 else "┐(~ー~;)┌"
+                            q_label = row['quarter']
                             
-                            st.markdown(f"#### {year_label} | {row['course']}")
+                            # This replaces the emoji with the Year/Quarter text
+                            st.markdown(f"#### {q_label} | {row['course']}")
                             st.caption(f"Instructor: **{row['instructor']}**")
                             
                             c1, c2 = st.columns([1, 1.2])
                             with c1:
-                                if row[gpa_col] >= 3.5:
-                                    vibe, label = "(✿◠‿◠)", "EASY A"
-                                elif row[gpa_col] <= 2.8:
-                                    vibe, label = "(╥﹏╥)", "WEED-OUT"
-                                else:
-                                    vibe, label = "(￣ー￣)ｂ", "BALANCED"
+                                # Logic for label text (moved emoji here)
+                                if row[gpa_col] >= 3.5: label = "✨ EASY A"
+                                elif row[gpa_col] <= 2.8: label = "💀 WEED-OUT"
+                                else: label = "⚖️ BALANCED"
                                 
                                 total_s = int(row['a'] + row['b'] + row['c'] + row['d'] + row['f'])
-                                st.write(f"{vibe} **{label}**")
+                                st.write(f"**{label}**")
                                 st.write(f"**Avg GPA:** {row[gpa_col]:.2f}")
                                 st.write(f"**Students:** {total_s}")
-                                st.write(f"**Term:** {row.get('quarter', '???')}")
                             
                             with c2:
                                 grade_counts = pd.DataFrame({
