@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import os
 import sqlite3
-import plotly.express as px
+import re
 
 # 1. Database Queries Import
 try:
@@ -47,20 +47,29 @@ def load_and_query_data():
     df_raw['dept'] = df_raw['dept'].apply(lambda x: str(x).strip().upper())
     df_raw['course'] = df_raw['course'].apply(lambda x: " ".join(str(x).split()).strip().upper())
     
-    # Ensure avgGPA is numeric for SQL
-    df_raw['avgGPA'] = pd.to_numeric(df_raw['avgGPA'], errors='coerce').fillna(0)
-    
-    # --- SQL COLUMN ALIGNMENT ---
-    # Your SQL queries specifically look for 'q_year' and 'q_rank'
+    # Ensure grade columns and GPA are numeric
+    grade_cols = ['avgGPA', 'nLetterStudents', 'a', 'b', 'c', 'd', 'f']
+    for col in grade_cols:
+        if col in df_raw.columns:
+            df_raw[col] = pd.to_numeric(df_raw[col], errors='coerce').fillna(0)
+
+    # --- YEAR & QUARTER LOGIC ---
     q_order = {'FALL': 4, 'SUMMER': 3, 'SPRING': 2, 'WINTER': 1}
     
-    # Create the columns SQL expects
-    df_raw['q_year'] = df_raw['quarter'].apply(lambda x: int(x.split()[1]) if len(x.split()) > 1 and x.split()[1].isdigit() else 0)
-    df_raw['q_rank'] = df_raw['quarter'].apply(lambda x: q_order.get(x.split()[0], 0) if len(x.split()) > 0 else 0)
+    def extract_year(q_str):
+        match = re.search(r'(\d{4})', q_str)
+        return int(match.group(1)) if match else 0
+
+    def extract_q_rank(q_str):
+        for q_name in q_order:
+            if q_name in q_str:
+                return q_order[q_name]
+        return 0
+
+    df_raw['q_year'] = df_raw['quarter'].apply(extract_year)
+    df_raw['q_rank'] = df_raw['quarter'].apply(extract_q_rank)
+    df_raw['year'] = df_raw['q_year'] # For display
     df_raw['course_num'] = df_raw['course'].str.extract(r'(\d+)').astype(float).fillna(0)
-    
-    # Create a duplicate 'year' column for our "Simple Table" display later
-    df_raw['year'] = df_raw['q_year']
 
     # --- RMP INTEGRATION ---
     if os.path.exists(rmp_path):
@@ -133,15 +142,16 @@ def main():
             avg_rmp = data['rmp_rating'].dropna().mean()
             m3.metric("Avg RMP", f"{avg_rmp:.1f}/5.0" if not pd.isna(avg_rmp) else "N/A")
 
-        st.subheader("Course History")
-        # We use 'year' for display, but 'q_year' exists in the background for SQL
-        final_cols = ['course', 'instructor', 'year', 'quarter', 'avgGPA', 'rmp_rating']
+        st.subheader("Course History & Grade Distribution")
+        
+        # Added A, B, C, D, F back to the column list
+        final_cols = ['course', 'instructor', 'year', 'quarter', 'avgGPA', 'a', 'b', 'c', 'd', 'f', 'rmp_rating']
         available_cols = [c for c in final_cols if c in data.columns]
         
-        st.dataframe(
-            data[available_cols].sort_values(by=['year', 'avgGPA'], ascending=[False, False]), 
-            use_container_width=True
-        )
+        display_data = data[available_cols].sort_values(by=['year', 'avgGPA'], ascending=[False, False])
+        
+        # Formatting for a cleaner table
+        st.dataframe(display_data, use_container_width=True)
     else:
         st.info("No records found.")
 
