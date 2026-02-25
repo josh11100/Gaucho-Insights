@@ -41,20 +41,23 @@ def load_and_query_data():
     df_raw['dept'] = df_raw['dept'].astype(str).str.upper().str.strip()
     df_raw['course'] = df_raw['course'].astype(str).str.upper().str.strip()
     
-    # --- THE SMART YEAR FIX ---
-    def smart_extract_year(q_str):
-        # Look for any number that is 2 or 4 digits long
-        match = re.search(r'(\d{2,4})', q_str)
-        if match:
-            year_val = match.group(1)
-            # If it's 2 digits (like '23'), turn it into '2023'
-            if len(year_val) == 2:
-                return int("20" + year_val)
-            return int(year_val)
-        return 0
+    # --- ULTRA-AGGRESSIVE YEAR EXTRACTOR ---
+    def deep_extract_year(q_str):
+        # 1. Try to find a 4-digit year (2024)
+        match4 = re.search(r'(20\d{2})', q_str)
+        if match4: return int(match4.group(1))
+        
+        # 2. Try to find a 2-digit year (24)
+        match2 = re.search(r'(\d{2})', q_str)
+        if match2: 
+            val = int(match2.group(1))
+            # Only convert if it's a reasonable year (between 10 and 30)
+            return 2000 + val if 10 <= val <= 30 else val
+            
+        return "Unknown" # Return a string so we see it in the table instead of 0
 
-    df_raw['year'] = df_raw['quarter'].apply(smart_extract_year)
-    df_raw['q_year'] = df_raw['year'] # For SQL compatibility
+    df_raw['year'] = df_raw['quarter'].apply(deep_extract_year)
+    df_raw['q_year'] = pd.to_numeric(df_raw['year'], errors='coerce').fillna(0)
     
     q_order = {'FALL': 4, 'SUMMER': 3, 'SPRING': 2, 'WINTER': 1}
     df_raw['q_rank'] = df_raw['quarter'].apply(lambda x: next((q_order[q] for q in q_order if q in x), 0))
@@ -100,14 +103,17 @@ def main():
     if not data.empty:
         gpa_col = 'avggpa' if 'avggpa' in data.columns else 'avg_gpa'
         
-        # --- DISPLAY REORDER ---
-        # Year is now right next to Quarter
-        display_cols = ['quarter', 'year', 'course', 'instructor', gpa_col, 'a', 'b', 'c', 'd', 'f']
+        # --- NEW ORDER: Course, Instructor, GPA, Quarter, Year, then Grades ---
+        display_cols = ['course', 'instructor', gpa_col, 'quarter', 'year', 'a', 'b', 'c', 'd', 'f']
         existing_cols = [c for c in display_cols if c in data.columns]
         
-        final_df = data[existing_cols].sort_values(by=['year', gpa_col], ascending=[False, False])
+        final_df = data[existing_cols].copy()
         
-        # Clean up headers for display
+        # Sort by Year (treating it as numeric where possible) and GPA
+        data['sort_year'] = pd.to_numeric(data['year'], errors='coerce').fillna(0)
+        final_df = final_df.loc[data.sort_values(by=['sort_year', gpa_col], ascending=[False, False]).index]
+        
+        # Final formatting for the UI
         final_df.columns = [c.replace('_', ' ').title() if c != 'avggpa' else 'Avg GPA' for c in final_df.columns]
 
         st.dataframe(final_df, use_container_width=True)
