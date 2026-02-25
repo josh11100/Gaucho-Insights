@@ -92,44 +92,51 @@ def main():
     if prof_q: data = data[data['instructor'].str.contains(prof_q, na=False)]
 
     if not data.empty:
-        # --- NEW HEATMAP SECTION ---
-        st.subheader("📊 Grade Heatmap")
-        
-        # Prepare data for heatmap (Top 10 filtered results)
-        viz_data = data.sort_values(by=['year', gpa_col], ascending=[False, False]).head(10)
-        
-        # Melt the grade columns for Plotly
-        melted_grades = viz_data.melt(
-            id_vars=['course', 'instructor', 'quarter', 'year'],
-            value_vars=['a', 'b', 'c', 'd', 'f'],
-            var_name='Grade', value_name='Percentage'
-        )
-        melted_grades['Grade'] = melted_grades['Grade'].str.upper()
-        
-        # Create the Heatmap
-        fig = px.bar(
-            melted_grades, 
-            x="Percentage", 
-            y="course", 
-            color="Grade", 
-            orientation='h',
-            hover_data=["instructor", "quarter", "year"],
-            color_discrete_map={'A':'#2ecc71', 'B':'#3498db', 'C':'#f1c40f', 'D':'#e67e22', 'F':'#e74c3c'},
-            title="Grade Distribution (A-F)"
-        )
-        fig.update_layout(barmode='stack', yaxis={'categoryorder':'total ascending'})
-        st.plotly_chart(fig, use_container_width=True)
+ # --- UPDATED HEATMAP SECTION IN main_app.py ---
+st.subheader("📊 Grade Distribution Breakdown")
 
-        # --- DATA TABLE ---
-        st.subheader("📋 Historical Data")
-        display_order = ['course', 'instructor', gpa_col, 'year', 'quarter', 'a', 'b', 'c', 'd', 'f']
-        existing = [c for c in display_order if c in data.columns]
-        
-        final_df = data[existing].sort_values(by=['year', gpa_col], ascending=[False, False])
-        final_df.columns = [c.replace('_', ' ').title() if c != gpa_col else 'Avg GPA' for c in final_df.columns]
-        st.dataframe(final_df, use_container_width=True)
-    else:
-        st.info("No records found.")
+# We only show the top 8 results to keep the chart clean
+viz_data = data.sort_values(by=['year', gpa_col], ascending=[False, False]).head(8)
 
-if __name__ == "__main__":
-    main()
+# "Melt" converts the columns (A, B, C, D, F) into a list the chart can read
+melted = viz_data.melt(
+    id_vars=['course', 'instructor', 'quarter', 'year'], 
+    value_vars=['a', 'b', 'c', 'd', 'f'], 
+    var_name='Grade', 
+    value_name='Percent'
+)
+
+# Capitalize for the UI
+melted['Grade'] = melted['Grade'].str.upper()
+
+# Create the interactive chart
+fig = px.bar(
+    melted, 
+    x="Percent", 
+    y="course", 
+    color="Grade", 
+    orientation='h',
+    text="Percent",  # This puts the number ON the color block
+    hover_data={
+        "Percent": ":.1f}%", # Formats hover as e.g. "45.2%"
+        "instructor": True,
+        "Grade": True,
+        "year": True
+    },
+    color_discrete_map={
+        'A':'#2ecc71', 'B':'#3498db', 'C':'#f1c40f', 
+        'D':'#e67e22', 'F':'#e74c3c'
+    },
+    title="Hover over colors to see exact percentages!"
+)
+
+# Visual polish
+fig.update_traces(texttemplate='%{text:.1s}%', textposition='inside')
+fig.update_layout(
+    barmode='stack', 
+    xaxis_title="Percentage of Students",
+    yaxis_title="",
+    legend_title="Grade"
+)
+
+st.plotly_chart(fig, use_container_width=True)
