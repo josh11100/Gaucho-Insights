@@ -136,19 +136,23 @@ def main():
     if prof_query:
         data = data[data['instructor'].str.contains(prof_query, case=False, na=False)]
 
-    # --- RESULTS DISPLAY ---
+
+# --- RESULTS DISPLAY ---
     st.header(f"Results for {mode}")
     
     if not data.empty:
-        # We now use 4 columns to include RMP Rating
+        # Columns were renamed to lowercase in load_and_query_data()
         m1, m2, m3, m4 = st.columns(4)
-        m1.metric("Avg GPA", f"{data['avgGPA'].mean():.2f}")
+        
+        # Changed 'avgGPA' -> 'avggpa'
+        m1.metric("Avg GPA", f"{data['avggpa'].mean():.2f}") 
         m2.metric("Classes Found", len(data))
+        
+        # Changed 'instructor' -> 'instructor' (already lowercase)
         m3.metric("Professors", len(data['instructor'].unique()))
         
-        # Calculate RMP Metric only if data exists
         if 'rmp_rating' in data.columns:
-            avg_rmp = data['rmp_rating'].dropna().astype(float).mean()
+            avg_rmp = pd.to_numeric(data['rmp_rating'], errors='coerce').mean()
             if pd.isna(avg_rmp):
                 m4.metric("RMP Rating", "N/A")
             else:
@@ -156,14 +160,15 @@ def main():
         else:
             m4.metric("RMP Data", "Missing CSV")
 
-        st.subheader("Historical Records (Sorted by Most Recent)")
+        st.subheader("Historical Records")
+        # Ensure we drop the lowercase helper columns
         display_df = data.drop(columns=['q_year', 'q_rank', 'course_num'], errors='ignore')
         st.dataframe(display_df, use_container_width=True)
         
-        # Show comparison chart if searching a course with multiple profs
         if len(data['instructor'].unique()) > 1:
             st.subheader("Instructor GPA Comparison")
-            prof_chart = data.groupby('instructor')['avgGPA'].mean().sort_values()
+            # Changed 'instructor' and 'avggpa' to lowercase
+            prof_chart = data.groupby('instructor')['avggpa'].mean().sort_values()
             st.bar_chart(prof_chart)
     else:
         st.info("No matching records found. Try adjusting your sidebar filters!")
