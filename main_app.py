@@ -3,7 +3,7 @@ import pandas as pd
 import os
 import sqlite3
 
-# 1. Database Queries Import
+# 1. Database Queries Import (Restored)
 from queries import (
     GET_RECENT_LECTURES, 
     GET_EASIEST_LOWER_DIV, 
@@ -12,7 +12,7 @@ from queries import (
     GET_BEST_GE_PROFS
 )
 
-# 2. Logic File Imports
+# 2. Logic File Imports (Restored)
 try:
     import pstat_logic
     import cs_logic
@@ -30,7 +30,7 @@ def load_and_query_data():
     rmp_path = os.path.join('data', 'rmp_ratings.csv')
     
     if not os.path.exists(csv_path):
-        st.error("Main CSV file (courseGrades.csv) not found.")
+        st.error(f"Main CSV file not found at {csv_path}")
         st.stop()
         
     df_raw = pd.read_csv(csv_path)
@@ -38,7 +38,7 @@ def load_and_query_data():
     # --- PRE-PROCESSING ---
     df_raw['dept'] = df_raw['dept'].str.strip()
     df_raw['course'] = df_raw['course'].str.replace(r'\s+', ' ', regex=True).str.strip()
-    df_raw['instructor'] = df_raw['instructor'].str.strip().upper() # Ensure uppercase for matching
+    df_raw['instructor'] = df_raw['instructor'].str.strip().upper() 
     df_raw['course_num'] = df_raw['course'].str.extract(r'(\d+)').astype(float)
     
     # Setup Quarter Sorting
@@ -47,16 +47,24 @@ def load_and_query_data():
     df_raw['q_year'] = pd.to_numeric(temp_split.str[1], errors='coerce').fillna(0).astype(int)
     df_raw['q_rank'] = temp_split.str[0].map(q_order).fillna(0).astype(int)
 
-    # --- RMP INTEGRATION ---
+    # --- RMP INTEGRATION (FUZZY MATCHING RESTORED) ---
     if os.path.exists(rmp_path):
         rmp_df = pd.read_csv(rmp_path)
-        rmp_df['instructor'] = rmp_df['instructor'].str.strip().upper()
-        # Merge Grade Data with RMP Data
-        df_raw = pd.merge(df_raw, rmp_df, on="instructor", how="left")
+        # Create a 'match_key' using the LAST NAME from RMP (e.g., "JORGE SOLIS" -> "SOLIS")
+        rmp_df['match_key'] = rmp_df['instructor'].str.split().str[-1].str.upper()
+        rmp_df = rmp_df.sort_values('rmp_rating', ascending=False).drop_duplicates('match_key')
+        
+        # Create a 'match_key' using the LAST NAME from Grades (e.g., "SOLIS J" -> "SOLIS")
+        df_raw['match_key'] = df_raw['instructor'].str.split().str[0].str.upper()
+        
+        # Merge on the key
+        df_raw = pd.merge(df_raw, rmp_df[['match_key', 'rmp_rating']], on="match_key", how="left")
+        df_raw = df_raw.drop(columns=['match_key'])
 
     # --- SQLITE WORKFLOW ---
     conn = sqlite3.connect(':memory:', check_same_thread=False)
-    df_raw.drop(columns=['temp_split'], errors='ignore').to_sql('courses', conn, index=False, if_exists='replace')
+    # Filter out columns that might break SQL
+    df_raw.to_sql('courses', conn, index=False, if_exists='replace')
     
     # Run Leaderboard & Display Queries
     df_sorted = pd.read_sql_query(GET_RECENT_LECTURES, conn)
@@ -118,27 +126,24 @@ def main():
     st.header(f"Results for {mode}")
     
     if not data.empty:
-        # We now use 4 columns to include RMP Rating
         m1, m2, m3, m4 = st.columns(4)
         m1.metric("Avg GPA", f"{data['avgGPA'].mean():.2f}")
         m2.metric("Classes Found", len(data))
         m3.metric("Professors", len(data['instructor'].unique()))
         
-        # Calculate RMP Metric only if data exists
+        # Calculate RMP Metric
         if 'rmp_rating' in data.columns:
-            avg_rmp = data['rmp_rating'].dropna().astype(float).mean()
-            if pd.isna(avg_rmp):
-                m4.metric("RMP Rating", "N/A")
-            else:
-                m4.metric("RMP Rating", f"{avg_rmp:.1f} / 5.0")
+            avg_rmp = pd.to_numeric(data['rmp_rating'], errors='coerce').dropna().mean()
+            m4.metric("RMP Rating", f"{avg_rmp:.1f} / 5.0" if not pd.isna(avg_rmp) else "N/A")
         else:
-            m4.metric("RMP Data", "Missing CSV")
+            m4.metric("RMP Data", "Missing")
 
         st.subheader("Historical Records (Sorted by Most Recent)")
-        display_df = data.drop(columns=['q_year', 'q_rank', 'course_num'], errors='ignore')
+        # Clean up table for display
+        cols_to_drop = ['q_year', 'q_rank', 'course_num']
+        display_df = data.drop(columns=[c for c in cols_to_drop if c in data.columns], errors='ignore')
         st.dataframe(display_df, use_container_width=True)
         
-        # Show comparison chart if searching a course with multiple profs
         if len(data['instructor'].unique()) > 1:
             st.subheader("Instructor GPA Comparison")
             prof_chart = data.groupby('instructor')['avgGPA'].mean().sort_values()
