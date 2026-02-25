@@ -35,20 +35,11 @@ def load_and_clean_data():
             df[col] = df[col].astype(str).str.upper().str.strip()
 
     def get_time_score(row):
-        year_val = 0
-        q_str = str(row.get('quarter', '')).upper()
-        potential_year_cols = [c for c in row.index if 'year' in c or 'yr' in c]
-        for col in potential_year_cols:
-            found = re.findall(r'\d+', str(row[col]))
-            if found:
-                val = int(found[0])
-                year_val = val if val > 100 else 2000 + val
-                break
-        if year_val == 0:
-            found = re.findall(r'\d+', q_str)
-            if found:
-                val = int(found[-1])
-                year_val = val if val > 100 else 2000 + val
+        year_val, q_str = 0, str(row.get('quarter', '')).upper()
+        nums = re.findall(r'\d+', q_str)
+        if nums:
+            val = int(nums[-1])
+            year_val = val if val > 100 else 2000 + val
         
         q_weight = 0
         if any(x in q_str for x in ["FALL", " F"]): q_weight = 4
@@ -58,8 +49,7 @@ def load_and_clean_data():
         return year_val, q_weight
 
     time_df = df.apply(lambda r: pd.Series(get_time_score(r)), axis=1)
-    df['year_val'] = time_df[0].astype(int)
-    df['q_weight'] = time_df[1].astype(int)
+    df['year_val'], df['q_weight'] = time_df[0].astype(int), time_df[1].astype(int)
     
     gpa_col = next((c for c in ['avggpa', 'avg_gpa', 'avg gpa'] if c in df.columns), 'avggpa')
     for col in [gpa_col, 'a', 'b', 'c', 'd', 'f']:
@@ -87,14 +77,20 @@ def main():
     if prof_q: data = data[data['instructor'].str.contains(prof_q, na=False)]
 
     if not data.empty:
+        # 1. Sort by Recency
         data = data.sort_values(by=['year_val', 'q_weight', gpa_col], ascending=[False, False, False])
 
-        m1, m2 = st.columns(2)
-        m1.metric("MEAN GPA", f"{data[gpa_col].mean():.2f}")
-        m2.metric("SECTIONS FOUND", len(data))
+        # 2. Show Stats Leaderboard (Top 3 Easy Profs)
+        st.markdown("### 🏆 Top Rated in Selection")
+        top_cols = st.columns(3)
+        top_profs = data.groupby('instructor')[gpa_col].mean().sort_values(ascending=False).head(3)
+        for i, (prof, gpa) in enumerate(top_profs.items()):
+            top_cols[i].metric(prof, f"{gpa:.2f} GPA")
+
         st.markdown("---")
 
-        display_limit = 40
+        # 3. The Grid (NO EXPANDERS)
+        display_limit = 20 # Lowered limit for better performance
         rows = data.head(display_limit)
         
         for i in range(0, len(rows), 2):
@@ -104,30 +100,31 @@ def main():
                 if idx < len(rows):
                     row = rows.iloc[idx]
                     with cols[j]:
-                        # THE CRITICAL FIX: Wrap the expander in a keyed container
-                        # This isolates the 'toggle' state for each card individually
-                        with st.container(key=f"container_{idx}"):
-                            vibe = "✨ EASY A" if row[gpa_col] >= 3.5 else "⚠️ WEED-OUT" if row[gpa_col] <= 3.0 else "⚖️ BALANCED"
+                        # A clean border container acts as the card
+                        with st.container(border=True):
                             year_label = int(row['year_val']) if row['year_val'] > 0 else "N/A"
+                            st.markdown(f"#### {year_label} | {row['course']}")
+                            st.caption(f"Instructor: **{row['instructor']}**")
                             
-                            unique_label = f"{year_label} | {row['course']} | {row['instructor']} " + ("\u200b" * idx)
+                            c1, c2 = st.columns([1, 1.5])
+                            with c1:
+                                st.write(f"**GPA:** {row[gpa_col]:.2f}")
+                                st.write(f"**Term:** {row.get('quarter', 'N/A')}")
                             
-                            with st.expander(unique_label, expanded=False):
-                                st.markdown(f"**{vibe}**")
+                            with c2:
                                 grade_df = pd.DataFrame({
                                     'Grade': ['A', 'B', 'C', 'D', 'F'],
                                     'Percent': [row['a'], row['b'], row['c'], row['d'], row['f']]
                                 })
                                 fig = px.bar(grade_df, x='Grade', y='Percent', color='Grade',
                                              color_discrete_map={'A':'#00CCFF','B':'#3498db','C':'#FFD700','D':'#e67e22','F':'#e74c3c'},
-                                             template="plotly_dark", height=150)
+                                             template="plotly_dark", height=120)
                                 fig.update_layout(margin=dict(l=0, r=0, t=0, b=0), showlegend=False,
                                                   paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
-                                
-                                st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False}, key=f"grid_chart_{idx}")
-                                st.write(f"**GPA:** {row[gpa_col]:.2f} | **Term:** {row.get('quarter', 'N/A')}")
+                                st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False}, key=f"fixed_chart_{idx}")
+
     else:
-        st.info("No courses found matching your criteria.")
+        st.info("No courses found. Adjust your search!")
 
 if __name__ == "__main__":
     main()
