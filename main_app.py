@@ -38,6 +38,7 @@ def load_and_query_data():
     df_raw = pd.read_csv(csv_path)
     df_raw.columns = [str(c).strip() for c in df_raw.columns]
     
+    # --- SANITIZATION ---
     def force_clean(x):
         return str(x).strip().upper()
 
@@ -46,7 +47,10 @@ def load_and_query_data():
     df_raw['dept'] = df_raw['dept'].apply(lambda x: str(x).strip().upper())
     df_raw['course'] = df_raw['course'].apply(lambda x: " ".join(str(x).split()).strip().upper())
     
-    # Extract Year and Quarter Rank
+    # Ensure avgGPA is numeric for SQL queries
+    df_raw['avgGPA'] = pd.to_numeric(df_raw['avgGPA'], errors='coerce').fillna(0)
+    
+    # Helper columns for sorting/searching
     q_order = {'FALL': 4, 'SUMMER': 3, 'SPRING': 2, 'WINTER': 1}
     df_raw['year'] = df_raw['quarter'].apply(lambda x: int(x.split()[1]) if len(x.split()) > 1 and x.split()[1].isdigit() else 0)
     df_raw['q_rank'] = df_raw['quarter'].apply(lambda x: q_order.get(x.split()[0], 0) if len(x.split()) > 0 else 0)
@@ -69,35 +73,47 @@ def load_and_query_data():
 
     # --- SQLITE WORKFLOW ---
     conn = sqlite3.connect(':memory:', check_same_thread=False)
+    # Uploading data exactly as SQL expects it
     df_raw.to_sql('courses', conn, index=False, if_exists='replace')
     
-    # Fetch results
-    results = (
-        pd.read_sql_query(GET_RECENT_LECTURES, conn),
-        pd.read_sql_query(GET_EASIEST_LOWER_DIV, conn),
-        pd.read_sql_query(GET_EASIEST_UPPER_DIV, conn),
-        pd.read_sql_query(GET_EASIEST_DEPTS, conn),
-        pd.read_sql_query(GET_BEST_GE_PROFS, conn)
-    )
-    conn.close()
+    # Execute SQL Leaderboards
+    try:
+        results = (
+            pd.read_sql_query(GET_RECENT_LECTURES, conn),
+            pd.read_sql_query(GET_EASIEST_LOWER_DIV, conn),
+            pd.read_sql_query(GET_EASIEST_UPPER_DIV, conn),
+            pd.read_sql_query(GET_EASIEST_DEPTS, conn),
+            pd.read_sql_query(GET_BEST_GE_PROFS, conn)
+        )
+    except Exception as e:
+        st.error(f"SQL Error: {e}")
+        st.stop()
+    finally:
+        conn.close()
+        
     return results
 
 def main():
     st.title("(｡•̀ᴗ-)✧ Gaucho Insights")
+    
+    # Load all 5 data sources from SQLite
     df, lower_div_df, upper_div_df, dept_df, ge_profs_df = load_and_query_data()
 
-    with st.expander("°˖✧ View Leaderboards"):
+    # --- LEADERBOARD DISPLAY ---
+    with st.expander("°˖✧ View University Leaderboards"):
         t1, t2, t3, t4 = st.tabs(["🐣 Lower Div", "🎓 Upper Div", "🏢 Depts", "👨‍🏫 Best GE Profs"])
-        t1.table(lower_div_df[['course', 'mean_gpa']].head(5))
-        t2.table(upper_div_df[['course', 'mean_gpa']].head(5))
-        t3.table(dept_df[['dept', 'dept_avg_gpa']].head(5))
-        t4.table(ge_profs_df[['instructor', 'avg_instructor_gpa']].head(5))
+        # Only show Top 5 to keep it clean
+        t1.table(lower_div_df.head(5))
+        t2.table(upper_div_df.head(5))
+        t3.table(dept_df.head(5))
+        t4.table(ge_profs_df.head(5))
 
     st.sidebar.header("🔍 Search Filters")
     mode = st.sidebar.selectbox("Choose Department", ["All Departments", "PSTAT", "CS", "MCDB", "CHEM"])
-    course_q = st.sidebar.text_input("Course Number", "").strip().upper()
-    prof_q = st.sidebar.text_input("Instructor Name", "").strip().upper()
+    course_q = st.sidebar.text_input("Course Number (e.g. 120A)", "").strip().upper()
+    prof_q = st.sidebar.text_input("Instructor Last Name", "").strip().upper()
     
+    # 1. Filter Logic
     data = df.copy()
     if mode == "PSTAT": data = pstat_logic.process_pstat(data)
     elif mode == "CS": data = cs_logic.process_cs(data)
@@ -109,6 +125,8 @@ def main():
     if prof_q:
         data = data[data['instructor'].str.contains(prof_q, case=False, na=False)]
 
+    # --- RESULTS DISPLAY ---
+    st.header(f"Results for {mode}")
     if not data.empty:
         m1, m2, m3 = st.columns(3)
         m1.metric("Avg GPA", f"{data['avgGPA'].mean():.2f}")
@@ -117,23 +135,16 @@ def main():
             avg_rmp = data['rmp_rating'].dropna().mean()
             m3.metric("Avg RMP", f"{avg_rmp:.1f}/5.0" if not pd.isna(avg_rmp) else "N/A")
 
-        # --- SIMPLIFIED TABLE ---
+        # --- SIMPLIFIED DISPLAY TABLE ---
         st.subheader("Course History")
-        
-        # Select and order the specific columns the user wants
-        # 'rmp_rating' is included to keep the scraper data visible
         final_cols = ['course', 'instructor', 'year', 'quarter', 'avgGPA', 'rmp_rating']
-        
-        # Filter to only show columns that actually exist in the dataframe
         available_cols = [c for c in final_cols if c in data.columns]
         
-        # Display the simple dataframe
-        st.dataframe(
-            data[available_cols].sort_values(by=['year', 'avgGPA'], ascending=[False, False]), 
-            use_container_width=True
-        )
+        # Sort by Year and GPA
+        display_data = data[available_cols].sort_values(by=['year', 'avgGPA'], ascending=[False, False])
+        st.dataframe(display_data, use_container_width=True)
     else:
-        st.info("No records found.")
+        st.info("No records found. Try adjusting filters!")
 
 if __name__ == "__main__":
     main()
