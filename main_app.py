@@ -38,13 +38,13 @@ def load_and_clean_data():
 
     gpa_col = next((c for c in ['avggpa', 'avg_gpa', 'avg gpa'] if c in df.columns), 'avggpa')
     
-    # Convert grades to numbers
+    # Convert grades and GPA to numbers
     for col in [gpa_col, 'a', 'b', 'c', 'd', 'f']:
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
 
     # --- THE BIG AGGREGATION ---
-    # Group by main identifiers to combine discussion sections into one Lecture
+    # Combine discussion sections into one lecture view
     group_cols = ['instructor', 'quarter', 'course', 'dept']
     df = df.groupby(group_cols).agg({
         gpa_col: 'mean',
@@ -56,42 +56,53 @@ def load_and_clean_data():
     }).reset_index()
 
     # --- MINIMUM STUDENT FILTER ---
-    # Removes the "ghost" sections or tiny independent studies (under 15 students)
+    # Filter out ghost data or tiny independent studies
     df = df[(df['a'] + df['b'] + df['c'] + df['d'] + df['f']) >= 15]
 
-    # --- SMART YEAR DETECTIVE ---
+    # --- SMART YEAR & QUARTER DETECTIVE ---
     def get_time_score(row):
         year_val = 0
-        all_text = " ".join([str(val) for val in row.values]).upper()
-        
-        # 1. Try 4-digit years (2020-2029) first
-        four_digit = re.findall(r'\b(202[0-9])\b', all_text)
-        if four_digit:
-            year_val = int(four_digit[0])
-        else:
-            # 2. Try 2-digit years (prioritize 21-29 to avoid the "20" bug)
-            # This catches things like "F24" or "24W"
-            two_digit = re.findall(r'(\d{2})', all_text)
-            if two_digit:
-                # We look for the number that isn't just '20' if possible
-                candidates = [int(x) for x in two_digit if 20 <= int(x) <= 30]
-                if candidates:
-                    year_val = 2000 + candidates[-1] # Take the most recent/relevant
-                else:
-                    year_val = 2000 + int(two_digit[-1])
-
-        # Quarter Weighting
-        q_str = str(row.get('quarter', '')).upper()
         q_weight = 0
-        if any(x in q_str for x in ["FALL", "F"]): q_weight = 4
-        elif any(x in q_str for x in ["SUMMER", "M"]): q_weight = 3
-        elif any(x in q_str for x in ["SPRING", "S"]): q_weight = 2
-        elif any(x in q_str for x in ["WINTER", "W"]): q_weight = 1
+        q_str = str(row.get('quarter', '')).upper().strip()
+        
+        # 1. Handle UCSB 5-digit Codes (e.g., 20244)
+        if len(q_str) == 5 and q_str.isdigit():
+            year_val = int(q_str[:4]) # First 4 digits are the year
+            q_code = q_str[4]         # Last digit is the quarter
+            if q_code == '4': q_weight = 4   # Fall
+            elif q_code == '3': q_weight = 3 # Summer
+            elif q_code == '2': q_weight = 2 # Spring
+            elif q_code == '1': q_weight = 1 # Winter
+            
+        # 2. Handle Text (e.g., "FALL 2024" or "F24")
+        else:
+            # Prioritize 4-digit years (2021-2030) to avoid the "20" bug
+            four_digit = re.findall(r'\b(202[1-9]|2030)\b', q_str)
+            if four_digit:
+                year_val = int(four_digit[0])
+            else:
+                # Look for 2-digit years, ignoring standalone "20" if possible
+                two_digit = re.findall(r'(\d{2})', q_str)
+                if two_digit:
+                    # Filter for numbers likely to be years (21-35)
+                    year_nums = [int(n) for n in two_digit if 21 <= int(n) <= 35]
+                    if year_nums:
+                        year_val = 2000 + year_nums[-1]
+                    else:
+                        year_val = 2000 + int(two_digit[-1])
+            
+            # Weighted seasons for sorting
+            if any(x in q_str for x in ["FALL", " F"]): q_weight = 4
+            elif any(x in q_str for x in ["SUMMER", " M"]): q_weight = 3
+            elif any(x in q_str for x in ["SPRING", " S"]): q_weight = 2
+            elif any(x in q_str for x in ["WINTER", " W"]): q_weight = 1
+            
         return year_val, q_weight
 
-    time_df = df.apply(lambda r: pd.Series(get_time_score(r)), axis=1)
-    df['year_val'] = time_df[0].astype(int)
-    df['q_weight'] = time_df[1].astype(int)
+    # Apply the time logic
+    time_results = df.apply(lambda r: pd.Series(get_time_score(r)), axis=1)
+    df['year_val'] = time_results[0].astype(int)
+    df['q_weight'] = time_results[1].astype(int)
             
     return df, gpa_col
 
@@ -127,7 +138,8 @@ def main():
 
         st.markdown("---")
 
-        rows = data.head(24)
+        # Grid view
+        rows = data.head(30) # Showing more results at once
         for i in range(0, len(rows), 2):
             grid_cols = st.columns(2)
             for j in range(2):
@@ -137,7 +149,6 @@ def main():
                     with grid_cols[j]:
                         with st.container(border=True):
                             y_val = int(row['year_val'])
-                            # Show the year correctly or the shrug if missing
                             year_label = str(y_val) if y_val > 0 else "┐(~ー~;)┌"
                             
                             st.markdown(f"#### {year_label} | {row['course']}")
