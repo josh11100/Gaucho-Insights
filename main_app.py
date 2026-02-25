@@ -30,22 +30,21 @@ def load_and_clean_data():
     df = pd.read_csv(csv_path)
     df.columns = [str(c).strip().lower() for c in df.columns]
     
-    # Standardize basic text columns
+    # Clean text columns
     text_cols = ['instructor', 'quarter', 'course', 'dept']
     for col in text_cols:
         if col in df.columns:
             df[col] = df[col].astype(str).str.upper().str.strip()
 
-    # Determine GPA column name
     gpa_col = next((c for c in ['avggpa', 'avg_gpa', 'avg gpa'] if c in df.columns), 'avggpa')
     
-    # Ensure grade columns are numeric before grouping
+    # Convert grades to numbers
     for col in [gpa_col, 'a', 'b', 'c', 'd', 'f']:
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
 
-    # --- THE STUDENT COUNT FIX ---
-    # We group by the main identifiers to combine discussion sections into one Lecture
+    # --- THE BIG AGGREGATION ---
+    # Group by main identifiers to combine discussion sections into one Lecture
     group_cols = ['instructor', 'quarter', 'course', 'dept']
     df = df.groupby(group_cols).agg({
         gpa_col: 'mean',
@@ -56,20 +55,32 @@ def load_and_clean_data():
         'f': 'sum'
     }).reset_index()
 
-    # --- YEAR & SEASON LOGIC ---
+    # --- MINIMUM STUDENT FILTER ---
+    # Removes the "ghost" sections or tiny independent studies (under 15 students)
+    df = df[(df['a'] + df['b'] + df['c'] + df['d'] + df['f']) >= 15]
+
+    # --- SMART YEAR DETECTIVE ---
     def get_time_score(row):
         year_val = 0
-        all_text = " ".join([str(val) for val in row.values])
-        four_digit = re.findall(r'\b(20\d{2})\b', all_text)
+        all_text = " ".join([str(val) for val in row.values]).upper()
+        
+        # 1. Try 4-digit years (2020-2029) first
+        four_digit = re.findall(r'\b(202[0-9])\b', all_text)
         if four_digit:
             year_val = int(four_digit[0])
         else:
-            two_digit = re.findall(r'\b(\d{2})\b|([A-Z](\d{2}))|((\d{2})[A-Z])', all_text)
+            # 2. Try 2-digit years (prioritize 21-29 to avoid the "20" bug)
+            # This catches things like "F24" or "24W"
+            two_digit = re.findall(r'(\d{2})', all_text)
             if two_digit:
-                flattened = [g for groups in two_digit for g in groups if g and len(g) == 2]
-                if flattened:
-                    year_val = 2000 + int(flattened[0])
+                # We look for the number that isn't just '20' if possible
+                candidates = [int(x) for x in two_digit if 20 <= int(x) <= 30]
+                if candidates:
+                    year_val = 2000 + candidates[-1] # Take the most recent/relevant
+                else:
+                    year_val = 2000 + int(two_digit[-1])
 
+        # Quarter Weighting
         q_str = str(row.get('quarter', '')).upper()
         q_weight = 0
         if any(x in q_str for x in ["FALL", "F"]): q_weight = 4
@@ -88,7 +99,6 @@ def main():
     st.title("(つ▀¯▀ )つ GAUCHO INSIGHTS ⊂(▀¯▀⊂ )")
     full_df, gpa_col = load_and_clean_data()
 
-    # Sidebar UI
     st.sidebar.header("🔍 FILTERS")
     mode = st.sidebar.selectbox("DEPARTMENT", ["All Departments", "PSTAT", "CS", "MCDB", "CHEM"])
     course_q = st.sidebar.text_input("COURSE #").strip().upper()
@@ -104,7 +114,7 @@ def main():
     if prof_q: data = data[data['instructor'].str.contains(prof_q, na=False)]
 
     if not data.empty:
-        # Sort by most recent
+        # Sort by Year (Newest First), then Season, then GPA
         data = data.sort_values(by=['year_val', 'q_weight', gpa_col], ascending=[False, False, False])
 
         st.markdown("### (◕‿◕✿) Top Rated in Selection")
@@ -117,10 +127,7 @@ def main():
 
         st.markdown("---")
 
-        # The Card Grid
-        display_limit = 24
-        rows = data.head(display_limit)
-        
+        rows = data.head(24)
         for i in range(0, len(rows), 2):
             grid_cols = st.columns(2)
             for j in range(2):
@@ -130,6 +137,7 @@ def main():
                     with grid_cols[j]:
                         with st.container(border=True):
                             y_val = int(row['year_val'])
+                            # Show the year correctly or the shrug if missing
                             year_label = str(y_val) if y_val > 0 else "┐(~ー~;)┌"
                             
                             st.markdown(f"#### {year_label} | {row['course']}")
@@ -151,7 +159,6 @@ def main():
                                 st.write(f"**Term:** {row.get('quarter', '???')}")
                             
                             with c2:
-                                # Data for the count-based graph
                                 grade_counts = pd.DataFrame({
                                     'Grade': ['A', 'B', 'C', 'D', 'F'],
                                     'Count': [row['a'], row['b'], row['c'], row['d'], row['f']]
