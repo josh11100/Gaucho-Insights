@@ -92,6 +92,7 @@ def main():
     if prof_q: data = data[data['instructor'].str.contains(prof_q, na=False)]
 
     if not data.empty:
+        
  # --- UPDATED HEATMAP SECTION IN main_app.py ---
 st.subheader("📊 Grade Distribution Breakdown")
 
