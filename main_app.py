@@ -8,7 +8,7 @@ import plotly.express as px
 try:
     import pstat_logic, cs_logic, mcdb_logic, chem_logic
 except ImportError:
-    st.error("❌ Logic files missing.")
+    st.error("┐(~ー~;)┌ Logic files missing.")
     st.stop()
 
 st.set_page_config(page_title="Gaucho Insights", layout="wide")
@@ -24,7 +24,7 @@ local_css("style.css")
 def load_and_clean_data():
     csv_path = os.path.join('data', 'courseGrades.csv')
     if not os.path.exists(csv_path):
-        st.error("❌ Data file missing.")
+        st.error("¯\_(ツ)_/¯ Data file missing.")
         st.stop()
         
     df = pd.read_csv(csv_path)
@@ -34,28 +34,22 @@ def load_and_clean_data():
         if col in df.columns:
             df[col] = df[col].astype(str).str.upper().str.strip()
 
-    # --- THE UPDATED YEAR DETECTIVE ---
     def get_time_score(row):
         year_val = 0
-        # Check every single column for a 2 or 4 digit number
-        # because the year might be in 'quarter', 'term', or 'year'
         all_text = " ".join([str(val) for val in row.values])
         
-        # Look for 4 digits (e.g., 2024)
+        # 4-digit year search
         four_digit = re.findall(r'\b(20\d{2})\b', all_text)
         if four_digit:
             year_val = int(four_digit[0])
         else:
-            # Look for 2 digits (e.g., F24, 24W)
-            # We look for digits attached to letters or common term patterns
+            # 2-digit year search (handles F24, 24W, etc)
             two_digit = re.findall(r'\b(\d{2})\b|([A-Z](\d{2}))|((\d{2})[A-Z])', all_text)
             if two_digit:
-                # Flatten the regex groups and find the first 2-digit number
                 flattened = [g for groups in two_digit for g in groups if g and len(g) == 2]
                 if flattened:
                     year_val = 2000 + int(flattened[0])
 
-        # Seasonal Weighting (Fall > Winter)
         q_str = str(row.get('quarter', '')).upper()
         q_weight = 0
         if any(x in q_str for x in ["FALL", "F"]): q_weight = 4
@@ -77,10 +71,9 @@ def load_and_clean_data():
     return df, gpa_col
 
 def main():
-    st.title("⚡ GAUCHO INSIGHTS ⚡")
+    st.title("(つ▀¯▀ )つ GAUCHO INSIGHTS ⊂(▀¯▀⊂ )")
     full_df, gpa_col = load_and_clean_data()
 
-    # Sidebar
     st.sidebar.header("🔍 FILTERS")
     mode = st.sidebar.selectbox("DEPARTMENT", ["All Departments", "PSTAT", "CS", "MCDB", "CHEM"])
     course_q = st.sidebar.text_input("COURSE #").strip().upper()
@@ -96,12 +89,10 @@ def main():
     if prof_q: data = data[data['instructor'].str.contains(prof_q, na=False)]
 
     if not data.empty:
-        # Sort by Recency
         data = data.sort_values(by=['year_val', 'q_weight', gpa_col], ascending=[False, False, False])
 
-        st.markdown("### 🏆 Top Rated in Selection")
+        st.markdown("### (◕‿◕✿) Top Rated in Selection")
         top_cols = st.columns(3)
-        # Filter out professors with 0 GPA or only a few students to keep results quality high
         valid_profs = data[data[gpa_col] > 0]
         if not valid_profs.empty:
             top_profs = valid_profs.groupby('instructor')[gpa_col].mean().sort_values(ascending=False).head(3)
@@ -121,17 +112,18 @@ def main():
                     row = rows.iloc[idx]
                     with grid_cols[j]:
                         with st.container(border=True):
-                            # Ensure year_label isn't 0
                             y_val = int(row['year_val'])
-                            year_label = str(y_val) if y_val > 0 else "YEAR?"
+                            year_label = str(y_val) if y_val > 0 else "┐(~ー~;)┌"
                             
                             st.markdown(f"#### {year_label} | {row['course']}")
                             st.caption(f"Instructor: **{row['instructor']}**")
                             
                             c1, c2 = st.columns([1, 1.5])
                             with c1:
+                                vibe = "(✿◠‿◠) EASY A" if row[gpa_col] >= 3.5 else "(╥﹏╥) WEED-OUT" if row[gpa_col] <= 2.8 else "⚖️ BALANCED"
+                                st.write(vibe)
                                 st.write(f"**GPA:** {row[gpa_col]:.2f}")
-                                st.write(f"**Term:** {row.get('quarter', 'N/A')}")
+                                st.write(f"**Term:** {row.get('quarter', '???')}")
                             
                             with c2:
                                 grade_df = pd.DataFrame({
@@ -145,7 +137,7 @@ def main():
                                                   paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
                                 st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False}, key=f"fixed_chart_{idx}")
     else:
-        st.info("No courses found. Try a different search.")
+        st.info("┐(~ー~;)┌ No courses found. Try a different search.")
 
 if __name__ == "__main__":
     main()
