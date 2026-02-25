@@ -34,16 +34,29 @@ def load_and_clean_data():
         if col in df.columns:
             df[col] = df[col].astype(str).str.upper().str.strip()
 
-    def extract_year(q_val):
-        nums = re.findall(r'\d+', str(q_val))
+    # --- ENHANCED RECENCY LOGIC ---
+    def get_time_score(row):
+        q_str = str(row['quarter'])
+        # Extract Year
+        nums = re.findall(r'\d+', q_str)
+        year = 0
         if nums:
             y = nums[0]
-            if len(y) == 2: return int("20" + y)
-            if len(y) == 4: return int(y)
-        return 0
+            year = int("20" + y) if len(y) == 2 else int(y)
+        
+        # Assign Quarter Weight (Fall is latest in academic year)
+        q_weight = 0
+        if "FALL" in q_str: q_weight = 4
+        elif "SUMMER" in q_str: q_weight = 3
+        elif "SPRING" in q_str: q_weight = 2
+        elif "WINTER" in q_str: q_weight = 1
+        
+        return year, q_weight
 
-    df['year_int'] = df['quarter'].apply(extract_year)
-    df['display_year'] = df['year_int'].apply(lambda x: str(x) if x > 0 else "N/A")
+    # Create helper columns for precise sorting
+    df[['year_val', 'q_weight']] = df.apply(
+        lambda r: pd.Series(get_time_score(r)), axis=1
+    )
     
     gpa_col = next((c for c in ['avggpa', 'avg_gpa', 'avg gpa'] if c in df.columns), 'avggpa')
     for col in [gpa_col, 'a', 'b', 'c', 'd', 'f']:
@@ -71,7 +84,8 @@ def main():
     if prof_q: data = data[data['instructor'].str.contains(prof_q, na=False)]
 
     if not data.empty:
-        data = data.sort_values(by=['year_int', gpa_col], ascending=[False, False])
+        # --- DESCENDING SORT BY YEAR THEN QUARTER ---
+        data = data.sort_values(by=['year_val', 'q_weight', gpa_col], ascending=[False, False, False])
 
         m1, m2 = st.columns(2)
         m1.metric("AVG GPA", f"{data[gpa_col].mean():.2f}")
@@ -79,19 +93,20 @@ def main():
 
         st.markdown("---")
 
-        # FIX: Added a limit so we don't crash the browser with 1000 charts
-        # Only show the first 40 results
         display_limit = 40
         for i, (index, row) in enumerate(data.head(display_limit).iterrows()):
             vibe = "✨ EASY A" if row[gpa_col] >= 3.5 else "⚠️ WEED-OUT" if row[gpa_col] <= 3.0 else "⚖️ BALANCED"
-            header = f"{vibe} | {row['course']} | {row['instructor']} | {row['quarter']}"
+            
+            # --- HEADER UPDATED TO PRIORITIZE YEAR ---
+            year_display = row['year_val'] if row['year_val'] > 0 else "N/A"
+            header = f"{year_display} | {vibe} | {row['course']} | {row['instructor']}"
             
             with st.expander(header):
                 col1, col2 = st.columns([1, 2])
                 with col1:
-                    st.write(f"**Prof:** {row['instructor']}")
+                    st.write(f"**Year:** {year_display}")
                     st.write(f"**Term:** {row['quarter']}")
-                    st.write(f"**Year:** {row['display_year']}")
+                    st.write(f"**Prof:** {row['instructor']}")
                     st.write(f"**GPA:** {row[gpa_col]:.2f}")
                 
                 with col2:
@@ -107,13 +122,12 @@ def main():
                     fig.update_layout(margin=dict(l=0, r=0, t=0, b=0), showlegend=False,
                                       paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
                     
-                    # THE FIX: Added a unique key using the loop index 'i'
                     st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False}, key=f"chart_{index}_{i}")
 
         if len(data) > display_limit:
-            st.warning(f"Showing top {display_limit} results. Please use filters to narrow down your search!")
+            st.warning(f"Showing top {display_limit} results sorted by recency.")
     else:
-        st.info("No courses found matching those filters.")
+        st.info("No courses found. Try adjusting your filters!")
 
 if __name__ == "__main__":
     main()
