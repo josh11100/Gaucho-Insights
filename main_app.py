@@ -33,46 +33,54 @@ def load_and_query_data():
         st.error("Main CSV file (courseGrades.csv) not found.")
         st.stop()
         
-    # Read CSV and immediately clean headers
     df_raw = pd.read_csv(csv_path)
-    df_raw.columns = [str(c).strip().lower() for c in df_raw.columns]
     
-    # --- SAFETY CHECK ---
+    # --- 1. Aggressive Column Cleaning ---
+    # Standardize all column names: lowercase and no spaces
+    df_raw.columns = [str(c).strip().lower() for c in df_raw.columns]
+
+    # --- 2. Handle Duplicate Column Names (The Likely Culprit) ---
+    # If there are two 'instructor' columns, this keeps only the first one
+    df_raw = df_raw.loc[:, ~df_raw.columns.duplicated()].copy()
+    
     if 'instructor' not in df_raw.columns:
-        st.error(f"Critical: 'instructor' column missing. Found: {list(df_raw.columns)}")
+        st.error(f"Column 'instructor' missing. Found: {list(df_raw.columns)}")
         st.stop()
 
-    # --- DATA PRE-PROCESSING ---
-    # We ensure the series is treated as an object/string explicitly
-    df_raw['instructor'] = df_raw['instructor'].astype(str).replace('nan', '').str.strip().upper()
-    df_raw['dept'] = df_raw['dept'].astype(str).replace('nan', '').str.strip().upper()
-    df_raw['course'] = df_raw['course'].astype(str).replace('nan', '').str.replace(r'\s+', ' ', regex=True).str.strip().upper()
-    
+    # --- 3. Robust String Conversion ---
+    # We use .apply(str) which is safer than .astype(str).str when dealing with weird objects
+    for col in ['instructor', 'dept', 'course', 'quarter']:
+        if col in df_raw.columns:
+            df_raw[col] = df_raw[col].apply(lambda x: str(x).strip().upper() if pd.notnull(x) else "")
+
     # Extract course number
     df_raw['course_num'] = df_raw['course'].str.extract(r'(\d+)').astype(float)
     
     # Quarter Sorting Logic
     q_order = {'FALL': 4, 'SUMMER': 3, 'SPRING': 2, 'WINTER': 1}
-    # Handling potential float/NaN issues in quarter string
-    temp_split = df_raw['quarter'].astype(str).str.upper().str.split(' ')
+    temp_split = df_raw['quarter'].str.split(' ')
     df_raw['q_year'] = pd.to_numeric(temp_split.str[1], errors='coerce').fillna(0).astype(int)
     df_raw['q_rank'] = temp_split.str[0].map(q_order).fillna(0).astype(int)
 
-    # --- RMP INTEGRATION ---
+    # --- 4. RMP Integration ---
     if os.path.exists(rmp_path):
         rmp_df = pd.read_csv(rmp_path)
         rmp_df.columns = [str(c).strip().lower() for c in rmp_df.columns]
+        # Clean RMP duplicates too
+        rmp_df = rmp_df.loc[:, ~rmp_df.columns.duplicated()].copy()
+        
         if 'instructor' in rmp_df.columns:
-            rmp_df['instructor'] = rmp_df['instructor'].astype(str).str.strip().upper()
-            # Merge on instructor
+            rmp_df['instructor'] = rmp_df['instructor'].apply(lambda x: str(x).strip().upper() if pd.notnull(x) else "")
+            # Merge
             df_raw = pd.merge(df_raw, rmp_df, on="instructor", how="left")
 
-    # --- SQLITE WORKFLOW ---
+    # --- 5. SQLite Export ---
     conn = sqlite3.connect(':memory:', check_same_thread=False)
-    # Drop helper list columns
-    df_raw.drop(columns=['temp_split'], errors='ignore').to_sql('courses', conn, index=False, if_exists='replace')
+    # Filter helper columns out of the SQL export
+    sql_df = df_raw.drop(columns=['temp_split'], errors='ignore')
+    sql_df.to_sql('courses', conn, index=False, if_exists='replace')
     
-    # Execute Queries
+    # Run Queries
     df_sorted = pd.read_sql_query(GET_RECENT_LECTURES, conn)
     lower_div_df = pd.read_sql_query(GET_EASIEST_LOWER_DIV, conn)
     upper_div_df = pd.read_sql_query(GET_EASIEST_UPPER_DIV, conn)
