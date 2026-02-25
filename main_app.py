@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import os
 import sqlite3
-import re
 
 # 1. Database Queries Import
 try:
@@ -26,8 +25,7 @@ except ImportError as e:
 
 st.set_page_config(page_title="Gaucho Insights", layout="wide")
 
-# We use a hash to ensure cache updates when the file changes
-@st.cache_data(show_spinner="Refreshing Data Distribution...")
+@st.cache_data
 def load_and_query_data():
     csv_path = os.path.join('data', 'courseGrades.csv')
     rmp_path = os.path.join('data', 'rmp_ratings.csv')
@@ -37,41 +35,27 @@ def load_and_query_data():
         st.stop()
         
     df_raw = pd.read_csv(csv_path)
-    # Lowercase everything for consistency
+    # Standardize column names to lowercase to prevent mapping errors
     df_raw.columns = [str(c).strip().lower() for c in df_raw.columns]
     
-    # --- SANITIZATION ---
-    def force_clean(x):
-        return str(x).strip().upper()
-
-    df_raw['instructor'] = df_raw['instructor'].apply(force_clean)
-    df_raw['quarter'] = df_raw['quarter'].apply(force_clean)
-    df_raw['dept'] = df_raw['dept'].apply(lambda x: str(x).strip().upper())
-    df_raw['course'] = df_raw['course'].apply(lambda x: " ".join(str(x).split()).strip().upper())
+    # --- BASIC CLEANING ---
+    df_raw['instructor'] = df_raw['instructor'].astype(str).str.upper().str.strip()
+    df_raw['quarter'] = df_raw['quarter'].astype(str).str.upper().str.strip()
+    df_raw['dept'] = df_raw['dept'].astype(str).str.upper().str.strip()
+    df_raw['course'] = df_raw['course'].astype(str).str.upper().str.strip()
     
-    # Map any variation of avgGPA to a standard name
-    gpa_mapping = {'avggpa': 'avgGPA', 'avg_gpa': 'avgGPA'}
-    df_raw = df_raw.rename(columns=gpa_mapping)
-
-    # Force A, B, C, D, F and GPA to be numbers
-    cols_to_fix = ['a', 'b', 'c', 'd', 'f', 'avgGPA']
-    for col in cols_to_fix:
+    # Force GPA and Grades to Numeric
+    # We check for both 'avggpa' and 'avg_gpa' just in case
+    gpa_col = 'avggpa' if 'avggpa' in df_raw.columns else 'avg_gpa'
+    for col in [gpa_col, 'a', 'b', 'c', 'd', 'f', 'nletterstudents']:
         if col in df_raw.columns:
             df_raw[col] = pd.to_numeric(df_raw[col], errors='coerce').fillna(0)
 
-    # --- YEAR EXTRACTION (Flexible for 2-digit or 4-digit years) ---
-    def get_year(q_str):
-        match = re.search(r'(\d{2,4})', q_str)
-        if match:
-            year = match.group(1)
-            # If it's a 2-digit year like '24', turn it into '2024'
-            return int(year) if len(year) == 4 else int("20" + year)
-        return 0
-
+    # --- YEAR & RANKING (For SQL Queries) ---
+    # Using a simple split; assumes format like "FALL 2024"
+    df_raw['q_year'] = df_raw['quarter'].str.extract(r'(\d{4})').fillna(0).astype(int)
     q_order = {'FALL': 4, 'SUMMER': 3, 'SPRING': 2, 'WINTER': 1}
-    df_raw['q_year'] = df_raw['quarter'].apply(get_year)
     df_raw['q_rank'] = df_raw['quarter'].apply(lambda x: next((q_order[q] for q in q_order if q in x), 0))
-    df_raw['year'] = df_raw['q_year'] # Use this for the display table
     df_raw['course_num'] = df_raw['course'].str.extract(r'(\d+)').astype(float).fillna(0)
 
     # --- RMP INTEGRATION ---
@@ -79,16 +63,13 @@ def load_and_query_data():
         try:
             rmp_df = pd.read_csv(rmp_path)
             rmp_df.columns = [str(c).strip().lower() for c in rmp_df.columns]
-            rmp_df['match_key'] = rmp_df['instructor'].apply(lambda x: str(x).split()[-1].upper() if len(str(x).split()) > 0 else "")
+            rmp_df['match_key'] = rmp_df['instructor'].str.split().str[-1].str.upper()
             rmp_df = rmp_df.sort_values('rmp_rating', ascending=False).drop_duplicates('match_key')
-            
-            df_raw['match_key'] = df_raw['instructor'].apply(lambda x: str(x).split()[0].upper() if len(str(x).split()) > 0 else "")
+            df_raw['match_key'] = df_raw['instructor'].str.split().str[0].str.upper()
             df_raw = pd.merge(df_raw, rmp_df[['match_key', 'rmp_rating']], on="match_key", how="left")
-            df_raw = df_raw.drop(columns=['match_key'])
-        except:
-            pass
+        except: pass
 
-    # --- SQLITE ---
+    # --- SQLITE WORKFLOW ---
     conn = sqlite3.connect(':memory:', check_same_thread=False)
     df_raw.to_sql('courses', conn, index=False, if_exists='replace')
     
@@ -105,20 +86,14 @@ def load_and_query_data():
 def main():
     st.title("(｡•̀ᴗ-)✧ Gaucho Insights")
     
-    # To force an update, you can manually click "Clear Cache" in the Streamlit menu
+    # Load data from the cached function
     df, lower_div_df, upper_div_df, dept_df, ge_profs_df = load_and_query_data()
 
-    with st.expander("°˖✧ View Leaderboards"):
-        t1, t2, t3, t4 = st.tabs(["🐣 Lower Div", "🎓 Upper Div", "🏢 Depts", "👨‍🏫 Best GE Profs"])
-        t1.table(lower_div_df.head(5))
-        t2.table(upper_div_df.head(5))
-        t3.table(dept_df.head(5))
-        t4.table(ge_profs_df.head(5))
-
-    st.sidebar.header("🔍 Search Filters")
-    mode = st.sidebar.selectbox("Choose Department", ["All Departments", "PSTAT", "CS", "MCDB", "CHEM"])
-    course_q = st.sidebar.text_input("Course Number", "").strip().upper()
-    prof_q = st.sidebar.text_input("Instructor Name", "").strip().upper()
+    # --- SEARCH ---
+    st.sidebar.header("🔍 Filters")
+    mode = st.sidebar.selectbox("Department", ["All Departments", "PSTAT", "CS", "MCDB", "CHEM"])
+    course_q = st.sidebar.text_input("Course #", "").strip().upper()
+    prof_q = st.sidebar.text_input("Professor", "").strip().upper()
     
     data = df.copy()
     if mode == "PSTAT": data = pstat_logic.process_pstat(data)
@@ -126,42 +101,38 @@ def main():
     elif mode == "MCDB": data = mcdb_logic.process_mcdb(data)
     elif mode == "CHEM": data = chem_logic.process_chem(data)
 
-    if course_q:
-        data = data[data['course'].str.contains(course_q, case=False, na=False)]
-    if prof_q:
-        data = data[data['instructor'].str.contains(prof_q, case=False, na=False)]
+    if course_q: data = data[data['course'].str.contains(course_q, na=False)]
+    if prof_q: data = data[data['instructor'].str.contains(prof_q, na=False)]
 
+    # --- MAIN DISPLAY ---
     if not data.empty:
-        # METRICS
-        m1, m2, m3 = st.columns(3)
-        m1.metric("Avg GPA", f"{data['avgGPA'].mean():.2f}")
-        m2.metric("Sections Found", len(data))
-        if 'rmp_rating' in data.columns:
-            avg_rmp = data['rmp_rating'].dropna().mean()
-            m3.metric("RMP Rating", f"{avg_rmp:.1f}/5.0" if not pd.isna(avg_rmp) else "N/A")
+        # 1. Metrics
+        col_gpa = 'avggpa' if 'avggpa' in data.columns else 'avg_gpa'
+        m1, m2 = st.columns(2)
+        m1.metric("Avg GPA", f"{data[col_gpa].mean():.2f}")
+        m2.metric("Records", len(data))
 
-        st.subheader("Historical Results & Distribution")
+        # 2. Reordered Table
+        # We put Course, Instructor, and GPA first. Everything else follows.
+        important_cols = ['course', 'instructor', col_gpa, 'quarter']
+        grade_cols = ['a', 'b', 'c', 'd', 'f']
+        rmp_cols = ['rmp_rating'] if 'rmp_rating' in data.columns else []
         
-        # DISPLAY MAPPING
-        ui_cols = {
-            'course': 'Course',
-            'instructor': 'Instructor',
-            'year': 'Year',
-            'quarter': 'Quarter',
-            'avgGPA': 'Avg GPA',
-            'a': 'A%', 'b': 'B%', 'c': 'C%', 'd': 'D%', 'f': 'F%',
-            'rmp_rating': 'RMP'
-        }
+        # Combine them in order
+        all_cols = important_cols + grade_cols + rmp_cols
+        # Only include columns that actually exist in the CSV
+        existing_cols = [c for c in all_cols if c in data.columns]
         
-        final_df = data[[c for c in ui_cols.keys() if c in data.columns]].rename(columns=ui_cols)
+        display_df = data[existing_cols].copy()
         
-        # Sorting by Year (Newest First) and then GPA
-        st.dataframe(
-            final_df.sort_values(by=['Year', 'Avg GPA'], ascending=[False, False]), 
-            use_container_width=True
-        )
+        # Sort by Quarter Year (q_year) and GPA
+        if 'q_year' in data.columns:
+            display_df['sort_year'] = data['q_year']
+            display_df = display_df.sort_values(by=['sort_year', col_gpa], ascending=[False, False]).drop(columns=['sort_year'])
+
+        st.dataframe(display_df, use_container_width=True)
     else:
-        st.info("No records found.")
+        st.info("No records found. Try searching for a different course!")
 
 if __name__ == "__main__":
     main()
