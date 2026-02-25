@@ -37,7 +37,6 @@ def load_and_clean_data():
     def get_time_score(row):
         year_val = 0
         q_str = str(row.get('quarter', '')).upper()
-        # Look for year in any column
         potential_year_cols = [c for c in row.index if 'year' in c or 'yr' in c]
         for col in potential_year_cols:
             found = re.findall(r'\d+', str(row[col]))
@@ -88,7 +87,6 @@ def main():
     if prof_q: data = data[data['instructor'].str.contains(prof_q, na=False)]
 
     if not data.empty:
-        # Recency Sorting
         data = data.sort_values(by=['year_val', 'q_weight', gpa_col], ascending=[False, False, False])
 
         m1, m2 = st.columns(2)
@@ -99,7 +97,6 @@ def main():
         display_limit = 40
         rows = data.head(display_limit)
         
-        # Two-Column Grid Loop
         for i in range(0, len(rows), 2):
             cols = st.columns(2)
             for j in range(2):
@@ -107,30 +104,28 @@ def main():
                 if idx < len(rows):
                     row = rows.iloc[idx]
                     with cols[j]:
-                        vibe = "✨ EASY A" if row[gpa_col] >= 3.5 else "⚠️ WEED-OUT" if row[gpa_col] <= 3.0 else "⚖️ BALANCED"
-                        year_label = int(row['year_val']) if row['year_val'] > 0 else "N/A"
-                        
-                        # THE FIX: Add an invisible zero-width space + index 
-                        # This forces every label to be technically unique to the browser
-                        unique_label = f"{year_label} | {row['course']} | {row['instructor']} " + ("\u200b" * idx)
-                        
-                        with st.expander(unique_label, expanded=False):
-                            st.markdown(f"**{vibe}**")
+                        # THE CRITICAL FIX: Wrap the expander in a keyed container
+                        # This isolates the 'toggle' state for each card individually
+                        with st.container(key=f"container_{idx}"):
+                            vibe = "✨ EASY A" if row[gpa_col] >= 3.5 else "⚠️ WEED-OUT" if row[gpa_col] <= 3.0 else "⚖️ BALANCED"
+                            year_label = int(row['year_val']) if row['year_val'] > 0 else "N/A"
                             
-                            # Grade Distribution
-                            grade_df = pd.DataFrame({
-                                'Grade': ['A', 'B', 'C', 'D', 'F'],
-                                'Percent': [row['a'], row['b'], row['c'], row['d'], row['f']]
-                            })
-                            fig = px.bar(grade_df, x='Grade', y='Percent', color='Grade',
-                                         color_discrete_map={'A':'#00CCFF','B':'#3498db','C':'#FFD700','D':'#e67e22','F':'#e74c3c'},
-                                         template="plotly_dark", height=150)
-                            fig.update_layout(margin=dict(l=0, r=0, t=0, b=0), showlegend=False,
-                                              paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+                            unique_label = f"{year_label} | {row['course']} | {row['instructor']} " + ("\u200b" * idx)
                             
-                            # Specific Key for the Chart
-                            st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False}, key=f"grid_chart_{idx}")
-                            st.write(f"**GPA:** {row[gpa_col]:.2f} | **Term:** {row.get('quarter', 'N/A')}")
+                            with st.expander(unique_label, expanded=False):
+                                st.markdown(f"**{vibe}**")
+                                grade_df = pd.DataFrame({
+                                    'Grade': ['A', 'B', 'C', 'D', 'F'],
+                                    'Percent': [row['a'], row['b'], row['c'], row['d'], row['f']]
+                                })
+                                fig = px.bar(grade_df, x='Grade', y='Percent', color='Grade',
+                                             color_discrete_map={'A':'#00CCFF','B':'#3498db','C':'#FFD700','D':'#e67e22','F':'#e74c3c'},
+                                             template="plotly_dark", height=150)
+                                fig.update_layout(margin=dict(l=0, r=0, t=0, b=0), showlegend=False,
+                                                  paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+                                
+                                st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False}, key=f"grid_chart_{idx}")
+                                st.write(f"**GPA:** {row[gpa_col]:.2f} | **Term:** {row.get('quarter', 'N/A')}")
     else:
         st.info("No courses found matching your criteria.")
 
