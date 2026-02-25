@@ -3,6 +3,7 @@ import pandas as pd
 import os
 import sqlite3
 import re
+import plotly.express as px  # New import for the heatmap
 
 # 1. Database Queries Import
 try:
@@ -34,10 +35,8 @@ def load_and_query_data():
     df_raw.columns = [str(c).strip().lower() for c in df_raw.columns]
     
     # --- DYNAMIC YEAR DISCOVERY ---
-    # We scan all columns to find where the year is hiding
     def find_year_value(row):
         for val in row:
-            # Look for 2010-2029 anywhere in the data
             match = re.search(r'(20[1-2]\d)', str(val))
             if match: return int(match.group(1))
         return 0
@@ -50,21 +49,18 @@ def load_and_query_data():
     df_raw['quarter'] = df_raw['quarter'].astype(str).str.upper().str.strip()
     df_raw['course'] = df_raw['course'].astype(str).str.upper().str.strip()
     
-    # Identify the GPA column
     gpa_col = next((c for c in ['avggpa', 'avg_gpa', 'avg gpa'] if c in df_raw.columns), None)
     
-    # Numeric formatting for GPA and Grades
     for col in [gpa_col, 'a', 'b', 'c', 'd', 'f']:
         if col and col in df_raw.columns:
             df_raw[col] = pd.to_numeric(df_raw[col], errors='coerce').fillna(0)
 
-    # SQL compatibility
+    # SQL Setup
     df_raw['q_year'] = df_raw['year']
     q_order = {'FALL': 4, 'SUMMER': 3, 'SPRING': 2, 'WINTER': 1}
     df_raw['q_rank'] = df_raw['quarter'].apply(lambda x: next((q_order[q] for q in q_order if q in x), 0))
     df_raw['course_num'] = df_raw['course'].str.extract(r'(\d+)').astype(float).fillna(0)
 
-    # SQLite Workflow
     conn = sqlite3.connect(':memory:', check_same_thread=False)
     df_raw.to_sql('courses', conn, index=False, if_exists='replace')
     results = (
@@ -96,16 +92,41 @@ def main():
     if prof_q: data = data[data['instructor'].str.contains(prof_q, na=False)]
 
     if not data.empty:
-        # --- THE REQUESTED LAYOUT ---
-        # 1. Course | 2. Instructor | 3. GPA | 4. Year | 5. Quarter | 6. A | 7. B ...
+        # --- NEW HEATMAP SECTION ---
+        st.subheader("📊 Grade Heatmap")
+        
+        # Prepare data for heatmap (Top 10 filtered results)
+        viz_data = data.sort_values(by=['year', gpa_col], ascending=[False, False]).head(10)
+        
+        # Melt the grade columns for Plotly
+        melted_grades = viz_data.melt(
+            id_vars=['course', 'instructor', 'quarter', 'year'],
+            value_vars=['a', 'b', 'c', 'd', 'f'],
+            var_name='Grade', value_name='Percentage'
+        )
+        melted_grades['Grade'] = melted_grades['Grade'].str.upper()
+        
+        # Create the Heatmap
+        fig = px.bar(
+            melted_grades, 
+            x="Percentage", 
+            y="course", 
+            color="Grade", 
+            orientation='h',
+            hover_data=["instructor", "quarter", "year"],
+            color_discrete_map={'A':'#2ecc71', 'B':'#3498db', 'C':'#f1c40f', 'D':'#e67e22', 'F':'#e74c3c'},
+            title="Grade Distribution (A-F)"
+        )
+        fig.update_layout(barmode='stack', yaxis={'categoryorder':'total ascending'})
+        st.plotly_chart(fig, use_container_width=True)
+
+        # --- DATA TABLE ---
+        st.subheader("📋 Historical Data")
         display_order = ['course', 'instructor', gpa_col, 'year', 'quarter', 'a', 'b', 'c', 'd', 'f']
         existing = [c for c in display_order if c in data.columns]
         
         final_df = data[existing].sort_values(by=['year', gpa_col], ascending=[False, False])
-        
-        # Clean up column names for display
         final_df.columns = [c.replace('_', ' ').title() if c != gpa_col else 'Avg GPA' for c in final_df.columns]
-
         st.dataframe(final_df, use_container_width=True)
     else:
         st.info("No records found.")
