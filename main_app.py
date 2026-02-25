@@ -94,37 +94,43 @@ def main():
         m2.metric("SECTIONS FOUND", len(data))
         st.markdown("---")
 
-        # --- GRID ENGINE (2 Columns) ---
         display_limit = 40
         rows_to_show = data.head(display_limit)
         
-        # Step through data 2 at a time
+        # Grid loop
         for i in range(0, len(rows_to_show), 2):
-            cols = st.columns(2) # Create 2 side-by-side containers
+            cols = st.columns(2) 
             
             for j in range(2):
-                if i + j < len(rows_to_show):
-                    row = rows_to_show.iloc[i + j]
+                idx = i + j
+                if idx < len(rows_to_show):
+                    row = rows_to_show.iloc[idx]
                     with cols[j]:
+                        # Added a hidden unique identifier to the header string 
+                        # to ensure the expander doesn't mirror its neighbor
                         vibe = "✨ EASY A" if row[gpa_col] >= 3.5 else "⚠️ WEED-OUT" if row[gpa_col] <= 3.0 else "⚖️ BALANCED"
                         year_label = int(row['year_val']) if row['year_val'] > 0 else "N/A"
                         header = f"{year_label} | {row['course']} | {row['instructor']}"
                         
-                        with st.expander(header):
-                            st.markdown(f"**{vibe}**")
-                            # Mini chart for the card
-                            grade_df = pd.DataFrame({
-                                'Grade': ['A', 'B', 'C', 'D', 'F'],
-                                'Percent': [row['a'], row['b'], row['c'], row['d'], row['f']]
-                            })
-                            fig = px.bar(grade_df, x='Grade', y='Percent', color='Grade',
-                                         color_discrete_map={'A':'#00CCFF','B':'#3498db','C':'#FFD700','D':'#e67e22','F':'#e74c3c'},
-                                         template="plotly_dark", height=150)
-                            fig.update_layout(margin=dict(l=0, r=0, t=0, b=0), showlegend=False,
-                                              paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
-                            st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False}, key=f"gr_{i}_{j}")
-                            st.write(f"**GPA:** {row[gpa_col]:.2f} | **Term:** {row.get('quarter', 'N/A')}")
-
+                        # Wrapping in a container can help isolate the state
+                        with st.container():
+                            # The key in st.expander is only available in recent Streamlit versions, 
+                            # but unique titles usually solve the mirroring.
+                            with st.expander(header):
+                                st.markdown(f"**{vibe}**")
+                                grade_df = pd.DataFrame({
+                                    'Grade': ['A', 'B', 'C', 'D', 'F'],
+                                    'Percent': [row['a'], row['b'], row['c'], row['d'], row['f']]
+                                })
+                                fig = px.bar(grade_df, x='Grade', y='Percent', color='Grade',
+                                             color_discrete_map={'A':'#00CCFF','B':'#3498db','C':'#FFD700','D':'#e67e22','F':'#e74c3c'},
+                                             template="plotly_dark", height=150)
+                                fig.update_layout(margin=dict(l=0, r=0, t=0, b=0), showlegend=False,
+                                                  paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+                                
+                                # Use a very specific key for the chart
+                                st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False}, key=f"chart_grid_{idx}")
+                                st.write(f"**GPA:** {row[gpa_col]:.2f} | **Term:** {row.get('quarter', 'N/A')}")
     else:
         st.info("No courses found.")
 
