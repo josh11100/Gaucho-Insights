@@ -1,0 +1,24 @@
+/* style.css */
+.main {
+    background-color: #f8f9fa;
+}
+
+div[data-testid="stExpander"] {
+    background-color: white;
+    border: 1px solid #e1e4e8;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.stMetric {
+    background-color: white;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+h1 {
+    color: #1f3a93;
+    font-weight: 800;
+}
