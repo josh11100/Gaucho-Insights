@@ -47,14 +47,20 @@ def load_and_query_data():
     df_raw['dept'] = df_raw['dept'].apply(lambda x: str(x).strip().upper())
     df_raw['course'] = df_raw['course'].apply(lambda x: " ".join(str(x).split()).strip().upper())
     
-    # Ensure avgGPA is numeric for SQL queries
+    # Ensure avgGPA is numeric for SQL
     df_raw['avgGPA'] = pd.to_numeric(df_raw['avgGPA'], errors='coerce').fillna(0)
     
-    # Helper columns for sorting/searching
+    # --- SQL COLUMN ALIGNMENT ---
+    # Your SQL queries specifically look for 'q_year' and 'q_rank'
     q_order = {'FALL': 4, 'SUMMER': 3, 'SPRING': 2, 'WINTER': 1}
-    df_raw['year'] = df_raw['quarter'].apply(lambda x: int(x.split()[1]) if len(x.split()) > 1 and x.split()[1].isdigit() else 0)
+    
+    # Create the columns SQL expects
+    df_raw['q_year'] = df_raw['quarter'].apply(lambda x: int(x.split()[1]) if len(x.split()) > 1 and x.split()[1].isdigit() else 0)
     df_raw['q_rank'] = df_raw['quarter'].apply(lambda x: q_order.get(x.split()[0], 0) if len(x.split()) > 0 else 0)
     df_raw['course_num'] = df_raw['course'].str.extract(r'(\d+)').astype(float).fillna(0)
+    
+    # Create a duplicate 'year' column for our "Simple Table" display later
+    df_raw['year'] = df_raw['q_year']
 
     # --- RMP INTEGRATION ---
     if os.path.exists(rmp_path):
@@ -73,10 +79,8 @@ def load_and_query_data():
 
     # --- SQLITE WORKFLOW ---
     conn = sqlite3.connect(':memory:', check_same_thread=False)
-    # Uploading data exactly as SQL expects it
     df_raw.to_sql('courses', conn, index=False, if_exists='replace')
     
-    # Execute SQL Leaderboards
     try:
         results = (
             pd.read_sql_query(GET_RECENT_LECTURES, conn),
@@ -96,13 +100,10 @@ def load_and_query_data():
 def main():
     st.title("(｡•̀ᴗ-)✧ Gaucho Insights")
     
-    # Load all 5 data sources from SQLite
     df, lower_div_df, upper_div_df, dept_df, ge_profs_df = load_and_query_data()
 
-    # --- LEADERBOARD DISPLAY ---
-    with st.expander("°˖✧ View University Leaderboards"):
+    with st.expander("°˖✧ View Leaderboards"):
         t1, t2, t3, t4 = st.tabs(["🐣 Lower Div", "🎓 Upper Div", "🏢 Depts", "👨‍🏫 Best GE Profs"])
-        # Only show Top 5 to keep it clean
         t1.table(lower_div_df.head(5))
         t2.table(upper_div_df.head(5))
         t3.table(dept_df.head(5))
@@ -110,10 +111,9 @@ def main():
 
     st.sidebar.header("🔍 Search Filters")
     mode = st.sidebar.selectbox("Choose Department", ["All Departments", "PSTAT", "CS", "MCDB", "CHEM"])
-    course_q = st.sidebar.text_input("Course Number (e.g. 120A)", "").strip().upper()
-    prof_q = st.sidebar.text_input("Instructor Last Name", "").strip().upper()
+    course_q = st.sidebar.text_input("Course Number", "").strip().upper()
+    prof_q = st.sidebar.text_input("Instructor Name", "").strip().upper()
     
-    # 1. Filter Logic
     data = df.copy()
     if mode == "PSTAT": data = pstat_logic.process_pstat(data)
     elif mode == "CS": data = cs_logic.process_cs(data)
@@ -125,8 +125,6 @@ def main():
     if prof_q:
         data = data[data['instructor'].str.contains(prof_q, case=False, na=False)]
 
-    # --- RESULTS DISPLAY ---
-    st.header(f"Results for {mode}")
     if not data.empty:
         m1, m2, m3 = st.columns(3)
         m1.metric("Avg GPA", f"{data['avgGPA'].mean():.2f}")
@@ -135,16 +133,17 @@ def main():
             avg_rmp = data['rmp_rating'].dropna().mean()
             m3.metric("Avg RMP", f"{avg_rmp:.1f}/5.0" if not pd.isna(avg_rmp) else "N/A")
 
-        # --- SIMPLIFIED DISPLAY TABLE ---
         st.subheader("Course History")
+        # We use 'year' for display, but 'q_year' exists in the background for SQL
         final_cols = ['course', 'instructor', 'year', 'quarter', 'avgGPA', 'rmp_rating']
         available_cols = [c for c in final_cols if c in data.columns]
         
-        # Sort by Year and GPA
-        display_data = data[available_cols].sort_values(by=['year', 'avgGPA'], ascending=[False, False])
-        st.dataframe(display_data, use_container_width=True)
+        st.dataframe(
+            data[available_cols].sort_values(by=['year', 'avgGPA'], ascending=[False, False]), 
+            use_container_width=True
+        )
     else:
-        st.info("No records found. Try adjusting filters!")
+        st.info("No records found.")
 
 if __name__ == "__main__":
     main()
