@@ -34,22 +34,40 @@ def load_and_clean_data():
         if col in df.columns:
             df[col] = df[col].astype(str).str.upper().str.strip()
 
+    # --- THE UPDATED YEAR DETECTIVE ---
     def get_time_score(row):
-        year_val, q_str = 0, str(row.get('quarter', '')).upper()
-        nums = re.findall(r'\d+', q_str)
-        if nums:
-            val = int(nums[-1])
-            year_val = val if val > 100 else 2000 + val
+        year_val = 0
+        # Check every single column for a 2 or 4 digit number
+        # because the year might be in 'quarter', 'term', or 'year'
+        all_text = " ".join([str(val) for val in row.values])
         
+        # Look for 4 digits (e.g., 2024)
+        four_digit = re.findall(r'\b(20\d{2})\b', all_text)
+        if four_digit:
+            year_val = int(four_digit[0])
+        else:
+            # Look for 2 digits (e.g., F24, 24W)
+            # We look for digits attached to letters or common term patterns
+            two_digit = re.findall(r'\b(\d{2})\b|([A-Z](\d{2}))|((\d{2})[A-Z])', all_text)
+            if two_digit:
+                # Flatten the regex groups and find the first 2-digit number
+                flattened = [g for groups in two_digit for g in groups if g and len(g) == 2]
+                if flattened:
+                    year_val = 2000 + int(flattened[0])
+
+        # Seasonal Weighting (Fall > Winter)
+        q_str = str(row.get('quarter', '')).upper()
         q_weight = 0
-        if any(x in q_str for x in ["FALL", " F"]): q_weight = 4
-        elif any(x in q_str for x in ["SUMMER", " M"]): q_weight = 3
-        elif any(x in q_str for x in ["SPRING", " S"]): q_weight = 2
-        elif any(x in q_str for x in ["WINTER", " W"]): q_weight = 1
+        if any(x in q_str for x in ["FALL", "F"]): q_weight = 4
+        elif any(x in q_str for x in ["SUMMER", "M"]): q_weight = 3
+        elif any(x in q_str for x in ["SPRING", "S"]): q_weight = 2
+        elif any(x in q_str for x in ["WINTER", "W"]): q_weight = 1
+        
         return year_val, q_weight
 
     time_df = df.apply(lambda r: pd.Series(get_time_score(r)), axis=1)
-    df['year_val'], df['q_weight'] = time_df[0].astype(int), time_df[1].astype(int)
+    df['year_val'] = time_df[0].astype(int)
+    df['q_weight'] = time_df[1].astype(int)
     
     gpa_col = next((c for c in ['avggpa', 'avg_gpa', 'avg gpa'] if c in df.columns), 'avggpa')
     for col in [gpa_col, 'a', 'b', 'c', 'd', 'f']:
@@ -62,6 +80,7 @@ def main():
     st.title("⚡ GAUCHO INSIGHTS ⚡")
     full_df, gpa_col = load_and_clean_data()
 
+    # Sidebar
     st.sidebar.header("🔍 FILTERS")
     mode = st.sidebar.selectbox("DEPARTMENT", ["All Departments", "PSTAT", "CS", "MCDB", "CHEM"])
     course_q = st.sidebar.text_input("COURSE #").strip().upper()
@@ -77,32 +96,35 @@ def main():
     if prof_q: data = data[data['instructor'].str.contains(prof_q, na=False)]
 
     if not data.empty:
-        # 1. Sort by Recency
+        # Sort by Recency
         data = data.sort_values(by=['year_val', 'q_weight', gpa_col], ascending=[False, False, False])
 
-        # 2. Show Stats Leaderboard (Top 3 Easy Profs)
         st.markdown("### 🏆 Top Rated in Selection")
         top_cols = st.columns(3)
-        top_profs = data.groupby('instructor')[gpa_col].mean().sort_values(ascending=False).head(3)
-        for i, (prof, gpa) in enumerate(top_profs.items()):
-            top_cols[i].metric(prof, f"{gpa:.2f} GPA")
+        # Filter out professors with 0 GPA or only a few students to keep results quality high
+        valid_profs = data[data[gpa_col] > 0]
+        if not valid_profs.empty:
+            top_profs = valid_profs.groupby('instructor')[gpa_col].mean().sort_values(ascending=False).head(3)
+            for i, (prof, gpa) in enumerate(top_profs.items()):
+                top_cols[i].metric(prof, f"{gpa:.2f} GPA")
 
         st.markdown("---")
 
-        # 3. The Grid (NO EXPANDERS)
-        display_limit = 20 # Lowered limit for better performance
+        display_limit = 24
         rows = data.head(display_limit)
         
         for i in range(0, len(rows), 2):
-            cols = st.columns(2)
+            grid_cols = st.columns(2)
             for j in range(2):
                 idx = i + j
                 if idx < len(rows):
                     row = rows.iloc[idx]
-                    with cols[j]:
-                        # A clean border container acts as the card
+                    with grid_cols[j]:
                         with st.container(border=True):
-                            year_label = int(row['year_val']) if row['year_val'] > 0 else "N/A"
+                            # Ensure year_label isn't 0
+                            y_val = int(row['year_val'])
+                            year_label = str(y_val) if y_val > 0 else "YEAR?"
+                            
                             st.markdown(f"#### {year_label} | {row['course']}")
                             st.caption(f"Instructor: **{row['instructor']}**")
                             
@@ -122,9 +144,8 @@ def main():
                                 fig.update_layout(margin=dict(l=0, r=0, t=0, b=0), showlegend=False,
                                                   paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
                                 st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False}, key=f"fixed_chart_{idx}")
-
     else:
-        st.info("No courses found. Adjust your search!")
+        st.info("No courses found. Try a different search.")
 
 if __name__ == "__main__":
     main()
