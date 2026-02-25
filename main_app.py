@@ -26,8 +26,8 @@ except ImportError as e:
 
 st.set_page_config(page_title="Gaucho Insights", layout="wide")
 
-# This forces Streamlit to re-run the logic if you change the code
-@st.cache_data(show_spinner=True)
+# We use a hash to ensure cache updates when the file changes
+@st.cache_data(show_spinner="Refreshing Data Distribution...")
 def load_and_query_data():
     csv_path = os.path.join('data', 'courseGrades.csv')
     rmp_path = os.path.join('data', 'rmp_ratings.csv')
@@ -37,7 +37,7 @@ def load_and_query_data():
         st.stop()
         
     df_raw = pd.read_csv(csv_path)
-    # Force all column headers to lowercase to avoid "A" vs "a" mismatch
+    # Lowercase everything for consistency
     df_raw.columns = [str(c).strip().lower() for c in df_raw.columns]
     
     # --- SANITIZATION ---
@@ -49,32 +49,29 @@ def load_and_query_data():
     df_raw['dept'] = df_raw['dept'].apply(lambda x: str(x).strip().upper())
     df_raw['course'] = df_raw['course'].apply(lambda x: " ".join(str(x).split()).strip().upper())
     
-    # Ensure grade columns and GPA are numeric (Using the lowercase names now)
-    grade_cols = ['avg_gpa', 'avg_instructor_gpa', 'avg_dept_gpa', 'avg_course_gpa', 'avg_gpa', 'avg_instructor_gpa', 'avggpa', 'a', 'b', 'c', 'd', 'f']
-    # Sometimes the column is named 'avgGPA' or 'avg_gpa', let's handle both
-    if 'avggpa' in df_raw.columns:
-        df_raw = df_raw.rename(columns={'avggpa': 'avgGPA'})
-    
-    for col in ['a', 'b', 'c', 'd', 'f', 'avgGPA']:
+    # Map any variation of avgGPA to a standard name
+    gpa_mapping = {'avggpa': 'avgGPA', 'avg_gpa': 'avgGPA'}
+    df_raw = df_raw.rename(columns=gpa_mapping)
+
+    # Force A, B, C, D, F and GPA to be numbers
+    cols_to_fix = ['a', 'b', 'c', 'd', 'f', 'avgGPA']
+    for col in cols_to_fix:
         if col in df_raw.columns:
             df_raw[col] = pd.to_numeric(df_raw[col], errors='coerce').fillna(0)
 
-    # --- YEAR & QUARTER LOGIC ---
-    q_order = {'FALL': 4, 'SUMMER': 3, 'SPRING': 2, 'WINTER': 1}
-    
-    def extract_year(q_str):
-        match = re.search(r'(\d{4})', q_str)
-        return int(match.group(1)) if match else 0
-
-    def extract_q_rank(q_str):
-        for q_name in q_order:
-            if q_name in q_str:
-                return q_order[q_name]
+    # --- YEAR EXTRACTION (Flexible for 2-digit or 4-digit years) ---
+    def get_year(q_str):
+        match = re.search(r'(\d{2,4})', q_str)
+        if match:
+            year = match.group(1)
+            # If it's a 2-digit year like '24', turn it into '2024'
+            return int(year) if len(year) == 4 else int("20" + year)
         return 0
 
-    df_raw['q_year'] = df_raw['quarter'].apply(extract_year)
-    df_raw['q_rank'] = df_raw['quarter'].apply(extract_q_rank)
-    df_raw['year'] = df_raw['q_year']
+    q_order = {'FALL': 4, 'SUMMER': 3, 'SPRING': 2, 'WINTER': 1}
+    df_raw['q_year'] = df_raw['quarter'].apply(get_year)
+    df_raw['q_rank'] = df_raw['quarter'].apply(lambda x: next((q_order[q] for q in q_order if q in x), 0))
+    df_raw['year'] = df_raw['q_year'] # Use this for the display table
     df_raw['course_num'] = df_raw['course'].str.extract(r'(\d+)').astype(float).fillna(0)
 
     # --- RMP INTEGRATION ---
@@ -91,30 +88,24 @@ def load_and_query_data():
         except:
             pass
 
-    # --- SQLITE WORKFLOW ---
+    # --- SQLITE ---
     conn = sqlite3.connect(':memory:', check_same_thread=False)
     df_raw.to_sql('courses', conn, index=False, if_exists='replace')
     
-    try:
-        results = (
-            pd.read_sql_query(GET_RECENT_LECTURES, conn),
-            pd.read_sql_query(GET_EASIEST_LOWER_DIV, conn),
-            pd.read_sql_query(GET_EASIEST_UPPER_DIV, conn),
-            pd.read_sql_query(GET_EASIEST_DEPTS, conn),
-            pd.read_sql_query(GET_BEST_GE_PROFS, conn)
-        )
-    except Exception as e:
-        st.error(f"SQL Error: {e}")
-        st.stop()
-    finally:
-        conn.close()
-        
+    results = (
+        pd.read_sql_query(GET_RECENT_LECTURES, conn),
+        pd.read_sql_query(GET_EASIEST_LOWER_DIV, conn),
+        pd.read_sql_query(GET_EASIEST_UPPER_DIV, conn),
+        pd.read_sql_query(GET_EASIEST_DEPTS, conn),
+        pd.read_sql_query(GET_BEST_GE_PROFS, conn)
+    )
+    conn.close()
     return results
 
 def main():
     st.title("(｡•̀ᴗ-)✧ Gaucho Insights")
     
-    # Reset cache to ensure newest version runs
+    # To force an update, you can manually click "Clear Cache" in the Streamlit menu
     df, lower_div_df, upper_div_df, dept_df, ge_profs_df = load_and_query_data()
 
     with st.expander("°˖✧ View Leaderboards"):
@@ -141,38 +132,34 @@ def main():
         data = data[data['instructor'].str.contains(prof_q, case=False, na=False)]
 
     if not data.empty:
+        # METRICS
         m1, m2, m3 = st.columns(3)
         m1.metric("Avg GPA", f"{data['avgGPA'].mean():.2f}")
-        m2.metric("Sections", len(data))
+        m2.metric("Sections Found", len(data))
         if 'rmp_rating' in data.columns:
             avg_rmp = data['rmp_rating'].dropna().mean()
-            m3.metric("Avg RMP", f"{avg_rmp:.1f}/5.0" if not pd.isna(avg_rmp) else "N/A")
+            m3.metric("RMP Rating", f"{avg_rmp:.1f}/5.0" if not pd.isna(avg_rmp) else "N/A")
 
-        st.subheader("Historical Grades & Year Breakdown")
+        st.subheader("Historical Results & Distribution")
         
-        # COLUMN SELECTION
-        display_cols = {
+        # DISPLAY MAPPING
+        ui_cols = {
             'course': 'Course',
             'instructor': 'Instructor',
             'year': 'Year',
             'quarter': 'Quarter',
             'avgGPA': 'Avg GPA',
-            'a': 'A%',
-            'b': 'B%',
-            'c': 'C%',
-            'd': 'D%',
-            'f': 'F%',
+            'a': 'A%', 'b': 'B%', 'c': 'C%', 'd': 'D%', 'f': 'F%',
             'rmp_rating': 'RMP'
         }
         
-        # Filter to only what is available, then rename for the UI
-        cols_to_show = [c for c in display_cols.keys() if c in data.columns]
-        display_df = data[cols_to_show].rename(columns=display_cols)
+        final_df = data[[c for c in ui_cols.keys() if c in data.columns]].rename(columns=ui_cols)
         
-        # Sort so 2024/2025 shows at the TOP
-        display_df = display_df.sort_values(by=['Year', 'Avg GPA'], ascending=[False, False])
-        
-        st.dataframe(display_df, use_container_width=True)
+        # Sorting by Year (Newest First) and then GPA
+        st.dataframe(
+            final_df.sort_values(by=['Year', 'Avg GPA'], ascending=[False, False]), 
+            use_container_width=True
+        )
     else:
         st.info("No records found.")
 
