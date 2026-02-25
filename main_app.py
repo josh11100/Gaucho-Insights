@@ -33,57 +33,57 @@ def load_and_query_data():
         st.error(f"Main CSV file not found at {csv_path}")
         st.stop()
         
+    # Read CSV and immediately strip whitespace from column headers
     df_raw = pd.read_csv(csv_path)
-    
-    # --- CRITICAL FIX: Clean Column Names ---
-    # This removes hidden spaces like " instructor" or "instructor "
     df_raw.columns = df_raw.columns.str.strip()
     
-    # Check if instructor exists after cleaning
-    if 'instructor' not in df_raw.columns:
-        st.error(f"Column 'instructor' not found. Available columns: {list(df_raw.columns)}")
+    # --- DATA TYPE PROTECTION ---
+    # Force 'instructor' and 'quarter' to string types to prevent AttributeError
+    if 'instructor' in df_raw.columns:
+        df_raw['instructor'] = df_raw['instructor'].astype(str).str.strip().upper()
+    else:
+        st.error("Missing 'instructor' column in courseGrades.csv")
         st.stop()
+
+    if 'quarter' in df_raw.columns:
+        df_raw['quarter'] = df_raw['quarter'].astype(str).str.strip().upper()
     
-    # --- PRE-PROCESSING ---
-    df_raw['dept'] = df_raw['dept'].str.strip()
-    df_raw['course'] = df_raw['course'].str.replace(r'\s+', ' ', regex=True).str.strip()
-    
-    # Handle potential NaN values in instructor before calling .str
-    df_raw['instructor'] = df_raw['instructor'].fillna("UNKNOWN").str.strip().upper() 
-    
+    # Clean other basic columns
+    df_raw['dept'] = df_raw['dept'].astype(str).str.strip()
+    df_raw['course'] = df_raw['course'].astype(str).str.replace(r'\s+', ' ', regex=True).str.strip()
     df_raw['course_num'] = df_raw['course'].str.extract(r'(\d+)').astype(float)
     
-    # Setup Quarter Sorting
+    # --- QUARTER SORTING LOGIC ---
     q_order = {'FALL': 4, 'SUMMER': 3, 'SPRING': 2, 'WINTER': 1}
-    # Ensure quarter is string and drop NaNs
-    df_raw['quarter'] = df_raw['quarter'].fillna("UNKNOWN 0").astype(str)
-    temp_split = df_raw['quarter'].str.upper().str.split(' ')
-    
-    df_raw['q_year'] = pd.to_numeric(temp_split.str.get(1), errors='coerce').fillna(0).astype(int)
+    # split(' ', n=1) ensures we only split once to avoid index errors
+    temp_split = df_raw['quarter'].str.split(' ', n=1)
     df_raw['q_rank'] = temp_split.str.get(0).map(q_order).fillna(0).astype(int)
+    df_raw['q_year'] = pd.to_numeric(temp_split.str.get(1), errors='coerce').fillna(0).astype(int)
 
     # --- RMP INTEGRATION ---
     if os.path.exists(rmp_path):
-        rmp_df = pd.read_csv(rmp_path)
-        rmp_df.columns = rmp_df.columns.str.strip() # Clean RMP columns too
-        
-        # Create a 'match_key' using the LAST NAME from RMP (e.g., "JORGE SOLIS" -> "SOLIS")
-        rmp_df['match_key'] = rmp_df['instructor'].fillna("").str.split().str[-1].str.upper()
-        rmp_df = rmp_df.sort_values('rmp_rating', ascending=False).drop_duplicates('match_key')
-        
-        # Create a 'match_key' using the LAST NAME from Grades (e.g., "SOLIS J" -> "SOLIS")
-        df_raw['match_key'] = df_raw['instructor'].str.split().str[0].str.upper()
-        
-        # Merge on the key
-        df_raw = pd.merge(df_raw, rmp_df[['match_key', 'rmp_rating']], on="match_key", how="left")
-        df_raw = df_raw.drop(columns=['match_key'])
+        try:
+            rmp_df = pd.read_csv(rmp_path)
+            rmp_df.columns = rmp_df.columns.str.strip()
+            
+            # Match Key: RMP "First Last" -> Last Name
+            rmp_df['match_key'] = rmp_df['instructor'].astype(str).str.split().str[-1].str.upper()
+            rmp_df['rmp_rating'] = pd.to_numeric(rmp_df['rmp_rating'], errors='coerce')
+            rmp_df = rmp_df.sort_values('rmp_rating', ascending=False).drop_duplicates('match_key')
+            
+            # Match Key: Grades "Last F" -> Last Name
+            df_raw['match_key'] = df_raw['instructor'].str.split().str[0].str.upper()
+            
+            df_raw = pd.merge(df_raw, rmp_df[['match_key', 'rmp_rating']], on="match_key", how="left")
+            df_raw = df_raw.drop(columns=['match_key'])
+        except Exception as e:
+            st.warning(f"Note: RMP data failed to merge: {e}")
 
     # --- SQLITE WORKFLOW ---
     conn = sqlite3.connect(':memory:', check_same_thread=False)
-    # Ensure all columns are SQL-friendly
+    # drop_duplicates here prevents SQL errors and keeps the app fast
     df_raw.to_sql('courses', conn, index=False, if_exists='replace')
     
-    # Run Leaderboard & Display Queries
     df_sorted = pd.read_sql_query(GET_RECENT_LECTURES, conn)
     lower_div_df = pd.read_sql_query(GET_EASIEST_LOWER_DIV, conn)
     upper_div_df = pd.read_sql_query(GET_EASIEST_UPPER_DIV, conn)
@@ -92,6 +92,7 @@ def load_and_query_data():
     
     conn.close()
     return df_sorted, lower_div_df, upper_div_df, dept_df, ge_profs_df
+    
 def main():
     st.title("(｡•̀ᴗ-)✧ Gaucho Insights: UCSB Grade Distribution")
     
