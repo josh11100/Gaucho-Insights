@@ -6,17 +6,6 @@ import plotly.express as px
 
 st.set_page_config(page_title="Gaucho Insights", layout="wide", page_icon="🎓")
 
-# --- SESSION STATE INITIALIZATION ---
-# This preserves your search filters when switching views
-if 'dept_val' not in st.session_state:
-    st.session_state.dept_val = " "
-if 'course_val' not in st.session_state:
-    st.session_state.course_val = ""
-if 'prof_val' not in st.session_state:
-    st.session_state.prof_val = ""
-if 'prof_view' not in st.session_state:
-    st.session_state.prof_view = None
-
 # --- LOAD EXTERNAL CSS ---
 def local_css(file_name):
     if os.path.exists(file_name):
@@ -44,7 +33,7 @@ def load_and_clean_data():
     df = pd.read_csv(csv_path)
     df.columns = [str(c).strip().lower() for c in df.columns]
 
-    # Course Filter: No 99, max 198
+    # Filter: Undergrad only (No 99, max 198)
     def get_course_num(course_str):
         match = re.search(r'(\d+)', str(course_str))
         return int(match.group(1)) if match else None
@@ -53,7 +42,7 @@ def load_and_clean_data():
     df = df[df['course_num_val'].notna()]
     df = df[(df['course_num_val'] <= 198) & (df['course_num_val'] != 99)]
 
-    # Matching Logic
+    # Matcher Logic
     def get_registrar_key(name):
         if pd.isna(name): return "UNKNOWN"
         parts = str(name).upper().split()
@@ -83,7 +72,6 @@ def load_and_clean_data():
         if rmp_c in df.columns: agg_dict[rmp_c] = 'first'
 
     df = df.groupby(group_cols).agg(agg_dict).reset_index()
-
     q_map = {'FALL': 4, 'SUMMER': 3, 'SPRING': 2, 'WINTER': 1}
     df['q_score'] = df['quarter'].map(q_map).fillna(0)
     df = df.sort_values(by=['year', 'q_score'], ascending=False)
@@ -94,72 +82,78 @@ def main():
     st.title("(つ▀¯▀ )つ GAUCHO INSIGHTS ⊂(▀¯▀⊂ )")
     full_df, gpa_col = load_and_clean_data()
 
-    # --- 1. PROFESSOR PROFILE MODE ---
+    if 'prof_view' not in st.session_state:
+        st.session_state.prof_view = None
+
+    # --- SIDEBAR (Always Visible) ---
+    st.sidebar.header("🔍 FILTERS")
+    
+    all_depts = sorted(full_df['dept'].unique().tolist())
+    selected_dept = st.sidebar.selectbox("Select Department", options=[" "] + all_depts, key="dept_persist")
+    course_q = st.sidebar.text_input("COURSE # (e.g. 120B, 16)", key="course_persist").strip().upper()
+    prof_q = st.sidebar.text_input("PROFESSOR NAME", key="prof_persist").strip().upper()
+
+    if st.sidebar.button("Clear All Filters"):
+        st.session_state.dept_persist = " "
+        st.session_state.course_persist = ""
+        st.session_state.prof_persist = ""
+        st.rerun()
+
+    # Apply Filters to the Data
+    data = full_df.copy()
+    if selected_dept != " ":
+        data = data[data['dept'] == selected_dept]
+    if course_q:
+        query = course_q.replace("CS", "CMPSC")
+        data = data[data['course'].str.contains(query, na=False)]
+    if prof_q:
+        data = data[data['instructor'].str.contains(prof_q, na=False)]
+
+    # --- 1. PROFESSOR PROFILE VIEW ---
     if st.session_state.prof_view:
         prof_key = st.session_state.prof_view
         prof_history = full_df[full_df['join_key'] == prof_key]
         
-        # Back button now just clears the view, filters are saved in session_state
         if st.button("⬅️ Back to Search"):
             st.session_state.prof_view = None
             st.rerun()
         
-        rmp = prof_history.iloc[0]
-        st.header(f"👨‍🏫 {rmp['instructor']}")
-        c1, c2 = st.columns([1, 1.2])
-        with c1:
-            st.subheader("Rate My Professor")
-            if pd.notna(rmp.get('rmp_rating')):
-                m1, m2, m3 = st.columns(3)
-                m1.metric("Rating", f"{rmp['rmp_rating']}/5")
-                m2.metric("Difficulty", f"{rmp['rmp_difficulty']}/5")
-                m3.metric("Take Again", rmp.get('rmp_take_again', 'N/A'))
-            else:
-                st.info("No RMP data found.")
-        with c2:
-            st.subheader("Teaching Record")
-            history = prof_history.groupby(['course', 'dept']).agg({gpa_col: 'mean', 'instructor': 'count'}).rename(columns={gpa_col: 'Avg GPA', 'instructor': 'Sections'}).reset_index()
-            history['Avg GPA'] = history['Avg GPA'].map('{:,.2f}'.format)
-            st.dataframe(history, hide_index=True, use_container_width=True)
+        if not prof_history.empty:
+            rmp = prof_history.iloc[0]
+            st.header(f"👨‍🏫 {rmp['instructor']}")
+            
+            c1, c2 = st.columns([1, 1.2])
+            with c1:
+                st.subheader("Rate My Professor")
+                if pd.notna(rmp.get('rmp_rating')):
+                    m1, m2, m3 = st.columns(3)
+                    m1.metric("Rating", f"{rmp['rmp_rating']}/5")
+                    m2.metric("Difficulty", f"{rmp['rmp_difficulty']}/5")
+                    m3.metric("Take Again", rmp.get('rmp_take_again', 'N/A'))
+                else:
+                    st.info("No RMP data found.")
+            
+            with c2:
+                st.subheader("Course History")
+                history = prof_history.groupby(['course', 'dept']).agg({gpa_col: 'mean', 'instructor': 'count'}).rename(columns={gpa_col: 'Avg GPA', 'instructor': 'Sections'}).reset_index()
+                history['Avg GPA'] = history['Avg GPA'].map('{:,.2f}'.format)
+                st.dataframe(history, hide_index=True, use_container_width=True)
+            
+            st.divider()
+            st.subheader("Grade Trends")
+            trend_df = prof_history.copy().sort_values(by=['year', 'q_score'])
+            trend_df['label'] = trend_df['quarter'] + " " + trend_df['year'].astype(str)
+            st.plotly_chart(px.line(trend_df, x='label', y=gpa_col, color='course', markers=True, template="plotly_dark"), use_container_width=True)
         return
 
-    # --- 2. SIDEBAR WITH MEMORY ---
-    st.sidebar.header("🔍 FILTERS")
-    
-    all_depts = sorted(full_df['dept'].unique().tolist())
-    dept_options = [" "] + all_depts
-    
-    # We use 'key' to link these widgets directly to Session State
-    selected_dept = st.sidebar.selectbox(
-        "Select Department",
-        options=dept_options,
-        index=dept_options.index(st.session_state.dept_val),
-        key="dept_val"
-    )
-    
-    course_q = st.sidebar.text_input("COURSE #", value=st.session_state.course_val, key="course_val").strip().upper()
-    prof_q = st.sidebar.text_input("PROFESSOR NAME", value=st.session_state.prof_val, key="prof_val").strip().upper()
-    
-    data = full_df.copy()
-    
-    if selected_dept != " ":
-        data = data[data['dept'] == selected_dept]
-
-    if course_q:
-        query = course_q.replace("CS", "CMPSC")
-        data = data[data['course'].str.contains(query, na=False)]
-
-    if prof_q:
-        data = data[data['instructor'].str.contains(prof_q, na=False)]
-
+    # --- 2. SEARCH RESULTS VIEW ---
     if not data.empty:
-        st.write(f"Showing results for undergraduate courses:")
+        st.write(f"Showing results based on your sidebar filters:")
         for idx, row in data.head(25).iterrows():
             with st.container(border=True):
                 colA, colB = st.columns([2, 1])
                 with colA:
                     st.markdown(f"### {row['course']} | {row['quarter']} {row['year']}")
-                    # Set the professor view and trigger rerun
                     if st.button(f"{row['instructor']}", key=f"btn_{idx}"):
                         st.session_state.prof_view = row['join_key']
                         st.rerun()
@@ -167,11 +161,13 @@ def main():
                     st.write(f"**Dept:** {row['dept']} | **GPA:** `{row[gpa_col]:.2f}` | **RMP:** {r_val}")
                 with colB:
                     grades = pd.DataFrame({'Grade': ['A', 'B', 'C', 'D', 'F'], 'Count': [row['a'], row['b'], row['c'], row['d'], row['f']]})
-                    st.plotly_chart(px.bar(grades, x='Grade', y='Count', color='Grade', 
-                                     color_discrete_map={'A':'#00CCFF','B':'#3498db','C':'#FFD700','D':'#e67e22','F':'#e74c3c'}, 
-                                     template="plotly_dark", height=100).update_layout(margin=dict(l=0,r=0,t=0,b=0), showlegend=False, xaxis_visible=False, yaxis_visible=False, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)'), use_container_width=True, config={'displayModeBar': False}, key=f"fig_{idx}")
+                    fig = px.bar(grades, x='Grade', y='Count', color='Grade', 
+                                 color_discrete_map={'A':'#00CCFF','B':'#3498db','C':'#FFD700','D':'#e67e22','F':'#e74c3c'}, 
+                                 template="plotly_dark", height=100)
+                    fig.update_layout(margin=dict(l=0,r=0,t=0,b=0), showlegend=False, xaxis_visible=False, yaxis_visible=False, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+                    st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False}, key=f"fig_{idx}")
     else:
-        st.info("No matching courses found.")
+        st.info("No courses match those filters. Try clearing some fields in the sidebar!")
 
 if __name__ == "__main__":
     main()
