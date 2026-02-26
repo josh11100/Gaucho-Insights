@@ -8,7 +8,7 @@ import plotly.express as px
 try:
     import pstat_logic, cs_logic, mcdb_logic, chem_logic
 except ImportError:
-    st.error("Logic files missing.")
+    st.error("Logic files missing. Please ensure pstat_logic.py, etc. are in the root folder.")
     st.stop()
 
 st.set_page_config(page_title="Gaucho Insights", layout="wide", page_icon="🎓")
@@ -27,30 +27,40 @@ def load_and_clean_data():
     rmp_path = os.path.join('data', 'rmp_final_data.csv')
     
     if not os.path.exists(csv_path):
-        st.error(f"Missing data: {csv_path}")
+        st.error(f"Missing grade data at {csv_path}")
         st.stop()
         
     df = pd.read_csv(csv_path)
     df.columns = [str(c).strip().lower() for c in df.columns]
 
-    # --- SIMPLIFIED KEY ENGINE ---
-    def super_clean(name):
-        if pd.isna(name) or str(name).strip() == "": return "UNKNOWN"
-        # Remove EVERYTHING except letters
+    # --- ADVANCED CLEANING ENGINE ---
+    def get_join_key(name):
+        if pd.isna(name): return "UNKNOWN"
+        # Remove everything except letters, make uppercase
         clean = re.sub(r'[^A-Z]', '', str(name).upper())
-        # Just use first 5 letters (e.g., RAVAT)
-        return clean[:5]
+        return clean
 
-    df['join_key'] = df['instructor'].apply(super_clean)
+    df['join_key'] = df['instructor'].apply(get_join_key)
 
     if os.path.exists(rmp_path):
         rmp_df = pd.read_csv(rmp_path)
-        rmp_df['rmp_join_key'] = rmp_df['instructor'].apply(super_clean)
+        rmp_df['rmp_join_key'] = rmp_df['instructor'].apply(get_join_key)
         
-        # Merge Grade Data with RMP Data
+        # MANUAL OVERRIDE: If the key 'RAVATU' is in Grades but 'UMARAVAT' is in RMP
+        # We force them to be 'RAVAT'
+        overrides = {
+            "RAVATU": "RAVAT",
+            "UMARAVAT": "RAVAT",
+            "UMAIRRAVAT": "RAVAT",
+            "RAVATUMA": "RAVAT"
+        }
+        df['join_key'] = df['join_key'].replace(overrides)
+        rmp_df['rmp_join_key'] = rmp_df['rmp_join_key'].replace(overrides)
+
+        # Merge
         df = pd.merge(df, rmp_df, left_on='join_key', right_on='rmp_join_key', how='left', suffixes=('', '_rmp'))
     
-    # Standardize basic text columns
+    # Standardize columns
     for col in ['instructor', 'quarter', 'course', 'dept']:
         if col in df.columns:
             df[col] = df[col].astype(str).str.upper().str.strip()
@@ -85,19 +95,17 @@ def main():
     st.title("(つ▀¯▀ )つ GAUCHO INSIGHTS ⊂(▀¯▀⊂ )")
     full_df, gpa_col = load_and_clean_data()
 
-    # --- NUCLEAR DEBUG WINDOW ---
-    with st.expander("🛠️ DEBUG: Check Connection Status"):
-        search_target = "RAVAT"
-        st.write(f"Searching for '{search_target}' in merged data...")
-        debug_df = full_df[full_df['instructor'].str.contains(search_target, na=False)]
-        if not debug_df.empty:
-            st.dataframe(debug_df[['instructor', 'join_key', 'rmp_rating']].head(5))
-            if pd.isna(debug_df['rmp_rating'].iloc[0]):
-                st.error("❌ Link Failed: Data exists in Registrar, but RMP data is missing.")
-            else:
-                st.success("✅ Link Success: RMP data is attached to this key.")
-        else:
-            st.warning("⚠️ No rows found matching that name in the Registrar data.")
+    # --- THE TRUTH FINDER (DEBUG) ---
+    with st.expander("🛠️ DEVELOPER TRUTH-FINDER"):
+        st.write("Checking for Ravat in Merged Data...")
+        ravat_test = full_df[full_df['instructor'].str.contains("RAVAT", na=False)]
+        st.dataframe(ravat_test[['instructor', 'join_key', 'rmp_rating']])
+        
+        st.write("Checking Raw RMP File names...")
+        rmp_path = os.path.join('data', 'rmp_final_data.csv')
+        if os.path.exists(rmp_path):
+            raw_rmp = pd.read_csv(rmp_path)
+            st.write(raw_rmp[raw_rmp['instructor'].str.contains("RAVAT", case=False, na=False)])
 
     if 'prof_view' not in st.session_state:
         st.session_state.prof_view = None
@@ -108,11 +116,9 @@ def main():
         prof_history = full_df[full_df['join_key'] == prof_key]
         
         if prof_history.empty:
-            st.error("No history found for this specific key.")
-            if st.button("⬅️ Back"):
-                st.session_state.prof_view = None
-                st.rerun()
-            return
+            st.warning("Data lost on refresh. Returning to search...")
+            st.session_state.prof_view = None
+            st.rerun()
 
         rmp = prof_history.sort_values(['year_val', 'q_weight'], ascending=False).iloc[0]
 
@@ -131,12 +137,12 @@ def main():
                 m2.metric("Difficulty", f"{rmp['rmp_difficulty']}/5")
                 m3.metric("Take Again", rmp.get('rmp_take_again', 'N/A'))
                 
-                tags_str = str(rmp.get('rmp_tags', ''))
-                if tags_str and tags_str not in ["nan", "None"]:
-                    tag_html = "".join([f'<span style="background-color:#FFD700; color:#000; padding:6px 12px; border-radius:15px; margin:4px; display:inline-block; font-size:13px; font-weight:bold;">{t.upper()}</span>' for t in tags_str.split(", ")])
+                tags = str(rmp.get('rmp_tags', ''))
+                if tags and tags not in ["nan", "None"]:
+                    tag_html = "".join([f'<span style="background-color:#FFD700; color:#000; padding:6px 12px; border-radius:15px; margin:4px; display:inline-block; font-size:12px; font-weight:bold;">{t.strip().upper()}</span>' for t in tags.split(",")])
                     st.markdown(tag_html, unsafe_allow_html=True)
             else:
-                st.info("No RMP data attached to this profile.")
+                st.info("No RMP match found for this instructor.")
 
         with c2:
             st.subheader("Teaching History")
@@ -145,7 +151,7 @@ def main():
             st.dataframe(history.sort_values('Sections', ascending=False), hide_index=True, use_container_width=True)
 
         st.divider()
-        st.subheader("GPA History")
+        st.subheader("GPA Trends")
         st.plotly_chart(px.line(prof_history.sort_values(['year_val', 'q_weight']), x='quarter', y=gpa_col, color='course', markers=True, template="plotly_dark"), use_container_width=True)
         return
 
@@ -166,23 +172,25 @@ def main():
 
     if not data.empty:
         data = data.sort_values(by=['year_val', 'q_weight', gpa_col], ascending=[False, False, False])
-        for idx, row in data.head(40).iterrows():
+        for idx, row in data.head(30).iterrows():
             with st.container(border=True):
-                left, right = st.columns([2, 1])
-                with left:
+                colA, colB = st.columns([2, 1])
+                with colA:
                     st.markdown(f"### {row['course']} | {row['quarter']}")
-                    if st.button(f"{row['instructor']}", key=f"b_{idx}_{row['join_key']}"):
+                    if st.button(f"{row['instructor']}", key=f"btn_{idx}"):
                         st.session_state.prof_view = row['join_key']
                         st.rerun()
                     
-                    r = f"⭐ {row['rmp_rating']}" if pd.notna(row.get('rmp_rating')) else "No Rating"
-                    st.write(f"**GPA:** `{row[gpa_col]:.2f}` | **RMP:** {r}")
+                    rating = f"⭐ {row['rmp_rating']}" if pd.notna(row.get('rmp_rating')) else "No RMP"
+                    st.write(f"**GPA:** `{row[gpa_col]:.2f}` | **RMP:** {rating}")
                 
-                with right:
+                with colB:
                     grades = pd.DataFrame({'Grade': ['A', 'B', 'C', 'D', 'F'], 'Count': [row['a'], row['b'], row['c'], row['d'], row['f']]})
-                    st.plotly_chart(px.bar(grades, x='Grade', y='Count', color='Grade', 
-                                     color_discrete_map={'A':'#00CCFF','B':'#3498db','C':'#FFD700','D':'#e67e22','F':'#e74c3c'}, 
-                                     template="plotly_dark", height=110).update_layout(margin=dict(l=0, r=0, t=0, b=0), showlegend=False, xaxis_visible=False, yaxis_visible=False, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)'), use_container_width=True, config={'displayModeBar': False}, key=f"f_{idx}")
+                    fig = px.bar(grades, x='Grade', y='Count', color='Grade', 
+                                 color_discrete_map={'A':'#00CCFF','B':'#3498db','C':'#FFD700','D':'#e67e22','F':'#e74c3c'}, 
+                                 template="plotly_dark", height=100)
+                    fig.update_layout(margin=dict(l=0,r=0,t=0,b=0), showlegend=False, xaxis_visible=False, yaxis_visible=False, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+                    st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False}, key=f"fig_{idx}")
     else:
         st.info("No courses found.")
 
