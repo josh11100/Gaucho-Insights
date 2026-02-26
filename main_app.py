@@ -33,7 +33,7 @@ def load_and_clean_data():
     df = pd.read_csv(csv_path)
     df.columns = [str(c).strip().lower() for c in df.columns]
 
-    # Course Filter: No 99, max 198
+    # Course Filter: Undergraduate only (No 99, max 198)
     def get_course_num(course_str):
         match = re.search(r'(\d+)', str(course_str))
         return int(match.group(1)) if match else None
@@ -42,7 +42,7 @@ def load_and_clean_data():
     df = df[df['course_num_val'].notna()]
     df = df[(df['course_num_val'] <= 198) & (df['course_num_val'] != 99)]
 
-    # Name Matcher Logic
+    # Matching Logic
     def get_registrar_key(name):
         if pd.isna(name): return "UNKNOWN"
         parts = str(name).upper().split()
@@ -89,7 +89,7 @@ def main():
         st.session_state.prof_view = None
 
     if st.session_state.prof_view:
-        # (Profile View Logic remains the same...)
+        # Profile View Logic
         prof_key = st.session_state.prof_view
         prof_history = full_df[full_df['join_key'] == prof_key]
         if st.button("⬅️ Back to Search"):
@@ -115,32 +115,26 @@ def main():
             st.dataframe(history, hide_index=True, use_container_width=True)
         return
 
-    # --- 2. IMPROVED SIDEBAR ---
+    # --- SIMPLIFIED SIDEBAR ---
     st.sidebar.header("🔍 FILTERS")
     
-    # Text search for department
-    dept_search = st.sidebar.text_input("Search Department...", "").strip().upper()
-    
-    # Filter the list of departments based on text input
+    # Get all depts and add a "blank" string instead of "ALL"
     all_depts = sorted(full_df['dept'].unique().tolist())
-    filtered_depts = [d for d in all_depts if dept_search in d] if dept_search else all_depts
     
-    # Scrollable selection list
+    # Using " " (space) as the default to make it look empty
     selected_dept = st.sidebar.selectbox(
         "Select Department",
-        options=["ALL"] + filtered_depts,
-        index=0,
-        help="Scroll or use the search box above to narrow down departments."
+        options=[" "] + all_depts,
+        index=0
     )
     
-    st.sidebar.divider()
     course_q = st.sidebar.text_input("COURSE # (e.g. 120B, 16)").strip().upper()
     prof_q = st.sidebar.text_input("PROFESSOR NAME").strip().upper()
     
     data = full_df.copy()
     
-    # Logic for CS/CMPSC Alias
-    if selected_dept != "ALL":
+    # Check for empty space selection
+    if selected_dept != " ":
         data = data[data['dept'] == selected_dept]
 
     if course_q:
@@ -151,7 +145,7 @@ def main():
         data = data[data['instructor'].str.contains(prof_q, na=False)]
 
     if not data.empty:
-        st.write(f"Showing results for undergraduate courses:")
+        st.write(f"Showing {min(len(data), 25)} undergraduate results:")
         for idx, row in data.head(25).iterrows():
             with st.container(border=True):
                 colA, colB = st.columns([2, 1])
