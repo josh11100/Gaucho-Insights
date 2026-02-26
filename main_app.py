@@ -8,7 +8,7 @@ import plotly.express as px
 try:
     import pstat_logic, cs_logic, mcdb_logic, chem_logic
 except ImportError:
-    st.error("Logic files missing.")
+    st.error("Logic files missing. Please ensure pstat_logic.py, etc. are in the root folder.")
     st.stop()
 
 st.set_page_config(page_title="Gaucho Insights", layout="wide", page_icon="🎓")
@@ -32,14 +32,30 @@ def load_and_clean_data():
     df = pd.read_csv(csv_path)
     df.columns = [str(c).strip().lower() for c in df.columns]
 
-    # --- THE AGGRESSIVE CLEANER ---
+    # --- THE SMART MATCHING ENGINE ---
     def get_join_key(name):
-        if pd.isna(name): return "UNKNOWN"
-        # 1. Convert to string and uppercase
-        name = str(name).upper()
-        # 2. Keep ONLY A-Z letters (Removes spaces, commas, dots, everything)
-        name = "".join(re.findall(r'[A-Z]+', name))
-        return name
+        if pd.isna(name) or str(name).strip() == "": return "UNKNOWN"
+        name = str(name).upper().strip()
+        
+        # Handle "LAST, FIRST" vs "FIRST LAST"
+        if ',' in name:
+            # Registrar Style: RAVAT, UMA
+            parts = name.split(',')
+            last = re.sub(r'[^A-Z]', '', parts[0])
+            first = re.sub(r'[^A-Z]', '', parts[1]) if len(parts) > 1 else ""
+        else:
+            # RMP Style: UMA RAVAT
+            parts = name.split()
+            if len(parts) >= 2:
+                last = re.sub(r'[^A-Z]', '', parts[-1]) # Last word
+                first = re.sub(r'[^A-Z]', '', parts[0])  # First word
+            else:
+                last = re.sub(r'[^A-Z]', '', parts[0])
+                first = ""
+        
+        # Key = LAST + First Initial (e.g., RAVAT + U = RAVATU)
+        first_initial = first[0] if first else ""
+        return f"{last}{first_initial}"
 
     df['join_key'] = df['instructor'].apply(get_join_key)
 
@@ -47,7 +63,7 @@ def load_and_clean_data():
         rmp_df = pd.read_csv(rmp_path)
         rmp_df['rmp_join_key'] = rmp_df['instructor'].apply(get_join_key)
         
-        # Merge - We use 'left' to keep all grades, even if RMP is missing
+        # Merge
         df = pd.merge(df, rmp_df, left_on='join_key', right_on='rmp_join_key', how='left', suffixes=('', '_rmp'))
     
     # Standardize columns
@@ -98,6 +114,7 @@ def main():
             st.session_state.prof_view = None
             st.rerun()
 
+        # Get most recent record for info
         rmp = prof_history.sort_values(['year_val', 'q_weight'], ascending=False).iloc[0]
 
         if st.button("⬅️ Back to Search"):
@@ -109,8 +126,6 @@ def main():
         c1, c2 = st.columns([1, 1.2])
         with c1:
             st.subheader("Rate My Professor Insights")
-            # --- DEBUG BLOCK FOR YOU ---
-            # If this is empty, the merge failed.
             if pd.notna(rmp.get('rmp_rating')):
                 m1, m2, m3 = st.columns(3)
                 m1.metric("Rating", f"{rmp['rmp_rating']}/5")
@@ -123,9 +138,7 @@ def main():
                     tag_html = "".join([f'<span style="background-color:#FFD700; color:#000; padding:5px 10px; border-radius:12px; margin:3px; display:inline-block; font-size:11px; font-weight:bold;">{t}</span>' for t in tag_list])
                     st.markdown(tag_html, unsafe_allow_html=True)
             else:
-                st.info("No RMP data found. (Check if name in RMP matches Registrar)")
-                # This helps you debug:
-                st.write(f"Computer's Key for this Prof: `{prof_key}`")
+                st.info(f"No RMP match found. Key used: {prof_key}")
 
         with c2:
             st.subheader("Teaching History")
@@ -169,11 +182,9 @@ def main():
                 
                 with colB:
                     grades = pd.DataFrame({'Grade': ['A', 'B', 'C', 'D', 'F'], 'Count': [row['a'], row['b'], row['c'], row['d'], row['f']]})
-                    fig = px.bar(grades, x='Grade', y='Count', color='Grade', 
-                                 color_discrete_map={'A':'#00CCFF','B':'#3498db','C':'#FFD700','D':'#e67e22','F':'#e74c3c'}, 
-                                 template="plotly_dark", height=100)
-                    fig.update_layout(margin=dict(l=0,r=0,t=0,b=0), showlegend=False, xaxis_visible=False, yaxis_visible=False, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
-                    st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False}, key=f"fig_{idx}")
+                    st.plotly_chart(px.bar(grades, x='Grade', y='Count', color='Grade', 
+                                     color_discrete_map={'A':'#00CCFF','B':'#3498db','C':'#FFD700','D':'#e67e22','F':'#e74c3c'}, 
+                                     template="plotly_dark", height=100).update_layout(margin=dict(l=0,r=0,t=0,b=0), showlegend=False, xaxis_visible=False, yaxis_visible=False, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)'), use_container_width=True, config={'displayModeBar': False}, key=f"fig_{idx}")
     else:
         st.info("No courses found.")
 
