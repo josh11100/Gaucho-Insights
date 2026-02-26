@@ -16,12 +16,19 @@ local_css("style.css")
 
 @st.cache_data
 def load_and_clean_data():
-    # Look for files in the current directory
-    csv_path = 'courseGrades.csv'
-    rmp_path = 'rmp_final_data.csv'
+    # Robust file path checking
+    def find_file(name):
+        paths_to_check = [name, os.path.join('data', name)]
+        for p in paths_to_check:
+            if os.path.exists(p):
+                return p
+        return None
 
-    if not os.path.exists(csv_path):
-        st.error(f"File not found: {csv_path}. Please ensure the CSV is in the same folder as this script.")
+    csv_path = find_file('courseGrades.csv')
+    rmp_path = find_file('rmp_final_data.csv')
+
+    if not csv_path:
+        st.error("Could not find 'courseGrades.csv' in the main folder or a 'data/' folder.")
         st.stop()
         
     df = pd.read_csv(csv_path)
@@ -46,7 +53,7 @@ def load_and_clean_data():
 
     df['join_key'] = df['instructor'].apply(get_registrar_key)
 
-    if os.path.exists(rmp_path):
+    if rmp_path:
         rmp_df = pd.read_csv(rmp_path)
         rmp_df['rmp_join_key'] = rmp_df['instructor'].apply(get_rmp_key)
         df = pd.merge(df, rmp_df, left_on='join_key', right_on='rmp_join_key', how='left', suffixes=('', '_rmp'))
@@ -128,7 +135,7 @@ def main():
     # --- 2. SEARCH MODE ---
     st.sidebar.header("🔍 FILTERS")
     
-    # This automatically finds CS (CMPSC), PSTAT, and all other departments
+    # Automatically finds CMPSC, PSTAT, and all other departments
     all_depts = sorted(full_df['dept'].unique().tolist())
     dept_choice = st.sidebar.selectbox("DEPARTMENT", ["All Departments"] + all_depts)
     
@@ -142,6 +149,7 @@ def main():
         data = data[data['dept'] == dept_choice]
 
     if course_q:
+        # This matches the number portion of the course string
         data = data[data['course'].str.contains(course_q, na=False)]
 
     if prof_q:
@@ -159,7 +167,7 @@ def main():
                         st.rerun()
                     
                     r_val = f"⭐ {row['rmp_rating']}" if pd.notna(row.get('rmp_rating')) else "N/A"
-                    st.write(f"**GPA:** `{row[gpa_col]:.2f}` | **RMP:** {r_val}")
+                    st.write(f"**Dept:** {row['dept']} | **GPA:** `{row[gpa_col]:.2f}` | **RMP:** {r_val}")
                 
                 with colB:
                     grades = pd.DataFrame({'Grade': ['A', 'B', 'C', 'D', 'F'], 'Count': [row['a'], row['b'], row['c'], row['d'], row['f']]})
