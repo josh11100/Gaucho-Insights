@@ -13,6 +13,7 @@ except ImportError:
 
 st.set_page_config(page_title="Gaucho Insights", layout="wide", page_icon="🎓")
 
+# --- LOAD EXTERNAL CSS ---
 def local_css(file_name):
     if os.path.exists(file_name):
         with open(file_name) as f:
@@ -26,57 +27,60 @@ def load_and_clean_data():
     rmp_path = os.path.join('data', 'rmp_final_data.csv')
     
     if not os.path.exists(csv_path):
-        st.error(f"Missing grade data at {csv_path}")
-        st.stop()
-        
+        # Fallback if 'data' folder isn't used
+        csv_path = 'courseGrades.csv'
+        rmp_path = 'rmp_final_data.csv'
+
     df = pd.read_csv(csv_path)
     df.columns = [str(c).strip().lower() for c in df.columns]
 
-    # --- THE STRICT CLEANER ---
-    def get_join_key(name):
+    # --- THE SMART MATCHING ENGINE ---
+    # Registrar: "RAVAT U V" -> RAVAT (Last) + U (First Init) -> RAVATU
+    # RMP: "UMA RAVAT" -> RAVAT (Last) + U (First Init) -> RAVATU
+    def get_registrar_key(name):
         if pd.isna(name): return "UNKNOWN"
-        # Keep only A-Z, no spaces
-        return "".join(re.findall(r'[A-Z]+', str(name).upper()))
+        parts = str(name).upper().split()
+        if not parts: return "UNKNOWN"
+        last = parts[0]
+        first_init = parts[1][0] if len(parts) > 1 else ""
+        return f"{last}{first_init}"
 
-    df['join_key'] = df['instructor'].apply(get_join_key)
+    def get_rmp_key(name):
+        if pd.isna(name): return "UNKNOWN"
+        parts = str(name).upper().split()
+        if not parts: return "UNKNOWN"
+        last = parts[-1]
+        first_init = parts[0][0] if len(parts) > 1 else ""
+        return f"{last}{first_init}"
+
+    df['join_key'] = df['instructor'].apply(get_registrar_key)
 
     if os.path.exists(rmp_path):
         rmp_df = pd.read_csv(rmp_path)
-        rmp_df['rmp_join_key'] = rmp_df['instructor'].apply(get_join_key)
+        rmp_df['rmp_join_key'] = rmp_df['instructor'].apply(get_rmp_key)
         
-        # --- MANUAL TRUTH MAP (Fixes Ravat specifically) ---
-        # This maps the key from Grades (RAVATU) to the key from RMP (UMARAVAT)
-        override_map = {"RAVATU": "UMARAVAT"}
-        df['join_key'] = df['join_key'].replace(override_map)
-
-        # Merge
+        # Merge Grade Data with RMP Data
         df = pd.merge(df, rmp_df, left_on='join_key', right_on='rmp_join_key', how='left', suffixes=('', '_rmp'))
     
-    # Standardize basic info
+    # Standardize basic text columns
     for col in ['instructor', 'quarter', 'course', 'dept']:
         if col in df.columns:
             df[col] = df[col].astype(str).str.upper().str.strip()
 
     gpa_col = next((c for c in ['avggpa', 'avg_gpa', 'avg gpa'] if c in df.columns), 'avggpa')
     
-    # Aggregation - Preventing the "wrong data" by grouping strictly by Course + Dept
-    group_cols = ['instructor', 'join_key', 'quarter', 'course', 'dept']
+    # Aggregate and clean
+    group_cols = ['instructor', 'join_key', 'quarter', 'year', 'course', 'dept']
     agg_dict = {gpa_col: 'mean', 'a': 'sum', 'b': 'sum', 'c': 'sum', 'd': 'sum', 'f': 'sum'}
     for rmp_c in ['rmp_rating', 'rmp_difficulty', 'rmp_take_again', 'rmp_tags', 'rmp_url']:
         if rmp_c in df.columns: agg_dict[rmp_c] = 'first'
 
     df = df.groupby(group_cols).agg(agg_dict).reset_index()
 
-    # Time sorting logic
-    def get_time_score(row):
-        q_str = str(row.get('quarter', '')).upper()
-        four_digit = re.findall(r'\b(202[1-9]|2030)\b', q_str)
-        year_val = int(four_digit[0]) if four_digit else 2000
-        q_weight = 4 if "FALL" in q_str else 3 if "SUMMER" in q_str else 2 if "SPRING" in q_str else 1
-        return year_val, q_weight
-
-    time_results = df.apply(lambda r: pd.Series(get_time_score(r)), axis=1)
-    df['year_val'], df['q_weight'] = time_results[0].astype(int), time_results[1].astype(int)
+    # Time sorting: Fixes the "ordering is wrong" issue
+    q_map = {'FALL': 4, 'SUMMER': 3, 'SPRING': 2, 'WINTER': 1}
+    df['q_score'] = df['quarter'].map(q_map).fillna(0)
+    df = df.sort_values(by=['year', 'q_score'], ascending=False)
     
     return df, gpa_col
 
@@ -97,10 +101,10 @@ def main():
             st.rerun()
 
         if prof_history.empty:
-            st.error("No records found for this selection.")
+            st.error("No data found.")
             return
 
-        rmp = prof_history.sort_values(['year_val', 'q_weight'], ascending=False).iloc[0]
+        rmp = prof_history.iloc[0] # Newest record
         st.header(f"👨‍🏫 Professor Profile: {rmp['instructor']}")
         
         c1, c2 = st.columns([1, 1.2])
@@ -113,53 +117,56 @@ def main():
                 m3.metric("Take Again", rmp.get('rmp_take_again', 'N/A'))
                 
                 tags = str(rmp.get('rmp_tags', ''))
-                if tags and tags not in ["nan", "None"]:
-                    tag_list = [t.strip().upper() for t in tags.split(",") if t.strip()]
-                    tag_html = "".join([f'<span style="background-color:#FFD700; color:#000; padding:5px 10px; border-radius:12px; margin:3px; display:inline-block; font-size:11px; font-weight:bold;">{t}</span>' for t in tag_list])
+                if tags and tags != "None":
+                    tag_html = "".join([f'<span style="background-color:#FFD700; color:#000; padding:5px 10px; border-radius:12px; margin:3px; display:inline-block; font-size:11px; font-weight:bold;">{t.strip().upper()}</span>' for t in tags.split(",")])
                     st.markdown(tag_html, unsafe_allow_html=True)
             else:
                 st.info("No RMP data found.")
 
         with c2:
             st.subheader("Teaching Record")
-            history = prof_history.groupby(['course', 'dept']).agg({gpa_col: 'mean', 'quarter': 'count'}).rename(columns={gpa_col: 'Avg GPA', 'quarter': 'Sections'}).reset_index()
+            # Filter history to show meaningful averages per course
+            history = prof_history.groupby(['course', 'dept']).agg({gpa_col: 'mean', 'instructor': 'count'}).rename(columns={gpa_col: 'Avg GPA', 'instructor': 'Sections'}).reset_index()
             history['Avg GPA'] = history['Avg GPA'].map('{:,.2f}'.format)
             st.dataframe(history.sort_values('Sections', ascending=False), hide_index=True, use_container_width=True)
 
         st.divider()
         st.subheader("Quarterly GPA Trends")
-        st.plotly_chart(px.line(prof_history.sort_values(['year_val', 'q_weight']), x='quarter', y=gpa_col, color='course', markers=True, template="plotly_dark"), use_container_width=True)
+        # Line chart of GPA over time
+        trend_df = prof_history.copy()
+        trend_df['q_label'] = trend_df['quarter'] + " " + trend_df['year'].astype(str)
+        st.plotly_chart(px.line(trend_df.iloc[::-1], x='q_label', y=gpa_col, color='course', markers=True, template="plotly_dark"), use_container_width=True)
         return
 
     # --- 2. SEARCH MODE ---
     st.sidebar.header("🔍 FILTERS")
     dept_choice = st.sidebar.selectbox("DEPARTMENT", ["All Departments", "PSTAT", "CS", "MCDB", "CHEM"])
-    course_q = st.sidebar.text_input("COURSE #").strip().upper()
     prof_q = st.sidebar.text_input("PROFESSOR NAME").strip().upper()
     
-    # Apply Filters
     data = full_df.copy()
     if dept_choice != "All Departments":
-        data = data[data['dept'] == dept_choice]
+        # Handle PSTAT and PSTATW (Web) as the same
+        if dept_choice == "PSTAT":
+            data = data[data['dept'].str.startswith("PSTAT")]
+        else:
+            data = data[data['dept'] == dept_choice]
 
-    if course_q: data = data[data['course'].str.contains(course_q, na=False)]
-    if prof_q: data = data[data['instructor'].str.contains(prof_q, na=False)]
+    if prof_q:
+        data = data[data['instructor'].str.contains(prof_q, na=False)]
 
     if not data.empty:
-        # Sort by Year, then Quarter, then GPA
-        data = data.sort_values(by=['year_val', 'q_weight', gpa_col], ascending=[False, False, False])
-        
-        for idx, row in data.head(30).iterrows():
+        # Display results
+        for idx, row in data.head(20).iterrows():
             with st.container(border=True):
                 colA, colB = st.columns([2, 1])
                 with colA:
-                    st.markdown(f"### {row['course']} | {row['quarter']}")
+                    st.markdown(f"### {row['course']} | {row['quarter']} {row['year']}")
                     if st.button(f"{row['instructor']}", key=f"btn_{idx}"):
                         st.session_state.prof_view = row['join_key']
                         st.rerun()
                     
-                    r = f"⭐ {row['rmp_rating']}" if pd.notna(row.get('rmp_rating')) else "No RMP"
-                    st.write(f"**Dept:** {row['dept']} | **GPA:** `{row[gpa_col]:.2f}`")
+                    rating = f"⭐ {row['rmp_rating']}" if pd.notna(row.get('rmp_rating')) else "No RMP"
+                    st.write(f"**GPA:** `{row[gpa_col]:.2f}` | **RMP:** {rating}")
                 
                 with colB:
                     grades = pd.DataFrame({'Grade': ['A', 'B', 'C', 'D', 'F'], 'Count': [row['a'], row['b'], row['c'], row['d'], row['f']]})
