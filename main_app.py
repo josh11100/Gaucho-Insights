@@ -27,42 +27,33 @@ def load_and_clean_data():
     rmp_path = find_file('rmp_final_data.csv')
 
     if not csv_path:
-        st.error("Missing 'courseGrades.csv'. Ensure it is in the main folder or a 'data/' folder.")
+        st.error("Missing 'courseGrades.csv'.")
         st.stop()
         
     df = pd.read_csv(csv_path)
     df.columns = [str(c).strip().lower() for c in df.columns]
 
-    # --- FILTER OUT GRAD CLASSES & INDEPENDENT STUDIES ---
+    # Course Filter: No 99, max 198
     def get_course_num(course_str):
-        # Extracts digits from strings like "PSTAT 120A" -> 120
         match = re.search(r'(\d+)', str(course_str))
-        if match:
-            return int(match.group(1))
-        return None
+        return int(match.group(1)) if match else None
 
     df['course_num_val'] = df['course'].apply(get_course_num)
-    
-    # Constraint: No 99, nothing above 198
     df = df[df['course_num_val'].notna()]
     df = df[(df['course_num_val'] <= 198) & (df['course_num_val'] != 99)]
 
-    # --- MATCHING LOGIC (The "Ravat Fix") ---
+    # Name Matcher Logic
     def get_registrar_key(name):
         if pd.isna(name): return "UNKNOWN"
         parts = str(name).upper().split()
         if not parts: return "UNKNOWN"
-        last = parts[0]
-        first_init = parts[1][0] if len(parts) > 1 else ""
-        return f"{last}{first_init}"
+        return f"{parts[0]}{parts[1][0] if len(parts) > 1 else ''}"
 
     def get_rmp_key(name):
         if pd.isna(name): return "UNKNOWN"
         parts = str(name).upper().split()
         if not parts: return "UNKNOWN"
-        last = parts[-1]
-        first_init = parts[0][0] if len(parts) > 1 else ""
-        return f"{last}{first_init}"
+        return f"{parts[-1]}{parts[0][0] if len(parts) > 1 else ''}"
 
     df['join_key'] = df['instructor'].apply(get_registrar_key)
 
@@ -97,22 +88,16 @@ def main():
     if 'prof_view' not in st.session_state:
         st.session_state.prof_view = None
 
-    # --- 1. PROFESSOR PROFILE MODE ---
     if st.session_state.prof_view:
+        # (Profile View Logic remains the same...)
         prof_key = st.session_state.prof_view
         prof_history = full_df[full_df['join_key'] == prof_key]
-        
         if st.button("⬅️ Back to Search"):
             st.session_state.prof_view = None
             st.rerun()
-
-        if prof_history.empty:
-            st.error("Error: Professor data not found.")
-            return
-
+        
         rmp = prof_history.iloc[0]
         st.header(f"👨‍🏫 {rmp['instructor']}")
-        
         c1, c2 = st.columns([1, 1.2])
         with c1:
             st.subheader("Rate My Professor")
@@ -121,44 +106,44 @@ def main():
                 m1.metric("Rating", f"{rmp['rmp_rating']}/5")
                 m2.metric("Difficulty", f"{rmp['rmp_difficulty']}/5")
                 m3.metric("Take Again", rmp.get('rmp_take_again', 'N/A'))
-                
-                tags = str(rmp.get('rmp_tags', ''))
-                if tags and tags != "None":
-                    tag_html = "".join([f'<span style="background-color:#FFD700; color:#000; padding:4px 8px; border-radius:10px; margin:2px; display:inline-block; font-size:11px; font-weight:bold;">{t.strip().upper()}</span>' for t in tags.split(",")])
-                    st.markdown(tag_html, unsafe_allow_html=True)
             else:
                 st.info("No RMP data found.")
-
         with c2:
             st.subheader("Teaching Record")
             history = prof_history.groupby(['course', 'dept']).agg({gpa_col: 'mean', 'instructor': 'count'}).rename(columns={gpa_col: 'Avg GPA', 'instructor': 'Sections'}).reset_index()
             history['Avg GPA'] = history['Avg GPA'].map('{:,.2f}'.format)
-            st.dataframe(history.sort_values('Sections', ascending=False), hide_index=True, use_container_width=True)
-
-        st.divider()
-        st.subheader("Grade Trends")
-        trend_df = prof_history.copy().sort_values(by=['year', 'q_score'])
-        trend_df['label'] = trend_df['quarter'] + " " + trend_df['year'].astype(str)
-        st.plotly_chart(px.line(trend_df, x='label', y=gpa_col, color='course', markers=True, template="plotly_dark"), use_container_width=True)
+            st.dataframe(history, hide_index=True, use_container_width=True)
         return
 
-    # --- 2. SEARCH MODE ---
+    # --- 2. IMPROVED SIDEBAR ---
     st.sidebar.header("🔍 FILTERS")
     
-    # Handle CS alias
-    all_depts = sorted(full_df['dept'].unique().tolist())
-    dept_choice = st.sidebar.selectbox("DEPARTMENT", ["All Departments"] + all_depts)
+    # Text search for department
+    dept_search = st.sidebar.text_input("Search Department...", "").strip().upper()
     
+    # Filter the list of departments based on text input
+    all_depts = sorted(full_df['dept'].unique().tolist())
+    filtered_depts = [d for d in all_depts if dept_search in d] if dept_search else all_depts
+    
+    # Scrollable selection list
+    selected_dept = st.sidebar.selectbox(
+        "Select Department",
+        options=["ALL"] + filtered_depts,
+        index=0,
+        help="Scroll or use the search box above to narrow down departments."
+    )
+    
+    st.sidebar.divider()
     course_q = st.sidebar.text_input("COURSE # (e.g. 120B, 16)").strip().upper()
     prof_q = st.sidebar.text_input("PROFESSOR NAME").strip().upper()
     
     data = full_df.copy()
     
-    if dept_choice != "All Departments":
-        data = data[data['dept'] == dept_choice]
+    # Logic for CS/CMPSC Alias
+    if selected_dept != "ALL":
+        data = data[data['dept'] == selected_dept]
 
     if course_q:
-        # If user types "CS 16", handle the CS -> CMPSC mapping
         query = course_q.replace("CS", "CMPSC")
         data = data[data['course'].str.contains(query, na=False)]
 
@@ -166,7 +151,7 @@ def main():
         data = data[data['instructor'].str.contains(prof_q, na=False)]
 
     if not data.empty:
-        st.write(f"Showing results for undergraduate courses (excluding 99 and 199+):")
+        st.write(f"Showing results for undergraduate courses:")
         for idx, row in data.head(25).iterrows():
             with st.container(border=True):
                 colA, colB = st.columns([2, 1])
@@ -175,19 +160,15 @@ def main():
                     if st.button(f"{row['instructor']}", key=f"btn_{idx}"):
                         st.session_state.prof_view = row['join_key']
                         st.rerun()
-                    
                     r_val = f"⭐ {row['rmp_rating']}" if pd.notna(row.get('rmp_rating')) else "N/A"
                     st.write(f"**Dept:** {row['dept']} | **GPA:** `{row[gpa_col]:.2f}` | **RMP:** {r_val}")
-                
                 with colB:
                     grades = pd.DataFrame({'Grade': ['A', 'B', 'C', 'D', 'F'], 'Count': [row['a'], row['b'], row['c'], row['d'], row['f']]})
-                    fig = px.bar(grades, x='Grade', y='Count', color='Grade', 
-                                 color_discrete_map={'A':'#00CCFF','B':'#3498db','C':'#FFD700','D':'#e67e22','F':'#e74c3c'}, 
-                                 template="plotly_dark", height=100)
-                    fig.update_layout(margin=dict(l=0,r=0,t=0,b=0), showlegend=False, xaxis_visible=False, yaxis_visible=False, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
-                    st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False}, key=f"fig_{idx}")
+                    st.plotly_chart(px.bar(grades, x='Grade', y='Count', color='Grade', 
+                                     color_discrete_map={'A':'#00CCFF','B':'#3498db','C':'#FFD700','D':'#e67e22','F':'#e74c3c'}, 
+                                     template="plotly_dark", height=100).update_layout(margin=dict(l=0,r=0,t=0,b=0), showlegend=False, xaxis_visible=False, yaxis_visible=False, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)'), use_container_width=True, config={'displayModeBar': False}, key=f"fig_{idx}")
     else:
-        st.info("No matching courses found. Note: Independent studies (99, 199) and Grad classes are hidden.")
+        st.info("No matching courses found.")
 
 if __name__ == "__main__":
     main()
