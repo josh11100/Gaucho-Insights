@@ -8,7 +8,7 @@ import plotly.express as px
 try:
     import pstat_logic, cs_logic, mcdb_logic, chem_logic
 except ImportError:
-    st.error("Logic files (pstat_logic.py, etc.) are missing.")
+    st.error("Logic files (pstat_logic.py, etc.) are missing from the directory.")
     st.stop()
 
 st.set_page_config(page_title="Gaucho Insights", layout="wide", page_icon="🎓")
@@ -27,31 +27,42 @@ def load_and_clean_data():
     rmp_path = os.path.join('data', 'rmp_final_data.csv')
     
     if not os.path.exists(csv_path):
-        st.error(f"Missing data: {csv_path}")
+        st.error(f"Missing data file: {csv_path}")
         st.stop()
         
     df = pd.read_csv(csv_path)
     df.columns = [str(c).strip().lower() for c in df.columns]
 
-    # --- UPDATED SUPER-CLEAN ENGINE ---
+    # --- THE SUPER-CLEAN ENGINE ---
     def super_clean(name):
         if pd.isna(name) or str(name).strip() == "": return "UNKNOWN"
         # Standardize: Upper and letters only
         name = re.sub(r'[^A-Z ]', ' ', str(name).upper())
-        # Filter out single-letter initials (e.g., 'U' in 'RAVAT U')
-        parts = [p for p in name.split() if len(p) > 1]
-        if not parts: parts = name.split() # Fallback for short names
-        return " ".join(sorted(parts))
+        parts = sorted(name.split())
+        if not parts: return "UNKNOWN"
+        return " ".join(parts)
 
     df['join_key'] = df['instructor'].apply(super_clean)
 
     if os.path.exists(rmp_path):
         rmp_df = pd.read_csv(rmp_path)
         rmp_df['rmp_join_key'] = rmp_df['instructor'].apply(super_clean)
+
+        # --- MANUAL OVERRIDE MAP ---
+        # Explicitly linking variations of names that the computer misses
+        overrides = {
+            "RAVAT U": "RAVAT UMA",
+            "UMA RAVAT": "RAVAT UMA",
+            "RAVAT UMAIR": "RAVAT UMA",
+            # Add more here if you find other "ghost" professors
+        }
+        df['join_key'] = df['join_key'].replace(overrides)
+        rmp_df['rmp_join_key'] = rmp_df['rmp_join_key'].replace(overrides)
+        
         # Merge Grade Data with RMP Data
         df = pd.merge(df, rmp_df, left_on='join_key', right_on='rmp_join_key', how='left', suffixes=('', '_rmp'))
     
-    # Standardize columns
+    # Standardize basic text columns
     for col in ['instructor', 'quarter', 'course', 'dept']:
         if col in df.columns:
             df[col] = df[col].astype(str).str.upper().str.strip()
@@ -65,14 +76,13 @@ def load_and_clean_data():
     group_cols = ['instructor', 'join_key', 'quarter', 'course', 'dept']
     agg_dict = {gpa_col: 'mean', 'a': 'sum', 'b': 'sum', 'c': 'sum', 'd': 'sum', 'f': 'sum'}
     
-    # Explicitly preserve RMP columns
     for rmp_c in ['rmp_rating', 'rmp_difficulty', 'rmp_take_again', 'rmp_tags', 'rmp_url']:
         if rmp_c in df.columns:
             agg_dict[rmp_c] = 'first'
 
     df = df.groupby(group_cols).agg(agg_dict).reset_index()
 
-    # Time sorting
+    # Time sorting weights
     def get_time_score(row):
         q_str = str(row.get('quarter', '')).upper()
         four_digit = re.findall(r'\b(202[1-9]|2030)\b', q_str)
@@ -95,10 +105,8 @@ def main():
     # --- 1. PROFESSOR PROFILE MODE ---
     if st.session_state.prof_view:
         prof_key = st.session_state.prof_view
-        # Filter all historical records for this professor key
         prof_history = full_df[full_df['join_key'] == prof_key]
         
-        # SAFETY CHECK: If the key isn't found, reset and show error
         if prof_history.empty:
             st.error(f"No data found for the key: {prof_key}")
             if st.button("⬅️ Return to Search"):
@@ -106,7 +114,6 @@ def main():
                 st.rerun()
             return
 
-        # Grab RMP data from the most recent quarter taught
         rmp = prof_history.sort_values(['year_val', 'q_weight'], ascending=False).iloc[0]
 
         if st.button("⬅️ Back to Search"):
@@ -124,7 +131,6 @@ def main():
                 m2.metric("Difficulty", f"{rmp['rmp_difficulty']}/5")
                 m3.metric("Take Again", rmp.get('rmp_take_again', 'N/A'))
                 
-                # Render Tag Badges
                 tags_str = str(rmp.get('rmp_tags', ''))
                 if tags_str and tags_str not in ["nan", "None"]:
                     tags = tags_str.split(", ")
@@ -134,7 +140,7 @@ def main():
                 st.info("No RMP data found for this instructor.")
 
         with col2:
-            st.subheader("Teaching History Summary")
+            st.subheader("Courses Taught Track Record")
             history = prof_history.groupby('course').agg({
                 gpa_col: 'mean', 
                 'quarter': 'count'
@@ -143,9 +149,9 @@ def main():
             st.dataframe(history.sort_values('Times Taught', ascending=False), hide_index=True, use_container_width=True)
 
         st.divider()
-        st.subheader("Full GPA History (By Quarter)")
-        trend_data = prof_history.sort_values(['year_val', 'q_weight'])
-        trend_fig = px.line(trend_data, x='quarter', y=gpa_col, color='course', markers=True, template="plotly_dark")
+        st.subheader("GPA Trends by Quarter")
+        trend_fig = px.line(prof_history.sort_values(['year_val', 'q_weight']), 
+                            x='quarter', y=gpa_col, color='course', markers=True, template="plotly_dark")
         st.plotly_chart(trend_fig, use_container_width=True)
         return
 
@@ -171,8 +177,7 @@ def main():
                 left, right = st.columns([2, 1])
                 with left:
                     st.markdown(f"### {row['course']} | {row['quarter']}")
-                    # Store the join_key for navigation
-                    if st.button(f"{row['instructor']}", key=f"btn_{idx}_{row['join_key']}"):
+                    if st.button(f"{row['instructor']}", key=f"p_{idx}_{row['join_key']}"):
                         st.session_state.prof_view = row['join_key']
                         st.rerun()
                     
