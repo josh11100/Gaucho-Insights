@@ -16,7 +16,6 @@ local_css("style.css")
 
 @st.cache_data
 def load_and_clean_data():
-    # Robust file path checking
     def find_file(name):
         paths_to_check = [name, os.path.join('data', name)]
         for p in paths_to_check:
@@ -28,11 +27,25 @@ def load_and_clean_data():
     rmp_path = find_file('rmp_final_data.csv')
 
     if not csv_path:
-        st.error("Could not find 'courseGrades.csv' in the main folder or a 'data/' folder.")
+        st.error("Missing 'courseGrades.csv'. Ensure it is in the main folder or a 'data/' folder.")
         st.stop()
         
     df = pd.read_csv(csv_path)
     df.columns = [str(c).strip().lower() for c in df.columns]
+
+    # --- FILTER OUT GRAD CLASSES & INDEPENDENT STUDIES ---
+    def get_course_num(course_str):
+        # Extracts digits from strings like "PSTAT 120A" -> 120
+        match = re.search(r'(\d+)', str(course_str))
+        if match:
+            return int(match.group(1))
+        return None
+
+    df['course_num_val'] = df['course'].apply(get_course_num)
+    
+    # Constraint: No 99, nothing above 198
+    df = df[df['course_num_val'].notna()]
+    df = df[(df['course_num_val'] <= 198) & (df['course_num_val'] != 99)]
 
     # --- MATCHING LOGIC (The "Ravat Fix") ---
     def get_registrar_key(name):
@@ -58,14 +71,12 @@ def load_and_clean_data():
         rmp_df['rmp_join_key'] = rmp_df['instructor'].apply(get_rmp_key)
         df = pd.merge(df, rmp_df, left_on='join_key', right_on='rmp_join_key', how='left', suffixes=('', '_rmp'))
     
-    # Standardize all text columns
     for col in ['instructor', 'quarter', 'course', 'dept']:
         if col in df.columns:
             df[col] = df[col].astype(str).str.upper().str.strip()
 
     gpa_col = next((c for c in ['avggpa', 'avg_gpa', 'avg gpa'] if c in df.columns), 'avggpa')
     
-    # Group by section info
     group_cols = ['instructor', 'join_key', 'quarter', 'year', 'course', 'dept']
     agg_dict = {gpa_col: 'mean', 'a': 'sum', 'b': 'sum', 'c': 'sum', 'd': 'sum', 'f': 'sum'}
     for rmp_c in ['rmp_rating', 'rmp_difficulty', 'rmp_take_again', 'rmp_tags', 'rmp_url']:
@@ -73,7 +84,6 @@ def load_and_clean_data():
 
     df = df.groupby(group_cols).agg(agg_dict).reset_index()
 
-    # Time sorting
     q_map = {'FALL': 4, 'SUMMER': 3, 'SPRING': 2, 'WINTER': 1}
     df['q_score'] = df['quarter'].map(q_map).fillna(0)
     df = df.sort_values(by=['year', 'q_score'], ascending=False)
@@ -117,10 +127,10 @@ def main():
                     tag_html = "".join([f'<span style="background-color:#FFD700; color:#000; padding:4px 8px; border-radius:10px; margin:2px; display:inline-block; font-size:11px; font-weight:bold;">{t.strip().upper()}</span>' for t in tags.split(",")])
                     st.markdown(tag_html, unsafe_allow_html=True)
             else:
-                st.info("No RMP data found for this professor.")
+                st.info("No RMP data found.")
 
         with c2:
-            st.subheader("Courses Taught")
+            st.subheader("Teaching Record")
             history = prof_history.groupby(['course', 'dept']).agg({gpa_col: 'mean', 'instructor': 'count'}).rename(columns={gpa_col: 'Avg GPA', 'instructor': 'Sections'}).reset_index()
             history['Avg GPA'] = history['Avg GPA'].map('{:,.2f}'.format)
             st.dataframe(history.sort_values('Sections', ascending=False), hide_index=True, use_container_width=True)
@@ -135,28 +145,28 @@ def main():
     # --- 2. SEARCH MODE ---
     st.sidebar.header("🔍 FILTERS")
     
-    # Automatically finds CMPSC, PSTAT, and all other departments
+    # Handle CS alias
     all_depts = sorted(full_df['dept'].unique().tolist())
     dept_choice = st.sidebar.selectbox("DEPARTMENT", ["All Departments"] + all_depts)
     
-    course_q = st.sidebar.text_input("COURSE # (e.g., 120B, 16)").strip().upper()
+    course_q = st.sidebar.text_input("COURSE # (e.g. 120B, 16)").strip().upper()
     prof_q = st.sidebar.text_input("PROFESSOR NAME").strip().upper()
     
-    # APPLY FILTERS
     data = full_df.copy()
     
     if dept_choice != "All Departments":
         data = data[data['dept'] == dept_choice]
 
     if course_q:
-        # This matches the number portion of the course string
-        data = data[data['course'].str.contains(course_q, na=False)]
+        # If user types "CS 16", handle the CS -> CMPSC mapping
+        query = course_q.replace("CS", "CMPSC")
+        data = data[data['course'].str.contains(query, na=False)]
 
     if prof_q:
         data = data[data['instructor'].str.contains(prof_q, na=False)]
 
     if not data.empty:
-        st.write(f"Showing top {min(len(data), 25)} results:")
+        st.write(f"Showing results for undergraduate courses (excluding 99 and 199+):")
         for idx, row in data.head(25).iterrows():
             with st.container(border=True):
                 colA, colB = st.columns([2, 1])
@@ -177,7 +187,7 @@ def main():
                     fig.update_layout(margin=dict(l=0,r=0,t=0,b=0), showlegend=False, xaxis_visible=False, yaxis_visible=False, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
                     st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False}, key=f"fig_{idx}")
     else:
-        st.info("No matching data. Try reducing your filters!")
+        st.info("No matching courses found. Note: Independent studies (99, 199) and Grad classes are hidden.")
 
 if __name__ == "__main__":
     main()
