@@ -33,7 +33,6 @@ def load_and_clean_data():
     df = pd.read_csv(csv_path)
     df.columns = [str(c).strip().lower() for c in df.columns]
 
-    # Filter: Undergrad only (No 99, max 198)
     def get_course_num(course_str):
         match = re.search(r'(\d+)', str(course_str))
         return int(match.group(1)) if match else None
@@ -42,7 +41,6 @@ def load_and_clean_data():
     df = df[df['course_num_val'].notna()]
     df = df[(df['course_num_val'] <= 198) & (df['course_num_val'] != 99)]
 
-    # Matcher Logic
     def get_registrar_key(name):
         if pd.isna(name): return "UNKNOWN"
         parts = str(name).upper().split()
@@ -96,42 +94,42 @@ def main():
         st.session_state.prof_view = None
 
     # --- TAB NAVIGATION ---
-    tab1, tab2 = st.tabs(["🏠 Home", "🔍 Search Tool"])
+    tab1, tab2 = st.tabs(["(🏠) Home", "(🔍) Search Tool"])
 
     with tab1:
         st.markdown("---")
         col_left, col_right = st.columns([2, 1])
         
         with col_left:
-            st.header("Welcome to Gaucho Insights! 🎓")
+            st.header("Welcome to Gaucho Insights! (🎓)")
             st.markdown("""
             ### What is this?
             Gaucho Insights is a comprehensive dashboard for UCSB students to analyze academic trends. 
             By merging official Registrar data with student-led reviews, we provide a holistic 
             view of the Gaucho classroom experience.
             
-            ### 📍 How to use the UI
-            - **Sidebar Navigation:** Use the filters on the left to start your search. Filter by department (e.g., PSTAT), course numbers, or professor names.
+            ### (📍) How to use the UI
+            - **Sidebar Navigation:** Use the filters on the left to start your search. Filter by department, course numbers, or professor names.
             - **Result Cards:** See grade distributions at a glance. High blue bars mean more A's!
-            - **Detailed Profiles:** Click a professor's name to view their historical GPA trends and specific RateMyProfessor tags.
+            - **Detailed Profiles:** Click a professor's name to view historical GPA trends and specific RateMyProfessor tags.
 
-            ### 📖 Glossary & Terms
+            ### (📖) Glossary & Terms
             - **RMP (Rate My Professors):** A review site where students rate instructors on a 1-5 scale.
             - **Difficulty:** An RMP metric showing how hard students found the coursework (5 = Hardest).
-            - **Avg GPA:** The average grade point assigned in a specific section, pulled from official records.
+            - **Avg GPA:** The average grade point assigned in a specific section.
             """)
         
         with col_right:
             st.success(f"""
-            **📊 Project Info**
-            - **Data Recency:** Grades through Summer 2025.
+            **(📊) Project Info**
+            - **Data Recency:** Through Summer 2025.
             - **Sources:** UCSB Registrar & RateMyProfessors.
             - **Created By:** Joshua Chung
             """)
             
             st.markdown(f"""
             <div style="background-color: #0077b5; padding: 15px; border-radius: 10px; color: white; text-align: center; margin-top: 10px;">
-                <p style="margin-bottom: 10px; font-weight: bold;">🚀 Like this project?</p>
+                <p style="margin-bottom: 10px; font-weight: bold;">(🚀) Like this project?</p>
                 <a href="https://www.linkedin.com/in/joshua-chung858/" target="_blank" style="color: white; text-decoration: none; background-color: #005582; padding: 8px 15px; border-radius: 5px; font-size: 0.9em; font-weight: bold;">
                     Follow me on LinkedIn
                 </a>
@@ -140,25 +138,23 @@ def main():
             """, unsafe_allow_html=True)
 
             st.write("---")
-            st.info("💡 **Tip:** Go to the 'Search Tool' tab to start exploring!")
+            st.info("(💡) Tip: Go to the 'Search Tool' tab to start exploring!")
 
         st.image("https://brand.ucsb.edu/sites/default/files/styles/flexslider_full/public/2021-12/ucsb-campus.jpg", caption="Helping Gauchos pick the right path.")
 
     with tab2:
-        # --- SIDEBAR (Only relevant for Tab 2) ---
-        st.sidebar.header("🔍 FILTERS")
+        st.sidebar.header("(🔍) FILTERS")
         all_depts = sorted(full_df['dept'].unique().tolist())
         selected_dept = st.sidebar.selectbox("Select Department", options=[" "] + all_depts, key="dept_persist")
-        course_q = st.sidebar.text_input("COURSE # (e.g. 120B, 16)", key="course_persist").strip().upper()
+        course_q = st.sidebar.text_input("COURSE #", key="course_persist").strip().upper()
         prof_q = st.sidebar.text_input("PROFESSOR NAME", key="prof_persist").strip().upper()
 
-        if st.sidebar.button("Clear All Filters"):
+        if st.sidebar.button("(✖) Clear All"):
             st.session_state.dept_persist = " "
             st.session_state.course_persist = ""
             st.session_state.prof_persist = ""
             st.rerun()
 
-        # Apply Filters
         data = full_df.copy()
         if selected_dept != " ":
             data = data[data['dept'] == selected_dept]
@@ -168,18 +164,17 @@ def main():
         if prof_q:
             data = data[data['instructor'].str.contains(prof_q, na=False)]
 
-        # --- PROFESSOR PROFILE VIEW ---
         if st.session_state.prof_view:
             prof_key = st.session_state.prof_view
             prof_history = full_df[full_df['join_key'] == prof_key]
             
-            if st.button("⬅️ Back to Search"):
+            if st.button("(⬅) Back to Search"):
                 st.session_state.prof_view = None
                 st.rerun()
             
             if not prof_history.empty:
                 rmp = prof_history.iloc[0]
-                st.header(f"👨‍🏫 {rmp['instructor']}")
+                st.header(f"(👨‍🏫) {rmp['instructor']}")
                 
                 c1, c2 = st.columns([1, 1.2])
                 with c1:
@@ -197,9 +192,9 @@ def main():
                             st.markdown(tag_html, unsafe_allow_html=True)
                         
                         if pd.notna(rmp.get('rmp_url')):
-                            st.markdown(f"<br><a href='{rmp['rmp_url']}' target='_blank' style='color: #00CCFF; text-decoration: none;'>View Original Reviews on RMP 🔗</a>", unsafe_allow_html=True)
+                            st.markdown(f"<br><a href='{rmp['rmp_url']}' target='_blank' style='color: #00CCFF; text-decoration: none;'>View Reviews on RMP (🔗)</a>", unsafe_allow_html=True)
                     else:
-                        st.info("No RMP data found.")
+                        st.info("(´・ω・`) No RMP data found.")
                 
                 with c2:
                     st.subheader("Course History")
@@ -213,10 +208,9 @@ def main():
                 trend_df['label'] = trend_df['quarter'] + " " + trend_df['year'].astype(str)
                 st.plotly_chart(px.line(trend_df, x='label', y=gpa_col, color='course', markers=True, template="plotly_dark"), use_container_width=True)
         
-        # --- SEARCH RESULTS VIEW ---
         else:
             if not data.empty:
-                st.write(f"Showing results based on your filters:")
+                st.write(f"(─‿─) Showing results:")
                 for idx, row in data.head(25).iterrows():
                     with st.container(border=True):
                         colA, colB = st.columns([2, 1])
@@ -225,7 +219,7 @@ def main():
                             if st.button(f"{row['instructor']}", key=f"btn_{idx}"):
                                 st.session_state.prof_view = row['join_key']
                                 st.rerun()
-                            r_val = f"⭐ {row['rmp_rating']}" if pd.notna(row.get('rmp_rating')) else "N/A"
+                            r_val = f"(⭐) {row['rmp_rating']}" if pd.notna(row.get('rmp_rating')) else "N/A"
                             st.write(f"**Dept:** {row['dept']} | **GPA:** `{row[gpa_col]:.2f}` | **RMP:** {r_val}")
                         with colB:
                             grades = pd.DataFrame({'Grade': ['A', 'B', 'C', 'D', 'F'], 'Count': [row['a'], row['b'], row['c'], row['d'], row['f']]})
@@ -235,7 +229,7 @@ def main():
                             fig.update_layout(margin=dict(l=0,r=0,t=0,b=0), showlegend=False, xaxis_visible=False, yaxis_visible=False, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
                             st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False}, key=f"fig_{idx}")
             else:
-                st.warning("No matches found. Try clearing your filters or changing your search!")
+                st.warning("(⊙_⊙) No matches found. Try clearing filters!")
 
 if __name__ == "__main__":
     main()
