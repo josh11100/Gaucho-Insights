@@ -33,6 +33,7 @@ def load_and_clean_data():
     df = pd.read_csv(csv_path)
     df.columns = [str(c).strip().lower() for c in df.columns]
 
+    # Filter: Undergrad only (No 99, max 198)
     def get_course_num(course_str):
         match = re.search(r'(\d+)', str(course_str))
         return int(match.group(1)) if match else None
@@ -41,6 +42,7 @@ def load_and_clean_data():
     df = df[df['course_num_val'].notna()]
     df = df[(df['course_num_val'] <= 198) & (df['course_num_val'] != 99)]
 
+    # Matcher Logic
     def get_registrar_key(name):
         if pd.isna(name): return "UNKNOWN"
         parts = str(name).upper().split()
@@ -86,6 +88,12 @@ def load_and_clean_data():
     
     return df, gpa_col
 
+# --- CALLBACK FOR CLEARING FILTERS ---
+def reset_filters():
+    st.session_state.dept_query = " "
+    st.session_state.course_query = ""
+    st.session_state.prof_query = ""
+
 def main():
     st.title("(つ▀¯▀ )つ GAUCHO INSIGHTS ⊂(▀¯▀⊂ )")
     full_df, gpa_col = load_and_clean_data()
@@ -107,28 +115,29 @@ def main():
             Gaucho Insights is a tool designed to help you survive your schedule. This dashboard helps you see exactly how stressful 
             certain classes are with specific professors **(ノಠ益ಠ)ノ彡┻━┻**. 
             
-            By merging official UCSB Registrar data with RMP reviews, we let you see if that "Easy GE" is actually a GPA killer.
+            By merging official UCSB Registrar data with student-led reviews, we provide a holistic 
+            view of the Gaucho classroom experience.
             
             ### ( 📍 ) How to use the UI
-            - **Sidebar Navigation:** Head to the 'Search Tool' tab and use the filters.
-            - **Result Cards:** High blue bars mean more A's! Low bars mean... well, you know.
-            - **Detailed Profiles:** Click a professor's name to see their historical "Stress Levels" (GPA trends).
+            - **Sidebar Navigation:** Head to the 'Search Tool' tab and use the filters on the left to start your search.
+            - **Result Cards:** See the grade distribution at a glance. High blue bars mean more A's!
+            - **Detailed Profiles:** Click a professor's name to view their historical GPA trends and specific RateMyProfessor tags.
 
             ### ( 📖 ) Glossary & Terms
-            - **RMP (Rate My Professors):** The student bible for avoiding bad vibes.
-            - **Difficulty:** A 1-5 scale of how much sleep you'll lose (5 = Hardest).
-            - **Avg GPA:** The actual average grade awarded. Numbers don't lie.
+            - **RMP (Rate My Professors):** A popular review site where students anonymously rate instructors on a scale of 1-5.
+            - **Difficulty:** An RMP metric showing how hard students found the coursework (5 being the hardest).
+            - **Avg GPA:** The average grade point assigned in that specific section, calculated from Registrar records.
             """)
         
         with col_right:
             st.success(f"""
             **( 📊 ) Project Info**
             - **Data Recency:** Through Summer 2025.
-            - **Sources:** UCSB Registrar & RMP.
+            - **Sources:** UCSB Registrar & RateMyProfessors.
             - **Created By:** Joshua Chung
             """)
             
-            # LinkedIn Section with New Emoticon
+            # LinkedIn Section
             st.markdown(f"""
             <div style="background-color: #0077b5; padding: 15px; border-radius: 10px; color: white; text-align: center; margin-top: 10px;">
                 <p style="margin-bottom: 10px; font-weight: bold;">ദ്ദി(˵ •̀ ᴗ - ˵ ) ✧ Like this project?</p>
@@ -140,22 +149,24 @@ def main():
             """, unsafe_allow_html=True)
 
             st.write("---")
-            st.info("( 💡 ) Tip: Switch to the 'Search Tool' tab to check your schedule!")
+            st.info("( 💡 ) Tip: Switch to the 'Search Tool' tab to start exploring!")
+
+        st.image("https://brand.ucsb.edu/sites/default/files/styles/flexslider_full/public/2021-12/ucsb-campus.jpg", 
+                 caption="Helping Gauchos pick the right path.")
 
     with tab2:
-        # --- SIDEBAR ---
+        # --- SIDEBAR FILTERS ---
         st.sidebar.header("( 🔍 ) FILTERS")
         all_depts = sorted(full_df['dept'].unique().tolist())
-        selected_dept = st.sidebar.selectbox("Select Department", options=[" "] + all_depts, key="dept_persist")
-        course_q = st.sidebar.text_input("COURSE #", key="course_persist").strip().upper()
-        prof_q = st.sidebar.text_input("PROFESSOR NAME", key="prof_persist").strip().upper()
+        
+        selected_dept = st.sidebar.selectbox("Select Department", options=[" "] + all_depts, key="dept_query")
+        course_q = st.sidebar.text_input("COURSE # (e.g. 120B, 16)", key="course_query").strip().upper()
+        prof_q = st.sidebar.text_input("PROFESSOR NAME", key="prof_query").strip().upper()
 
-        if st.sidebar.button("( ✖ ) Clear All"):
-            st.session_state.dept_persist = " "
-            st.session_state.course_persist = ""
-            st.session_state.prof_persist = ""
+        if st.sidebar.button("( ✖ ) Clear All", on_click=reset_filters):
             st.rerun()
 
+        # Apply Filters
         data = full_df.copy()
         if selected_dept != " ":
             data = data[data['dept'] == selected_dept]
@@ -194,7 +205,7 @@ def main():
                             st.markdown(tag_html, unsafe_allow_html=True)
                         
                         if pd.notna(rmp.get('rmp_url')):
-                            st.markdown(f"<br><a href='{rmp['rmp_url']}' target='_blank' style='color: #00CCFF; text-decoration: none;'>View Original Reviews ( 🔗 )</a>", unsafe_allow_html=True)
+                            st.markdown(f"<br><a href='{rmp['rmp_url']}' target='_blank' style='color: #00CCFF; text-decoration: none;'>View Reviews on RMP ( 🔗 )</a>", unsafe_allow_html=True)
                     else:
                         st.info("(´・ω・`) No RMP data found.")
                 
@@ -209,31 +220,30 @@ def main():
                 trend_df = prof_history.copy().sort_values(by=['year', 'q_score'])
                 trend_df['label'] = trend_df['quarter'] + " " + trend_df['year'].astype(str)
                 st.plotly_chart(px.line(trend_df, x='label', y=gpa_col, color='course', markers=True, template="plotly_dark"), use_container_width=True)
-        
+            return
+
         # --- SEARCH RESULTS VIEW ---
+        if not data.empty:
+            st.write(f"( ─‿─ ) Showing results:")
+            for idx, row in data.head(25).iterrows():
+                with st.container(border=True):
+                    colA, colB = st.columns([2, 1])
+                    with colA:
+                        st.markdown(f"### {row['course']} | {row['quarter']} {row['year']}")
+                        if st.button(f"{row['instructor']}", key=f"btn_{idx}"):
+                            st.session_state.prof_view = row['join_key']
+                            st.rerun()
+                        r_val = f"٩(◕‿◕｡)۶ {row['rmp_rating']}" if pd.notna(row.get('rmp_rating')) else "N/A"
+                        st.write(f"**Dept:** {row['dept']} | **GPA:** `{row[gpa_col]:.2f}` | **RMP:** {r_val}")
+                    with colB:
+                        grades = pd.DataFrame({'Grade': ['A', 'B', 'C', 'D', 'F'], 'Count': [row['a'], row['b'], row['c'], row['d'], row['f']]})
+                        fig = px.bar(grades, x='Grade', y='Count', color='Grade', 
+                                     color_discrete_map={'A':'#00CCFF','B':'#3498db','C':'#FFD700','D':'#e67e22','F':'#e74c3c'}, 
+                                     template="plotly_dark", height=100)
+                        fig.update_layout(margin=dict(l=0,r=0,t=0,b=0), showlegend=False, xaxis_visible=False, yaxis_visible=False, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+                        st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False}, key=f"fig_{idx}")
         else:
-            if not data.empty:
-                st.write(f"( ─‿─ ) Showing results:")
-                for idx, row in data.head(25).iterrows():
-                    with st.container(border=True):
-                        colA, colB = st.columns([2, 1])
-                        with colA:
-                            st.markdown(f"### {row['course']} | {row['quarter']} {row['year']}")
-                            if st.button(f"{row['instructor']}", key=f"btn_{idx}"):
-                                st.session_state.prof_view = row['join_key']
-                                st.rerun()
-                            # Updated Rating Emoticon here
-                            r_val = f"٩(◕‿◕｡)۶ {row['rmp_rating']}" if pd.notna(row.get('rmp_rating')) else "N/A"
-                            st.write(f"**Dept:** {row['dept']} | **GPA:** `{row[gpa_col]:.2f}` | **RMP:** {r_val}")
-                        with colB:
-                            grades = pd.DataFrame({'Grade': ['A', 'B', 'C', 'D', 'F'], 'Count': [row['a'], row['b'], row['c'], row['d'], row['f']]})
-                            fig = px.bar(grades, x='Grade', y='Count', color='Grade', 
-                                         color_discrete_map={'A':'#00CCFF','B':'#3498db','C':'#FFD700','D':'#e67e22','F':'#e74c3c'}, 
-                                         template="plotly_dark", height=100)
-                            fig.update_layout(margin=dict(l=0,r=0,t=0,b=0), showlegend=False, xaxis_visible=False, yaxis_visible=False, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
-                            st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False}, key=f"fig_{idx}")
-            else:
-                st.warning("( ⊙_⊙ ) No matches found. Try again!")
+            st.warning("( ⊙_⊙ ) No matches found. Try clearing your filters!")
 
 if __name__ == "__main__":
     main()
