@@ -226,20 +226,19 @@ def main():
                             st.session_state.prof_view = row['join_key']
                             st.rerun()
                         
-                        # --- CONDITIONAL RMP KAOMOJI ---
-                        rmp_val = row.get('rmp_rating')
-                        if pd.isna(rmp_val):
-                            r_display = "N/A"
+                        # --- CONDITIONAL GPA KAOMOJI ---
+                        gpa_val = row[gpa_col]
+                        if gpa_val > 3.4:
+                            gpa_emo = "°˖✧◝(⁰▿⁰)◜✧˖°"
+                        elif 3.1 <= gpa_val <= 3.3:
+                            gpa_emo = "┐(~ー~;)┌"
                         else:
-                            if rmp_val >= 3.5:
-                                emo = "°˖✧◝(⁰▿⁰)◜✧˖°"
-                            elif 2.6 <= rmp_val <= 3.4:
-                                emo = "┐(~ー~;)┌"
-                            else:
-                                emo = "(╥﹏╥)"
-                            r_display = f"{emo} {rmp_val}"
+                            gpa_emo = "(╥﹏╥)"
                             
-                        st.write(f"**Dept:** {row['dept']} | **GPA:** `{row[gpa_col]:.2f}` | **RMP:** {r_display}")
+                        # Standard Rating Star
+                        r_star = f"٩(◕‿◕｡)۶ {row['rmp_rating']}" if pd.notna(row.get('rmp_rating')) else "N/A"
+                        
+                        st.write(f"**Dept:** {row['dept']} | **GPA:** {gpa_emo} `{gpa_val:.2f}` | **RMP:** {r_star}")
                         
                     with colB:
                         grades = pd.DataFrame({'Grade': ['A', 'B', 'C', 'D', 'F'], 'Count': [row['a'], row['b'], row['c'], row['d'], row['f']]})
