@@ -158,7 +158,6 @@ def main():
         if st.sidebar.button("( ✖ ) Clear All", on_click=reset_filters):
             st.rerun()
 
-        # Apply Filters
         data = full_df.copy()
         if selected_dept != " ":
             data = data[data['dept'] == selected_dept]
@@ -235,10 +234,10 @@ def main():
                         else:
                             gpa_emo = "(╥﹏╥)"
                             
-                        # Standard Rating Star
-                        r_star = f"٩(◕‿◕｡)۶ {row['rmp_rating']}" if pd.notna(row.get('rmp_rating')) else "N/A"
+                        # Removed emoji from RMP text
+                        r_score = row.get('rmp_rating', 'N/A')
                         
-                        st.write(f"**Dept:** {row['dept']} | **GPA:** {gpa_emo} `{gpa_val:.2f}` | **RMP:** {r_star}")
+                        st.write(f"**Dept:** {row['dept']} | **GPA:** {gpa_emo} `{gpa_val:.2f}` | **RMP:** {r_score}")
                         
                     with colB:
                         grades = pd.DataFrame({'Grade': ['A', 'B', 'C', 'D', 'F'], 'Count': [row['a'], row['b'], row['c'], row['d'], row['f']]})
