@@ -33,7 +33,6 @@ def load_and_clean_data():
     df = pd.read_csv(csv_path)
     df.columns = [str(c).strip().lower() for c in df.columns]
 
-    # Filter: Undergrad only (No 99, max 198)
     def get_course_num(course_str):
         match = re.search(r'(\d+)', str(course_str))
         return int(match.group(1)) if match else None
@@ -42,7 +41,6 @@ def load_and_clean_data():
     df = df[df['course_num_val'].notna()]
     df = df[(df['course_num_val'] <= 198) & (df['course_num_val'] != 99)]
 
-    # Matcher Logic
     def get_registrar_key(name):
         if pd.isna(name): return "UNKNOWN"
         parts = str(name).upper().split()
@@ -88,7 +86,6 @@ def load_and_clean_data():
     
     return df, gpa_col
 
-# --- CALLBACK FOR CLEARING FILTERS ---
 def reset_filters():
     st.session_state.dept_query = " "
     st.session_state.course_query = ""
@@ -115,29 +112,27 @@ def main():
             Gaucho Insights is a tool designed to help you survive your schedule. This dashboard helps you see exactly how stressful 
             certain classes are with specific professors **(ノಠ益ಠ)ノ彡┻━┻**. 
             
-            By merging official UCSB Registrar data with student-led reviews, we provide a holistic 
-            view of the Gaucho classroom experience.
+            By merging official UCSB Registrar data with RMP reviews, we let you see if that "Easy GE" is actually a GPA killer.
             
             ### ( 📍 ) How to use the UI
-            - **Sidebar Navigation:** Head to the 'Search Tool' tab and use the filters on the left to start your search.
-            - **Result Cards:** See the grade distribution at a glance. High blue bars mean more A's!
-            - **Detailed Profiles:** Click a professor's name to view their historical GPA trends and specific RateMyProfessor tags.
+            - **Sidebar Navigation:** Head to the 'Search Tool' tab and use the filters.
+            - **Result Cards:** High blue bars mean more A's! Low bars mean... well, you know.
+            - **Detailed Profiles:** Click a professor's name to see their historical "Stress Levels" (GPA trends).
 
             ### ( 📖 ) Glossary & Terms
-            - **RMP (Rate My Professors):** A popular review site where students anonymously rate instructors on a scale of 1-5.
-            - **Difficulty:** An RMP metric showing how hard students found the coursework (5 being the hardest).
-            - **Avg GPA:** The average grade point assigned in that specific section, calculated from Registrar records.
+            - **RMP (Rate My Professors):** The student bible for avoiding bad vibes.
+            - **Difficulty:** A 1-5 scale of how much sleep you'll lose (5 = Hardest).
+            - **Avg GPA:** The actual average grade awarded. Numbers don't lie.
             """)
         
         with col_right:
             st.success(f"""
             **( 📊 ) Project Info**
             - **Data Recency:** Through Summer 2025.
-            - **Sources:** UCSB Registrar & RateMyProfessors.
+            - **Sources:** UCSB Registrar & RMP.
             - **Created By:** Joshua Chung
             """)
             
-            # LinkedIn Section
             st.markdown(f"""
             <div style="background-color: #0077b5; padding: 15px; border-radius: 10px; color: white; text-align: center; margin-top: 10px;">
                 <p style="margin-bottom: 10px; font-weight: bold;">ദ്ദി(˵ •̀ ᴗ - ˵ ) ✧ Like this project?</p>
@@ -149,10 +144,7 @@ def main():
             """, unsafe_allow_html=True)
 
             st.write("---")
-            st.info("( 💡 ) Tip: Switch to the 'Search Tool' tab to start exploring!")
-
-        st.image("https://brand.ucsb.edu/sites/default/files/styles/flexslider_full/public/2021-12/ucsb-campus.jpg", 
-                 caption="Helping Gauchos pick the right path.")
+            st.info("( 💡 ) Tip: Switch to the 'Search Tool' tab to check your schedule!")
 
     with tab2:
         # --- SIDEBAR FILTERS ---
@@ -160,7 +152,7 @@ def main():
         all_depts = sorted(full_df['dept'].unique().tolist())
         
         selected_dept = st.sidebar.selectbox("Select Department", options=[" "] + all_depts, key="dept_query")
-        course_q = st.sidebar.text_input("COURSE # (e.g. 120B, 16)", key="course_query").strip().upper()
+        course_q = st.sidebar.text_input("COURSE #", key="course_query").strip().upper()
         prof_q = st.sidebar.text_input("PROFESSOR NAME", key="prof_query").strip().upper()
 
         if st.sidebar.button("( ✖ ) Clear All", on_click=reset_filters):
@@ -233,8 +225,22 @@ def main():
                         if st.button(f"{row['instructor']}", key=f"btn_{idx}"):
                             st.session_state.prof_view = row['join_key']
                             st.rerun()
-                        r_val = f"٩(◕‿◕｡)۶ {row['rmp_rating']}" if pd.notna(row.get('rmp_rating')) else "N/A"
-                        st.write(f"**Dept:** {row['dept']} | **GPA:** `{row[gpa_col]:.2f}` | **RMP:** {r_val}")
+                        
+                        # --- CONDITIONAL RMP KAOMOJI ---
+                        rmp_val = row.get('rmp_rating')
+                        if pd.isna(rmp_val):
+                            r_display = "N/A"
+                        else:
+                            if rmp_val >= 3.5:
+                                emo = "°˖✧◝(⁰▿⁰)◜✧˖°"
+                            elif 2.6 <= rmp_val <= 3.4:
+                                emo = "┐(~ー~;)┌"
+                            else:
+                                emo = "(╥﹏╥)"
+                            r_display = f"{emo} {rmp_val}"
+                            
+                        st.write(f"**Dept:** {row['dept']} | **GPA:** `{row[gpa_col]:.2f}` | **RMP:** {r_display}")
+                        
                     with colB:
                         grades = pd.DataFrame({'Grade': ['A', 'B', 'C', 'D', 'F'], 'Count': [row['a'], row['b'], row['c'], row['d'], row['f']]})
                         fig = px.bar(grades, x='Grade', y='Count', color='Grade', 
