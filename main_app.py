@@ -94,42 +94,44 @@ def main():
         st.session_state.prof_view = None
 
     # --- TAB NAVIGATION ---
-    tab1, tab2 = st.tabs(["(🏠) Home", "(🔍) Search Tool"])
+    tab1, tab2 = st.tabs(["( 🏠 ) Home", "( 🔍 ) Search Tool"])
 
     with tab1:
         st.markdown("---")
         col_left, col_right = st.columns([2, 1])
         
         with col_left:
-            st.header("Welcome to Gaucho Insights! (🎓)")
+            st.header("Welcome to Gaucho Insights! ৻(  •̀ ᗜ •́  ৻)")
             st.markdown("""
             ### What is this?
-            Gaucho Insights is a comprehensive dashboard for UCSB students to analyze academic trends. 
-            By merging official Registrar data with student-led reviews, we provide a holistic 
-            view of the Gaucho classroom experience.
+            Gaucho Insights is a tool designed to help you survive your schedule. This dashboard helps you see exactly how stressful 
+            certain classes are with specific professors **(ノಠ益ಠ)ノ彡┻━┻**. 
             
-            ### (📍) How to use the UI
-            - **Sidebar Navigation:** Use the filters on the left to start your search. Filter by department, course numbers, or professor names.
-            - **Result Cards:** See grade distributions at a glance. High blue bars mean more A's!
-            - **Detailed Profiles:** Click a professor's name to view historical GPA trends and specific RateMyProfessor tags.
+            By merging official UCSB Registrar data with RMP reviews, we let you see if that "Easy GE" is actually a GPA killer.
+            
+            ### ( 📍 ) How to use the UI
+            - **Sidebar Navigation:** Head to the 'Search Tool' tab and use the filters.
+            - **Result Cards:** High blue bars mean more A's! Low bars mean... well, you know.
+            - **Detailed Profiles:** Click a professor's name to see their historical "Stress Levels" (GPA trends).
 
-            ### (📖) Glossary & Terms
-            - **RMP (Rate My Professors):** A review site where students rate instructors on a 1-5 scale.
-            - **Difficulty:** An RMP metric showing how hard students found the coursework (5 = Hardest).
-            - **Avg GPA:** The average grade point assigned in a specific section.
+            ### ( 📖 ) Glossary & Terms
+            - **RMP (Rate My Professors):** The student bible for avoiding bad vibes.
+            - **Difficulty:** A 1-5 scale of how much sleep you'll lose (5 = Hardest).
+            - **Avg GPA:** The actual average grade awarded. Numbers don't lie.
             """)
         
         with col_right:
             st.success(f"""
-            **(📊) Project Info**
+            **( 📊 ) Project Info**
             - **Data Recency:** Through Summer 2025.
-            - **Sources:** UCSB Registrar & RateMyProfessors.
+            - **Sources:** UCSB Registrar & RMP.
             - **Created By:** Joshua Chung
             """)
             
+            # LinkedIn Section with New Emoticon
             st.markdown(f"""
             <div style="background-color: #0077b5; padding: 15px; border-radius: 10px; color: white; text-align: center; margin-top: 10px;">
-                <p style="margin-bottom: 10px; font-weight: bold;">(🚀) Like this project?</p>
+                <p style="margin-bottom: 10px; font-weight: bold;">ദ്ദി(˵ •̀ ᴗ - ˵ ) ✧ Like this project?</p>
                 <a href="https://www.linkedin.com/in/joshua-chung858/" target="_blank" style="color: white; text-decoration: none; background-color: #005582; padding: 8px 15px; border-radius: 5px; font-size: 0.9em; font-weight: bold;">
                     Follow me on LinkedIn
                 </a>
@@ -138,18 +140,17 @@ def main():
             """, unsafe_allow_html=True)
 
             st.write("---")
-            st.info("(💡) Tip: Go to the 'Search Tool' tab to start exploring!")
-
-        st.image("https://brand.ucsb.edu/sites/default/files/styles/flexslider_full/public/2021-12/ucsb-campus.jpg", caption="Helping Gauchos pick the right path.")
+            st.info("( 💡 ) Tip: Switch to the 'Search Tool' tab to check your schedule!")
 
     with tab2:
-        st.sidebar.header("(🔍) FILTERS")
+        # --- SIDEBAR ---
+        st.sidebar.header("( 🔍 ) FILTERS")
         all_depts = sorted(full_df['dept'].unique().tolist())
         selected_dept = st.sidebar.selectbox("Select Department", options=[" "] + all_depts, key="dept_persist")
         course_q = st.sidebar.text_input("COURSE #", key="course_persist").strip().upper()
         prof_q = st.sidebar.text_input("PROFESSOR NAME", key="prof_persist").strip().upper()
 
-        if st.sidebar.button("(✖) Clear All"):
+        if st.sidebar.button("( ✖ ) Clear All"):
             st.session_state.dept_persist = " "
             st.session_state.course_persist = ""
             st.session_state.prof_persist = ""
@@ -164,17 +165,18 @@ def main():
         if prof_q:
             data = data[data['instructor'].str.contains(prof_q, na=False)]
 
+        # --- PROFESSOR PROFILE VIEW ---
         if st.session_state.prof_view:
             prof_key = st.session_state.prof_view
             prof_history = full_df[full_df['join_key'] == prof_key]
             
-            if st.button("(⬅) Back to Search"):
+            if st.button("( ⬅ ) Back to Search"):
                 st.session_state.prof_view = None
                 st.rerun()
             
             if not prof_history.empty:
                 rmp = prof_history.iloc[0]
-                st.header(f"(👨‍🏫) {rmp['instructor']}")
+                st.header(f"( 👨‍🏫 ) {rmp['instructor']}")
                 
                 c1, c2 = st.columns([1, 1.2])
                 with c1:
@@ -192,7 +194,7 @@ def main():
                             st.markdown(tag_html, unsafe_allow_html=True)
                         
                         if pd.notna(rmp.get('rmp_url')):
-                            st.markdown(f"<br><a href='{rmp['rmp_url']}' target='_blank' style='color: #00CCFF; text-decoration: none;'>View Reviews on RMP (🔗)</a>", unsafe_allow_html=True)
+                            st.markdown(f"<br><a href='{rmp['rmp_url']}' target='_blank' style='color: #00CCFF; text-decoration: none;'>View Original Reviews ( 🔗 )</a>", unsafe_allow_html=True)
                     else:
                         st.info("(´・ω・`) No RMP data found.")
                 
@@ -208,9 +210,10 @@ def main():
                 trend_df['label'] = trend_df['quarter'] + " " + trend_df['year'].astype(str)
                 st.plotly_chart(px.line(trend_df, x='label', y=gpa_col, color='course', markers=True, template="plotly_dark"), use_container_width=True)
         
+        # --- SEARCH RESULTS VIEW ---
         else:
             if not data.empty:
-                st.write(f"(─‿─) Showing results:")
+                st.write(f"( ─‿─ ) Showing results:")
                 for idx, row in data.head(25).iterrows():
                     with st.container(border=True):
                         colA, colB = st.columns([2, 1])
@@ -219,7 +222,8 @@ def main():
                             if st.button(f"{row['instructor']}", key=f"btn_{idx}"):
                                 st.session_state.prof_view = row['join_key']
                                 st.rerun()
-                            r_val = f"(⭐) {row['rmp_rating']}" if pd.notna(row.get('rmp_rating')) else "N/A"
+                            # Updated Rating Emoticon here
+                            r_val = f"٩(◕‿◕｡)۶ {row['rmp_rating']}" if pd.notna(row.get('rmp_rating')) else "N/A"
                             st.write(f"**Dept:** {row['dept']} | **GPA:** `{row[gpa_col]:.2f}` | **RMP:** {r_val}")
                         with colB:
                             grades = pd.DataFrame({'Grade': ['A', 'B', 'C', 'D', 'F'], 'Count': [row['a'], row['b'], row['c'], row['d'], row['f']]})
@@ -229,7 +233,7 @@ def main():
                             fig.update_layout(margin=dict(l=0,r=0,t=0,b=0), showlegend=False, xaxis_visible=False, yaxis_visible=False, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
                             st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False}, key=f"fig_{idx}")
             else:
-                st.warning("(⊙_⊙) No matches found. Try clearing filters!")
+                st.warning("( ⊙_⊙ ) No matches found. Try again!")
 
 if __name__ == "__main__":
     main()
