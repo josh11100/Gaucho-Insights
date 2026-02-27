@@ -108,7 +108,6 @@ def main():
         st.session_state.prof_persist = ""
         st.rerun()
 
-    # Apply Filters and check if we are searching
     data = full_df.copy()
     has_active_filter = False
 
@@ -183,22 +182,39 @@ def main():
             view of the Gaucho classroom experience.
             
             ### 📍 How to use the UI
-            - **Sidebar Navigation:** Use the filters on the left to start your search. You can filter by department (e.g., PSTAT), specific course numbers, or professor last names.
-            - **Result Cards:** See the grade distribution at a glance. High blue bars mean more A's!
-            - **Detailed Profiles:** Click a professor's name to view their historical GPA trends and specific RateMyProfessor tags.
+            - **Sidebar Navigation:** Use the filters on the left to start your search. Filter by department (e.g., PSTAT), course numbers, or professor names.
+            - **Result Cards:** See grade distributions at a glance. High blue bars mean more A's!
+            - **Detailed Profiles:** Click a professor's name to view historical GPA trends and specific RateMyProfessor tags.
+
+            ### 📖 Glossary & Terms
+            - **RMP (Rate My Professors):** A review site where students rate instructors on a 1-5 scale.
+            - **Difficulty:** An RMP metric showing how hard students found the coursework (5 = Hardest).
+            - **Avg GPA:** The average grade point assigned in a specific section, pulled from official records.
             """)
         
         with col_right:
-            st.success("""
+            st.success(f"""
             **📊 Project Info**
-            - **Data Recency:** Grades updated through Summer 2025.
+            - **Data Recency:** Grades through Summer 2025.
             - **Sources:** UCSB Registrar & RateMyProfessors.
             - **Created By:** Joshua Chung
             """)
-            st.write("---")
-            st.info("💡 **Tip:** Try typing 'PSTAT' in the department filter to see how the UI changes!")
+            
+            # LinkedIn Call-to-Action
+            st.markdown("""
+            <div style="background-color: #0077b5; padding: 15px; border-radius: 10px; color: white; text-align: center; margin-top: 10px;">
+                <p style="margin-bottom: 10px; font-weight: bold;">🚀 Like this project?</p>
+                <a href="https://www.linkedin.com/in/joshua-chung858/" target="_blank" style="color: white; text-decoration: none; background-color: #005582; padding: 8px 15px; border-radius: 5px; font-size: 0.9em; font-weight: bold;">
+                    Follow me on LinkedIn
+                </a>
+                <p style="margin-top: 10px; font-size: 0.8em;">For more useful Gaucho tools!</p>
+            </div>
+            """, unsafe_allow_html=True)
 
-        st.image("https://brand.ucsb.edu/sites/default/files/styles/flexslider_full/public/2021-12/ucsb-campus.jpg", caption="UCSB Campus - Storke Tower")
+            st.write("---")
+            st.info("💡 **Tip:** Try searching for 'ANTH' to see Summer 2025 data!")
+
+        st.image("https://brand.ucsb.edu/sites/default/files/styles/flexslider_full/public/2021-12/ucsb-campus.jpg", caption="Helping Gauchos pick the right path.")
         return
 
     # --- 3. SEARCH RESULTS VIEW ---
