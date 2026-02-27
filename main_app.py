@@ -57,8 +57,19 @@ def load_and_clean_data():
 
     if rmp_path:
         rmp_df = pd.read_csv(rmp_path)
-        rmp_df['rmp_join_key'] = rmp_df['instructor'].apply(get_rmp_key)
-        df = pd.merge(df, rmp_df, left_on='join_key', right_on='rmp_join_key', how='left', suffixes=('', '_rmp'))
+        # Ensure column names are clean
+        rmp_df.columns = [c.strip().lower() for c in rmp_df.columns]
+        # Mapping our expected columns if they have different names in CSV
+        rmp_df = rmp_df.rename(columns={
+            'instructor': 'instructor_rmp',
+            'rating': 'rmp_rating',
+            'difficulty': 'rmp_difficulty',
+            'take_again': 'rmp_take_again',
+            'tags': 'rmp_tags',
+            'url': 'rmp_url'
+        })
+        rmp_df['rmp_join_key'] = rmp_df['instructor_rmp'].apply(get_rmp_key)
+        df = pd.merge(df, rmp_df, left_on='join_key', right_on='rmp_join_key', how='left')
     
     for col in ['instructor', 'quarter', 'course', 'dept']:
         if col in df.columns:
@@ -67,9 +78,12 @@ def load_and_clean_data():
     gpa_col = next((c for c in ['avggpa', 'avg_gpa', 'avg gpa'] if c in df.columns), 'avggpa')
     
     group_cols = ['instructor', 'join_key', 'quarter', 'year', 'course', 'dept']
+    
+    # Define aggregation, ensuring tags and url are included
     agg_dict = {gpa_col: 'mean', 'a': 'sum', 'b': 'sum', 'c': 'sum', 'd': 'sum', 'f': 'sum'}
     for rmp_c in ['rmp_rating', 'rmp_difficulty', 'rmp_take_again', 'rmp_tags', 'rmp_url']:
-        if rmp_c in df.columns: agg_dict[rmp_c] = 'first'
+        if rmp_c in df.columns: 
+            agg_dict[rmp_c] = 'first'
 
     df = df.groupby(group_cols).agg(agg_dict).reset_index()
     q_map = {'FALL': 4, 'SUMMER': 3, 'SPRING': 2, 'WINTER': 1}
@@ -85,7 +99,7 @@ def main():
     if 'prof_view' not in st.session_state:
         st.session_state.prof_view = None
 
-    # --- SIDEBAR (Always Visible) ---
+    # --- SIDEBAR ---
     st.sidebar.header("🔍 FILTERS")
     
     all_depts = sorted(full_df['dept'].unique().tolist())
@@ -99,7 +113,6 @@ def main():
         st.session_state.prof_persist = ""
         st.rerun()
 
-    # Apply Filters to the Data
     data = full_df.copy()
     if selected_dept != " ":
         data = data[data['dept'] == selected_dept]
@@ -129,9 +142,23 @@ def main():
                     m1, m2, m3 = st.columns(3)
                     m1.metric("Rating", f"{rmp['rmp_rating']}/5")
                     m2.metric("Difficulty", f"{rmp['rmp_difficulty']}/5")
-                    m3.metric("Take Again", rmp.get('rmp_take_again', 'N/A'))
+                    m3.metric("Take Again", f"{rmp.get('rmp_take_again', 'N/A')}")
+                    
+                    # --- NEW: TAGS DISPLAY ---
+                    if pd.notna(rmp.get('rmp_tags')) and rmp['rmp_tags'] != "":
+                        st.write("**Student Tags:**")
+                        tags = str(rmp['rmp_tags']).split(',')
+                        tag_html = ""
+                        for tag in tags:
+                            if tag.strip():
+                                tag_html += f'<span style="background-color: #FFD700; color: black; padding: 4px 10px; border-radius: 12px; margin-right: 6px; font-size: 0.75rem; font-weight: bold; display: inline-block; margin-bottom: 5px;">{tag.strip().upper()}</span>'
+                        st.markdown(tag_html, unsafe_allow_html=True)
+                    
+                    # --- NEW: LINK TO RMP ---
+                    if pd.notna(rmp.get('rmp_url')):
+                        st.markdown(f"<br><a href='{rmp['rmp_url']}' target='_blank' style='color: #00CCFF; text-decoration: none;'>View Original Reviews on RMP 🔗</a>", unsafe_allow_html=True)
                 else:
-                    st.info("No RMP data found.")
+                    st.info("No RMP data found for this professor.")
             
             with c2:
                 st.subheader("Course History")
@@ -148,7 +175,7 @@ def main():
 
     # --- 2. SEARCH RESULTS VIEW ---
     if not data.empty:
-        st.write(f"Showing results based on your sidebar filters:")
+        st.write(f"Showing results based on your filters:")
         for idx, row in data.head(25).iterrows():
             with st.container(border=True):
                 colA, colB = st.columns([2, 1])
