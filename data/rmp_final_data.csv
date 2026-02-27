@@ -1,4 +1,12 @@
 instructor,rmp_rating,rmp_url,rmp_tags,rmp_difficulty,rmp_take_again
+ANNA BRUSUTTI,3.1,https://www.ratemyprofessors.com/professor/268051,"Tough Grader, Good Feedback, Respected, Lecture Heavy, Hilarious, Caring, Accessible, Many Papers, Inspirational",2.9,45%
+PETER ALAGONA,4.5,https://www.ratemyprofessors.com/professor/1701804,"Respected, Amazing Lectures, Caring, Extra Credit, Accessible, Participation Matters, Inspirational",2.5,89%
+MARYAM MAJEDI,2.6,https://www.ratemyprofessors.com/professor/2938378,"Tough Grader, Test Heavy, Caring, Accessible, Participation Matters",4,44%
+VOLKER WELTER,3.8,https://www.ratemyprofessors.com/professor/463145,"Tough Grader, Lecture Heavy, Amazing Lectures, Clear Grading, Participation Matters",3,67%
+HILARY BERNSTEIN,4.0,https://www.ratemyprofessors.com/professor/543961,"Tough Grader, Lecture Heavy, Amazing Lectures, Many Papers, Clear Grading, Participation Matters",3.2,68%
+ANNA TRUGMAN,4.0,https://www.ratemyprofessors.com/professor/2641665,"Lecture Heavy, Test Heavy, Caring, Group Projects, Accessible, Clear Grading, Participation Matters",2.8,69%
+ANDREEA CORONA,1.0,https://www.ratemyprofessors.com/professor/3159556,None,5,0%
+MAUNG NYEU,5.0,https://www.ratemyprofessors.com/professor/3158663,"Amazing Lectures, Group Projects, Clear Grading",1,100%
 CRISJOE JOSEPH,4.2,https://www.ratemyprofessors.com/professor/1829388,"Test Heavy, Amazing Lectures, Extra Credit, Clear Grading, Participation Matters, Inspirational",3.7,83%
 STUART SMITH,2.8,https://www.ratemyprofessors.com/professor/349755,"Lecture Heavy, Amazing Lectures, Extra Credit, Group Projects, Many Papers, Clear Grading, Participation Matters, Inspirational",3.1,57%
 RUTH FINKELSTEIN,2.0,https://www.ratemyprofessors.com/professor/168264,"Tough Grader, Lecture Heavy, Test Heavy, Participation Matters",4.4,8%
@@ -32,6 +40,8 @@ CRYSTAL MARTIN,3.0,https://www.ratemyprofessors.com/professor/297697,"Tough Grad
 ALAN CRAWLEY,5.0,https://www.ratemyprofessors.com/professor/3108217,"Test Heavy, Amazing Lectures, Caring",4,100%
 MARK RODWELL,3.0,https://www.ratemyprofessors.com/professor/568950,"Tough Grader, Lecture Heavy, Amazing Lectures, Hilarious, Group Projects, Accessible, Inspirational",3.4,50%
 FAYE WALKER,1.3,https://www.ratemyprofessors.com/professor/3046802,"Tough Grader, Many Papers, Participation Matters",4.6,5%
+JAVIER BIRCHENALL,2.5,https://www.ratemyprofessors.com/professor/744241,"Tough Grader, Lecture Heavy, Test Heavy",3.7,36%
+FENGRUI YANG,1.3,https://www.ratemyprofessors.com/professor/3042220,"Tough Grader, Lecture Heavy, Test Heavy, Extra Credit",4.2,10%
 YOUNGKI HONG,3.3,https://www.ratemyprofessors.com/professor/2403175,"Tough Grader, Respected, Lecture Heavy, Test Heavy, Extra Credit, Clear Grading",2.8,75%
 ALAN FRIDLUND,4.1,https://www.ratemyprofessors.com/professor/855,"Tough Grader, Test Heavy, Amazing Lectures, Hilarious, Accessible",3.1,75%
 ANDREW BAKER,3.9,https://www.ratemyprofessors.com/professor/2343293,"Tough Grader, Good Feedback, Respected, Caring, Extra Credit, Group Projects",2.6,73%
@@ -59,12 +69,11 @@ YEKATERINA KATE KHARITONOVA,2.5,https://www.ratemyprofessors.com/professor/24506
 ROBERT (BOB) KENNEDY,4.1,https://www.ratemyprofessors.com/professor/1148287,"Good Feedback, Respected, Lecture Heavy, Amazing Lectures, Hilarious, Caring, Clear Grading, Participation Matters",2.5,85%
 THOMAS BARRETT,4.8,https://www.ratemyprofessors.com/professor/2435150,"Amazing Lectures, Hilarious, Caring, Extra Credit, Accessible, Clear Grading",2.3,94%
 JEREMY WHITE,3.7,https://www.ratemyprofessors.com/professor/895623,"Lecture Heavy, Extra Credit, Group Projects, Many Papers",2.9,69%
-VOLKER WELTER,3.8,https://www.ratemyprofessors.com/professor/463145,"Tough Grader, Lecture Heavy, Amazing Lectures, Accessible, Clear Grading",3,66%
 GIULIANA PERRONE,4.6,https://www.ratemyprofessors.com/professor/2294553,"Tough Grader, Respected, Test Heavy, Amazing Lectures, Caring, Accessible, Inspirational",2.6,86%
 SAMEER PANDYA,4.4,https://www.ratemyprofessors.com/professor/1252531,"Respected, Lecture Heavy, Amazing Lectures, Inspirational",2.6,89%
-DAVID MOKRISKI,4.0,https://www.ratemyprofessors.com/professor/2241164,None,N/A,N/A
+DAVID MOKRISKI,4.0,https://www.ratemyprofessors.com/professor/2241164,"Good Feedback, Respected, Lecture Heavy, Test Heavy, Amazing Lectures, Accessible, Clear Grading",2.8,69%
 DANIEL FRANK,4.9,https://www.ratemyprofessors.com/professor/2464254,"Good Feedback, Respected, Lecture Heavy, Amazing Lectures, Hilarious, Caring, Accessible, Many Papers, Participation Matters",2.3,96%
-LETTY GARCIA DAHAN,4.7,https://www.ratemyprofessors.com/professor/3015202,None,N/A,N/A
+LETTY GARCIA DAHAN,4.7,https://www.ratemyprofessors.com/professor/3015202,"Amazing Lectures, Hilarious, Caring, Extra Credit, Accessible, Participation Matters",1.9,100%
 MATTHIAS WINK,3.2,https://www.ratemyprofessors.com/professor/3083884,"Tough Grader, Lecture Heavy, Test Heavy, Caring, Accessible, Clear Grading",3.3,60%
 HAOYANG LIU,3.3,https://www.ratemyprofessors.com/professor/3150367,"Tough Grader, Caring, Clear Grading",3.5,50%
 HUNG CHIANG,3.3,https://www.ratemyprofessors.com/professor/3125688,"Tough Grader, Extra Credit, Participation Matters",3,67%
@@ -72,6 +81,7 @@ HELEN MORALES,4.2,https://www.ratemyprofessors.com/professor/1406022,"Respected,
 ALICE O'CONNOR,4.0,https://www.ratemyprofessors.com/professor/41969,"Tough Grader, Good Feedback, Amazing Lectures, Participation Matters",3.3,65%
 OLGA AZARENKO,2.8,https://www.ratemyprofessors.com/professor/2612875,"Tough Grader, Lecture Heavy, Test Heavy, Hilarious, Extra Credit, Group Projects, Clear Grading",3.8,52%
 GREG JARRETT,4.0,https://www.ratemyprofessors.com/professor/1677243,"Test Heavy, Amazing Lectures, Hilarious, Participation Matters",3.2,82%
+SIMONETTA FALASCA,3.7,https://www.ratemyprofessors.com/professor/584099,"Tough Grader, Lecture Heavy, Test Heavy, Caring, Clear Grading",2.9,58%
 ALICIA BOSWELL,2.9,https://www.ratemyprofessors.com/professor/2572177,"Tough Grader, Lecture Heavy, Test Heavy, Extra Credit, Clear Grading, Participation Matters",3.3,40%
 ROSS MELNICK,4.6,https://www.ratemyprofessors.com/professor/1824808,"Good Feedback, Respected, Amazing Lectures, Hilarious, Caring, Accessible, Inspirational",2.6,86%
 MONA DAMLUJI,3.7,https://www.ratemyprofessors.com/professor/2470697,"Tough Grader, Good Feedback, Lecture Heavy, Amazing Lectures, Caring, Accessible, Many Papers, Clear Grading, Participation Matters",2.9,70%
@@ -93,7 +103,6 @@ COLIN ALLEN,3.8,https://www.ratemyprofessors.com/professor/2987737,"Respected, L
 REAGAN HAYNES,2.7,https://www.ratemyprofessors.com/professor/2914500,"Group Projects, Participation Matters",1.7,34%
 MEHDI HAGHIGHI,4.0,https://www.ratemyprofessors.com/professor/3109447,"Amazing Lectures, Extra Credit, Accessible, Participation Matters",3,100%
 JOHN HARTMAN,2.2,https://www.ratemyprofessors.com/professor/1112610,"Tough Grader, Lecture Heavy, Test Heavy, Clear Grading",3.8,25%
-MARYAM MAJEDI,2.6,https://www.ratemyprofessors.com/professor/2938378,"Tough Grader, Test Heavy, Hilarious, Caring, Accessible, Participation Matters",4,45%
 KATHLEEN BRUHN,3.4,https://www.ratemyprofessors.com/professor/43810,"Tough Grader, Respected, Lecture Heavy, Amazing Lectures, Many Papers",3.2,56%
 BRIAN DONNELLY,4.4,https://www.ratemyprofessors.com/professor/1406076,"Tough Grader, Amazing Lectures, Hilarious, Caring, Accessible",2.8,87%
 MELINDA BAHAM,3.9,https://www.ratemyprofessors.com/professor/2914518,"Tough Grader, Good Feedback, Lecture Heavy, Amazing Lectures, Caring, Many Papers, Clear Grading",2.5,80%
@@ -137,7 +146,6 @@ SEBASTIAN STREICHAN,4.5,https://www.ratemyprofessors.com/professor/2354923,"Good
 AMOS NATIDO,4.1,https://www.ratemyprofessors.com/professor/3149691,"Good Feedback, Respected, Lecture Heavy, Caring, Extra Credit, Clear Grading",2,100%
 XIANZHE DAI,2.6,https://www.ratemyprofessors.com/professor/346088,"Tough Grader, Lecture Heavy, Test Heavy, Amazing Lectures, Hilarious, Caring, Clear Grading, Inspirational",3.5,23%
 SCOTT FULKERSON,4.3,https://www.ratemyprofessors.com/professor/2346208,"Respected, Test Heavy, Amazing Lectures, Hilarious, Caring, Group Projects, Clear Grading",3.9,85%
-HILARY BERNSTEIN,4.0,https://www.ratemyprofessors.com/professor/543961,"Tough Grader, Lecture Heavy, Amazing Lectures, Many Papers, Clear Grading, Participation Matters",3.2,67%
 PUJA PANDEY,4.0,https://www.ratemyprofessors.com/professor/2988389,"Tough Grader, Lecture Heavy, Test Heavy, Amazing Lectures, Caring, Group Projects, Pop Quizzes",3,73%
 TIMOTHY GILMORE,3.0,https://www.ratemyprofessors.com/professor/2020145,"Amazing Lectures, Pop Quizzes, Clear Grading, Participation Matters",2.6,44%
 ERIKA ARENAS-VELAZQUEZ,2.2,https://www.ratemyprofessors.com/professor/2235158,"Tough Grader, Amazing Lectures, Caring, Extra Credit, Accessible",3.2,25%
@@ -159,7 +167,7 @@ DAVID CARR,4.4,https://www.ratemyprofessors.com/professor/748114,"Respected, Lec
 ALYSON SANTORO,5.0,https://www.ratemyprofessors.com/professor/2355075,"Good Feedback, Respected, Lecture Heavy, Caring, Accessible, Clear Grading, Participation Matters",2.2,100%
 RHEA BAKSHI,4.2,https://www.ratemyprofessors.com/professor/3042736,"Good Feedback, Respected, Test Heavy, Amazing Lectures, Caring, Extra Credit, Clear Grading",2.9,83%
 JUSTIN WILSON,3.7,https://www.ratemyprofessors.com/professor/3150990,"Good Feedback, Lecture Heavy, Test Heavy, Amazing Lectures, Caring, Accessible, Clear Grading",3.5,60%
-HANNAH STEVENS,3.3,https://www.ratemyprofessors.com/professor/3129627,"Tough Grader, Good Feedback, Lecture Heavy, Test Heavy, Amazing Lectures, Group Projects, Participation Matters",2.3,56%
+HANNAH STEVENS,3.3,https://www.ratemyprofessors.com/professor/3129627,"Tough Grader, Good Feedback, Lecture Heavy, Test Heavy, Amazing Lectures, Participation Matters",2.6,50%
 ELIZABETH DIGESER,2.8,https://www.ratemyprofessors.com/professor/464938,"Tough Grader, Lecture Heavy, Pop Quizzes, Participation Matters",3.7,49%
 CHRISTOPHER BERNT,2.9,https://www.ratemyprofessors.com/professor/2184986,"Tough Grader, Lecture Heavy, Test Heavy, Caring, Accessible, Participation Matters",3.7,51%
 RUDOLPH WARE,3.3,https://www.ratemyprofessors.com/professor/2499604,"Lecture Heavy, Test Heavy, Amazing Lectures, Clear Grading, Inspirational",2.9,58%
@@ -170,8 +178,8 @@ MATT RIOUX,4.4,https://www.ratemyprofessors.com/professor/2265040,"Tough Grader,
 BERNADETTE ANDREA,4.1,https://www.ratemyprofessors.com/professor/2386798,"Respected, Lecture Heavy, Amazing Lectures, Caring, Many Papers, Clear Grading, Participation Matters, Inspirational",2.9,71%
 DANIEL LOKSHTANOV,3.7,https://www.ratemyprofessors.com/professor/2469933,"Tough Grader, Lecture Heavy, Amazing Lectures, Caring, Accessible",4.1,60%
 JANET AFARY,3.8,https://www.ratemyprofessors.com/professor/1422158,"Respected, Lecture Heavy, Test Heavy, Accessible, Clear Grading, Participation Matters",2.6,80%
-KATE MCDONALD,4.5,https://www.ratemyprofessors.com/professor/2182410,"Good Feedback, Lecture Heavy, Caring, Clear Grading",2.3,90%
 PETER BOYLAND,1.9,https://www.ratemyprofessors.com/professor/3003411,"Tough Grader, Amazing Lectures, Accessible, Clear Grading, Participation Matters, Inspirational",4.4,15%
+KATE MCDONALD,4.5,https://www.ratemyprofessors.com/professor/2182410,"Good Feedback, Lecture Heavy, Caring, Clear Grading",2.3,90%
 GIOVANNI VIGNA,3.8,https://www.ratemyprofessors.com/professor/1264467,"Group Projects, Many Papers",4.1,50%
 TENGIZ BIBILASHVILI,4.6,https://www.ratemyprofessors.com/professor/1831205,"Respected, Lecture Heavy, Test Heavy, Amazing Lectures, Hilarious, Caring, Accessible, Inspirational",3.2,97%
 NEIL NARANG,4.8,https://www.ratemyprofessors.com/professor/1983498,"Good Feedback, Respected, Amazing Lectures, Hilarious, Caring, Inspirational",3.1,99%
@@ -184,7 +192,6 @@ HENRY SANDER,3.6,https://www.ratemyprofessors.com/professor/123024,"Tough Grader
 TAMMY AFIFI,4.3,https://www.ratemyprofessors.com/professor/954206,"Tough Grader, Respected, Amazing Lectures, Caring, Accessible, Clear Grading, Participation Matters",2.8,71%
 KAREN MYERS,4.2,https://www.ratemyprofessors.com/professor/995360,"Tough Grader, Amazing Lectures, Caring, Pop Quizzes, Clear Grading, Inspirational",2.4,71%
 AAZAM FEIZ,5.0,https://www.ratemyprofessors.com/professor/2475022,"Good Feedback, Respected, Amazing Lectures, Caring, Accessible, Clear Grading, Participation Matters, Inspirational",1.7,100%
-ANNA BRUSUTTI,3.1,https://www.ratemyprofessors.com/professor/268051,"Tough Grader, Respected, Lecture Heavy, Hilarious, Caring, Many Papers, Inspirational",2.9,44%
 CRAIG COTICH,4.2,https://www.ratemyprofessors.com/professor/409817,"Tough Grader, Good Feedback, Respected, Amazing Lectures, Caring, Accessible, Clear Grading, Participation Matters",2.9,67%
 ANDY WYSS,2.8,https://www.ratemyprofessors.com/professor/2381552,"Tough Grader, Lecture Heavy, Test Heavy, Caring",3.8,30%
 AMY PROPEN,4.8,https://www.ratemyprofessors.com/professor/2151979,"Good Feedback, Respected, Caring, Group Projects, Accessible, Clear Grading, Participation Matters",1.7,100%
@@ -203,7 +210,6 @@ NABEEL NASIR,4.9,https://www.ratemyprofessors.com/professor/3065963,"Good Feedba
 OMISE'EKE TINSLEY,5.0,https://www.ratemyprofessors.com/professor/2605741,"Respected, Lecture Heavy, Amazing Lectures, Hilarious, Caring, Extra Credit, Clear Grading",2.3,100%
 QIRUI PENG,4.6,https://www.ratemyprofessors.com/professor/3136865,"Good Feedback, Respected, Lecture Heavy, Test Heavy, Caring, Accessible, Clear Grading, Inspirational",2.1,72%
 ANNA SCHEWELEW,5.0,https://www.ratemyprofessors.com/professor/3133504,"Good Feedback, Caring, Accessible, Participation Matters",3,100%
-PETER ALAGONA,4.5,https://www.ratemyprofessors.com/professor/1701804,"Respected, Amazing Lectures, Caring, Extra Credit, Accessible, Clear Grading, Inspirational",2.5,89%
 DAN LINZ,3.7,https://www.ratemyprofessors.com/professor/295619,"Good Feedback, Respected, Amazing Lectures, Hilarious, Caring, Accessible, Pop Quizzes, Many Papers, Inspirational",2.5,92%
 MIGUEL ECKSTEIN,4.1,https://www.ratemyprofessors.com/professor/351446,"Lecture Heavy, Test Heavy, Amazing Lectures, Caring, Extra Credit, Accessible, Participation Matters, Inspirational",3.1,74%
 SWATI RANA,3.3,https://www.ratemyprofessors.com/professor/1824075,"Tough Grader, Amazing Lectures, Caring, Clear Grading",3.1,50%
@@ -267,14 +273,13 @@ ANNA PAJAK,4.8,https://www.ratemyprofessors.com/professor/2657283,"Good Feedback
 PETRA KRANZFELDER,4.5,https://www.ratemyprofessors.com/professor/2982660,"Good Feedback, Amazing Lectures, Caring, Extra Credit, Group Projects, Accessible, Clear Grading, Participation Matters, Inspirational",2.1,100%
 MENGYANG MICHAEL GU,3.9,https://www.ratemyprofessors.com/professor/2525428,"Tough Grader, Good Feedback, Lecture Heavy, Amazing Lectures, Extra Credit, Participation Matters",3.3,45%
 BOB ANDERSON,3.4,https://www.ratemyprofessors.com/professor/409420,"Tough Grader, Lecture Heavy, Test Heavy, Amazing Lectures",3.5,54%
-WILLIAM ELISON,4.2,https://www.ratemyprofessors.com/professor/2342733,None,N/A,N/A
-NINO GONZALEZ,2.4,https://www.ratemyprofessors.com/professor/2496787,None,N/A,N/A
+WILLIAM ELISON,4.2,https://www.ratemyprofessors.com/professor/2342733,"Respected, Lecture Heavy, Hilarious, Caring, Accessible, Participation Matters",2.2,77%
+NINO GONZALEZ,2.4,https://www.ratemyprofessors.com/professor/2496787,"Lecture Heavy, Test Heavy, Amazing Lectures, Hilarious, Caring, Accessible",4.1,31%
 NINA MIOLANE,3.6,https://www.ratemyprofessors.com/professor/2744929,"Amazing Lectures, Extra Credit, Clear Grading, Participation Matters",2.7,84%
 FRANCESCO BULLO,4.1,https://www.ratemyprofessors.com/professor/616057,None,3.5,100%
 LEAH CHIRINOS-ALEMAN,4.1,https://www.ratemyprofessors.com/professor/1982897,"Good Feedback, Caring, Accessible, Participation Matters",3.1,100%
 ANTHONY GRECO,3.8,https://www.ratemyprofessors.com/professor/2441782,"Tough Grader, Good Feedback, Hilarious, Caring, Group Projects, Accessible, Clear Grading",2.8,50%
 BRIAN WAINWRIGHT,3.1,https://www.ratemyprofessors.com/professor/2530808,"Tough Grader, Lecture Heavy, Test Heavy, Hilarious, Caring, Accessible, Clear Grading, Participation Matters",3.5,56%
-BRIAN ERNST,4.9,https://www.ratemyprofessors.com/professor/1693991,"Good Feedback, Hilarious, Caring, Group Projects, Clear Grading, Inspirational",2,100%
 DAVIT HARUTYUNYAN,2.9,https://www.ratemyprofessors.com/professor/2518738,"Tough Grader, Good Feedback, Lecture Heavy, Test Heavy, Amazing Lectures, Accessible",3.9,50%
 JITENDRA RATHORE,4.3,https://www.ratemyprofessors.com/professor/3046038,"Tough Grader, Good Feedback, Amazing Lectures, Caring, Accessible",2.7,79%
 CARL MEINHART,4.6,https://www.ratemyprofessors.com/professor/538365,"Tough Grader, Respected, Test Heavy, Caring, Accessible, Inspirational",3.5,100%
@@ -288,8 +293,8 @@ FRANCIS DUNN,3.7,https://www.ratemyprofessors.com/professor/149977,"Lecture Heav
 ROBERT LEWIS,4.4,https://www.ratemyprofessors.com/professor/2170428,"Lecture Heavy, Test Heavy, Amazing Lectures, Caring, Accessible, Clear Grading",4,89%
 VANESSA WOODS,3.5,https://www.ratemyprofessors.com/professor/823219,"Tough Grader, Lecture Heavy, Caring, Group Projects, Accessible, Participation Matters",3.5,54%
 LIOR SEPUNARU,4.4,https://www.ratemyprofessors.com/professor/2420291,"Good Feedback, Respected, Amazing Lectures, Caring, Extra Credit, Accessible, Clear Grading, Inspirational",3.9,87%
-LUKE ROBERTS,4.2,https://www.ratemyprofessors.com/professor/315248,"Good Feedback, Respected, Amazing Lectures, Caring, Extra Credit, Accessible, Clear Grading",2.4,83%
 JONATHAN SCHOOLER,3.5,https://www.ratemyprofessors.com/professor/1138550,"Respected, Lecture Heavy, Test Heavy, Amazing Lectures, Extra Credit, Clear Grading",3.1,68%
+LUKE ROBERTS,4.2,https://www.ratemyprofessors.com/professor/315248,"Good Feedback, Respected, Amazing Lectures, Caring, Extra Credit, Accessible, Clear Grading",2.4,83%
 GEORGIOS KOUTROULAKIS,4.3,https://www.ratemyprofessors.com/professor/2241089,"Respected, Lecture Heavy, Amazing Lectures, Hilarious, Clear Grading, Participation Matters",3.5,84%
 SCOTT MARCUS,3.3,https://www.ratemyprofessors.com/professor/49030,"Lecture Heavy, Amazing Lectures, Hilarious, Participation Matters, Inspirational",1.9,43%
 LISA JACOBSON,4.0,https://www.ratemyprofessors.com/professor/419645,"Tough Grader, Good Feedback, Amazing Lectures, Group Projects, Participation Matters",3.1,72%
@@ -303,8 +308,8 @@ KATHERINE ELDER,5.0,https://www.ratemyprofessors.com/professor/3047865,"Amazing 
 MARK SHISHIM,4.8,https://www.ratemyprofessors.com/professor/1796107,"Good Feedback, Respected, Hilarious, Caring, Group Projects, Accessible, Clear Grading, Participation Matters, Inspirational",2.4,86%
 ANDREW TEEL,4.4,https://www.ratemyprofessors.com/professor/22622,"Good Feedback, Test Heavy, Amazing Lectures, Caring, Accessible",3.9,100%
 JIM BUCKWALTER,4.4,https://www.ratemyprofessors.com/professor/2202887,"Tough Grader, Lecture Heavy, Test Heavy, Amazing Lectures, Accessible, Clear Grading",3.7,100%
-B. S. MANJUNATH,3.5,https://www.ratemyprofessors.com/professor/1380891,"Tough Grader, Amazing Lectures, Caring",3,100%
 DARAKA LARIMORE-HALL,4.0,https://www.ratemyprofessors.com/professor/3088877,"Good Feedback, Test Heavy, Hilarious, Caring, Group Projects, Clear Grading, Participation Matters",1.5,75%
+B. S. MANJUNATH,3.5,https://www.ratemyprofessors.com/professor/1380891,"Tough Grader, Amazing Lectures, Caring",3,100%
 PHILLIP CHRISTOPHER,4.0,https://www.ratemyprofessors.com/professor/3045818,"Good Feedback, Amazing Lectures, Accessible, Participation Matters",4,100%
 TANJA STOYAN,4.0,https://www.ratemyprofessors.com/professor/2238586,"Group Projects, Many Papers",1,N/A
 FABIAN OFFERT,5.0,https://www.ratemyprofessors.com/professor/2678146,Accessible,2,100%
@@ -393,7 +398,6 @@ KARIN LOHWASSER,3.7,https://www.ratemyprofessors.com/professor/2702869,"Tough Gr
 LISA HAJJAR,4.5,https://www.ratemyprofessors.com/professor/71184,"Respected, Lecture Heavy, Amazing Lectures, Caring, Accessible, Clear Grading, Inspirational",2.3,90%
 THOMAS HOLDEN,4.5,https://www.ratemyprofessors.com/professor/571506,"Tough Grader, Lecture Heavy, Test Heavy, Amazing Lectures, Hilarious",3,65%
 ANIL MUNDRA,4.9,https://www.ratemyprofessors.com/professor/3080622,"Good Feedback, Test Heavy, Amazing Lectures, Caring, Clear Grading",1.9,100%
-ELENA ARONOVA,3.9,https://www.ratemyprofessors.com/professor/2346411,"Tough Grader, Respected, Lecture Heavy, Test Heavy, Caring, Group Projects, Accessible, Clear Grading",3,77%
 PHUNG SU,3.5,https://www.ratemyprofessors.com/professor/3080395,"Tough Grader, Good Feedback, Respected, Lecture Heavy, Amazing Lectures, Group Projects, Accessible, Participation Matters",3.4,63%
 ALTHEA WASOW,1.0,https://www.ratemyprofessors.com/professor/3081233,"Lecture Heavy, Many Papers, Participation Matters",4.7,0%
 RICHARD MEDINA,4.0,https://www.ratemyprofessors.com/professor/3107056,"Tough Grader, Lecture Heavy, Amazing Lectures, Hilarious, Accessible, Clear Grading",3.5,75%
@@ -428,9 +432,6 @@ BISHNUPRIYA GHOSH,3.6,https://www.ratemyprofessors.com/professor/1405334,"Tough 
 SWATI CHATTOPADHYAY,3.0,https://www.ratemyprofessors.com/professor/395890,"Tough Grader, Lecture Heavy, Caring, Group Projects, Clear Grading",3.3,44%
 JUAN CAMPO,3.3,https://www.ratemyprofessors.com/professor/275932,"Tough Grader, Lecture Heavy, Amazing Lectures, Many Papers, Clear Grading",3,50%
 PEI-TE LIEN,2.2,https://www.ratemyprofessors.com/professor/1413797,"Tough Grader, Lecture Heavy, Test Heavy, Clear Grading",3.4,30%
-CARLA BORROMEO,4.5,https://www.ratemyprofessors.com/professor/406574,"Tough Grader, Amazing Lectures, Caring, Group Projects, Participation Matters",2,70%
-JASON TUROWETZ,4.5,https://www.ratemyprofessors.com/professor/2841341,"Test Heavy, Amazing Lectures, Caring, Accessible, Many Papers, Clear Grading",2.1,95%
-ALEXANDER CHO,4.8,https://www.ratemyprofessors.com/professor/2681029,"Amazing Lectures, Hilarious, Caring, Accessible, Clear Grading, Inspirational",1.6,94%
 HOLLY ROOSE,5.0,https://www.ratemyprofessors.com/professor/2557806,"Lecture Heavy, Amazing Lectures, Hilarious, Caring, Accessible, Inspirational",1,100%
 RICKY LEE,5.0,https://www.ratemyprofessors.com/professor/3030668,"Amazing Lectures, Hilarious, Caring, Clear Grading",1.7,100%
 ADRIAN STIER,4.5,https://www.ratemyprofessors.com/professor/2610284,"Amazing Lectures, Hilarious",2,100%
@@ -458,7 +459,6 @@ VICKIE SCOTT,3.5,https://www.ratemyprofessors.com/professor/1556611,"Tough Grade
 JAN NEDERVEEN-PIETERSE,2.1,https://www.ratemyprofessors.com/professor/1585396,"Tough Grader, Respected, Lecture Heavy, Amazing Lectures, Caring",3.5,18%
 TARAS TSYMBAL,4.0,https://www.ratemyprofessors.com/professor/3105227,"Lecture Heavy, Amazing Lectures, Caring, Extra Credit, Accessible, Clear Grading, Participation Matters",1.5,93%
 CHENGYU FANG,2.2,https://www.ratemyprofessors.com/professor/2812924,"Tough Grader, Lecture Heavy, Test Heavy, Amazing Lectures, Group Projects, Participation Matters",2.8,25%
-DEBORAH HARRIS-MOORE,4.9,https://www.ratemyprofessors.com/professor/1698558,"Good Feedback, Caring, Clear Grading, Participation Matters, Inspirational",2.2,100%
 EVELYN REDER,5.0,https://www.ratemyprofessors.com/professor/2022895,"Good Feedback, Respected, Amazing Lectures, Hilarious, Caring, Extra Credit, Clear Grading, Participation Matters",1.9,100%
 SUSANNAH PORTER,4.4,https://www.ratemyprofessors.com/professor/826353,"Respected, Lecture Heavy, Test Heavy, Amazing Lectures, Hilarious, Accessible, Pop Quizzes, Participation Matters, Inspirational",2.5,89%
 ANTHONY BARBIERI-LOW,3.6,https://www.ratemyprofessors.com/professor/1102840,"Good Feedback, Lecture Heavy, Test Heavy, Amazing Lectures, Clear Grading, Participation Matters, Inspirational",3.1,48%
@@ -501,3 +501,297 @@ NIKKI TRUSCELLI,4.6,https://www.ratemyprofessors.com/professor/2759426,"Tough Gr
 RICHARD WITTMAN,3.6,https://www.ratemyprofessors.com/professor/586345,"Tough Grader, Respected, Lecture Heavy, Amazing Lectures, Inspirational",3.6,66%
 AMY MARTINEZ,1.9,https://www.ratemyprofessors.com/professor/2837674,"Tough Grader, Respected, Lecture Heavy, Amazing Lectures, Many Papers, Participation Matters",3.7,24%
 AKANKSHA ARORA,0.0,https://www.ratemyprofessors.com/professor/3122391,None,N/A,N/A
+LORENZO GIACHETTI,5.0,https://www.ratemyprofessors.com/professor/3122230,"Respected, Hilarious, Caring",2,100%
+DIBA MIRZA,4.7,https://www.ratemyprofessors.com/professor/2258262,"Good Feedback, Respected, Amazing Lectures, Caring, Extra Credit, Group Projects, Clear Grading, Participation Matters, Inspirational",2.9,91%
+TROY KLING,4.9,https://www.ratemyprofessors.com/professor/2813859,"Good Feedback, Amazing Lectures, Hilarious, Caring, Extra Credit, Accessible, Clear Grading",3,91%
+EMILIO CAPETTINI,3.9,https://www.ratemyprofessors.com/professor/2431220,"Tough Grader, Good Feedback, Lecture Heavy, Caring, Accessible, Clear Grading, Participation Matters",2.6,78%
+AMY LASHMET,3.6,https://www.ratemyprofessors.com/professor/2262876,"Tough Grader, Good Feedback, Caring, Extra Credit, Group Projects, Participation Matters",3.1,63%
+DIEGO ACOSTA-ALVEAR,2.4,https://www.ratemyprofessors.com/professor/2262054,"Tough Grader, Lecture Heavy, Test Heavy",4.3,35%
+PATRICK MCCRAY,4.6,https://www.ratemyprofessors.com/professor/471035,"Good Feedback, Respected, Lecture Heavy, Amazing Lectures, Caring, Clear Grading, Participation Matters, Inspirational",3.3,90%
+TIKAL CATENA,1.0,https://www.ratemyprofessors.com/professor/3114822,"Tough Grader, Lecture Heavy, Test Heavy, Participation Matters",4.4,0%
+HECTOR CENICEROS,3.1,https://www.ratemyprofessors.com/professor/59328,"Tough Grader, Good Feedback, Lecture Heavy, Test Heavy, Caring, Accessible, Clear Grading",3.1,36%
+BEHROOZ PARHAMI,2.5,https://www.ratemyprofessors.com/professor/809341,"Tough Grader, Hilarious, Participation Matters",2.6,34%
+SARAH HIRSCH,4.9,https://www.ratemyprofessors.com/professor/1982786,"Good Feedback, Caring, Clear Grading, Participation Matters",2.2,100%
+OUSMANE KODIO,3.0,https://www.ratemyprofessors.com/professor/3121486,None,3,100%
+DANIEL KORMAN,4.3,https://www.ratemyprofessors.com/professor/2318098,"Tough Grader, Lecture Heavy, Amazing Lectures, Caring, Extra Credit, Many Papers, Clear Grading",2.9,88%
+MARK MEADOW,3.9,https://www.ratemyprofessors.com/professor/570920,"Tough Grader, Lecture Heavy, Test Heavy, Amazing Lectures, Caring, Group Projects, Participation Matters",2.8,78%
+VESNA WALLACE,3.5,https://www.ratemyprofessors.com/professor/795725,"Tough Grader, Lecture Heavy, Amazing Lectures, Caring, Extra Credit",2.2,55%
+MARK SHERWIN,2.4,https://www.ratemyprofessors.com/professor/1047412,"Tough Grader, Lecture Heavy, Test Heavy, Caring, Clear Grading, Participation Matters",3.8,48%
+JOSEPH HENNAWI,2.4,https://www.ratemyprofessors.com/professor/2258871,"Tough Grader, Accessible, Clear Grading, Participation Matters",3.8,30%
+LINDA ALDER-KASSNER,5.0,https://www.ratemyprofessors.com/professor/2676230,"Good Feedback, Respected, Amazing Lectures, Caring, Group Projects, Inspirational",1,100%
+DANIEL MASTERSON,2.8,https://www.ratemyprofessors.com/professor/2727131,"Tough Grader, Lecture Heavy, Participation Matters",3,30%
+CHARLES KULICK,5.0,https://www.ratemyprofessors.com/professor/3113258,"Good Feedback, Test Heavy, Caring, Extra Credit, Accessible, Clear Grading",2.4,100%
+MATTANJAH DE VRIES,3.6,https://www.ratemyprofessors.com/professor/411274,"Lecture Heavy, Test Heavy, Amazing Lectures, Caring, Extra Credit, Clear Grading, Participation Matters, Inspirational",2.2,80%
+WILLIAM BURATTO,5.0,https://www.ratemyprofessors.com/professor/3108075,"Amazing Lectures, Accessible, Clear Grading",2.3,100%
+DIANE FUJINO,3.8,https://www.ratemyprofessors.com/professor/238497,"Tough Grader, Respected, Lecture Heavy, Amazing Lectures, Caring, Clear Grading",3.1,75%
+MAHDI ABU-OMAR,4.4,https://www.ratemyprofessors.com/professor/2241328,"Tough Grader, Test Heavy, Amazing Lectures, Hilarious, Caring, Accessible",2.9,88%
+BEN OLGUIN,2.7,https://www.ratemyprofessors.com/professor/2383501,"Lecture Heavy, Extra Credit, Group Projects, Clear Grading, Participation Matters, Inspirational",2.9,50%
+KEITH DYCK,5.0,https://www.ratemyprofessors.com/professor/2893909,"Tough Grader, Good Feedback, Respected, Lecture Heavy, Amazing Lectures, Caring, Pop Quizzes, Clear Grading",2.6,100%
+REEM TAHA,5.0,https://www.ratemyprofessors.com/professor/3016330,"Group Projects, Participation Matters",2,100%
+MIRIAM METZGER,3.5,https://www.ratemyprofessors.com/professor/439610,"Tough Grader, Lecture Heavy, Test Heavy, Amazing Lectures, Caring, Accessible, Clear Grading",3.5,52%
+JENNIFER MARSH,4.2,https://www.ratemyprofessors.com/professor/2987989,"Good Feedback, Lecture Heavy, Amazing Lectures, Hilarious, Caring, Extra Credit, Clear Grading, Inspirational",2.8,77%
+MICHELLE GRUE,5.0,https://www.ratemyprofessors.com/professor/2602251,"Good Feedback, Respected, Caring, Participation Matters, Inspirational",1.7,100%
+KAARONICA EVANS-WARE,4.5,https://www.ratemyprofessors.com/professor/2606135,"Good Feedback, Caring, Extra Credit, Clear Grading, Inspirational",2,100%
+SHOLA SHODIYA,5.0,https://www.ratemyprofessors.com/professor/3118592,"Amazing Lectures, Caring, Inspirational",1,100%
+JULIE PORTILLO,2.6,https://www.ratemyprofessors.com/professor/1847087,"Tough Grader, Extra Credit, Clear Grading",3.8,100%
+JING YUAN,5.0,https://www.ratemyprofessors.com/professor/3078541,"Hilarious, Caring, Participation Matters",2,100%
+JAMES POTTER,2.2,https://www.ratemyprofessors.com/professor/290333,"Tough Grader, Good Feedback, Lecture Heavy, Test Heavy, Amazing Lectures, Accessible, Clear Grading, Inspirational",3.7,16%
+MICHAEL LUDKOVSKI,3.0,https://www.ratemyprofessors.com/professor/1294914,"Tough Grader, Respected, Amazing Lectures, Participation Matters",4.1,43%
+KEN GOODEARL,3.7,https://www.ratemyprofessors.com/professor/279453,"Respected, Lecture Heavy, Test Heavy, Accessible, Clear Grading",2.6,56%
+WILLIAM BURATTO,5.0,https://www.ratemyprofessors.com/professor/3107532,"Amazing Lectures, Accessible, Clear Grading",3,100%
+SUSAN GROVER,3.7,https://www.ratemyprofessors.com/professor/2470652,"Good Feedback, Respected, Caring, Extra Credit, Group Projects, Clear Grading, Participation Matters",3.2,66%
+AMANDA GREENE,4.0,https://www.ratemyprofessors.com/professor/2882864,"Tough Grader, Good Feedback, Amazing Lectures, Participation Matters, Inspirational",3.3,75%
+NUHA KHOURY,1.9,https://www.ratemyprofessors.com/professor/49031,"Tough Grader, Lecture Heavy, Pop Quizzes, Many Papers",3.6,24%
+THOMAS TOMMY SPRAGUE,4.6,https://www.ratemyprofessors.com/professor/2481058,"Test Heavy, Amazing Lectures, Caring, Extra Credit, Clear Grading",2.7,91%
+IGNACIO ADRIASOLA-MUNOZ,2.6,https://www.ratemyprofessors.com/professor/1881452,"Tough Grader, Respected, Lecture Heavy, Amazing Lectures, Group Projects, Participation Matters, Inspirational",3.4,40%
+RENE WEBER,3.4,https://www.ratemyprofessors.com/professor/962184,"Tough Grader, Respected, Lecture Heavy, Test Heavy, Caring, Accessible, Participation Matters, Inspirational",2.9,48%
+RAM SESHADRI,4.3,https://www.ratemyprofessors.com/professor/789325,"Tough Grader, Respected, Lecture Heavy, Test Heavy, Amazing Lectures, Hilarious, Clear Grading, Inspirational",2.4,88%
+ELLIE HERNANDEZ,2.8,https://www.ratemyprofessors.com/professor/347225,"Caring, Group Projects, Accessible, Many Papers, Clear Grading, Participation Matters",2.2,40%
+AHARON ARVIZU RAMÍREZ,5.0,https://www.ratemyprofessors.com/professor/3069673,"Good Feedback, Caring, Accessible, Clear Grading",2.5,100%
+LEAH STOKES,4.5,https://www.ratemyprofessors.com/professor/2153307,"Respected, Lecture Heavy, Amazing Lectures, Hilarious, Caring, Extra Credit, Clear Grading, Participation Matters",3.5,89%
+CANDACE WAID,3.1,https://www.ratemyprofessors.com/professor/12781,"Respected, Lecture Heavy, Hilarious, Caring, Accessible, Inspirational",3,36%
+LEXXUS COFFEY-EDISON,3.4,https://www.ratemyprofessors.com/professor/2986341,"Good Feedback, Amazing Lectures, Hilarious, Participation Matters, Inspirational",2.4,60%
+NAN WILKENFELD,5.0,https://www.ratemyprofessors.com/professor/2478653,"Good Feedback, Amazing Lectures, Caring, Group Projects, Clear Grading",2.3,100%
+ROBERT MORSTEIN-MARX,4.6,https://www.ratemyprofessors.com/professor/280502,"Tough Grader, Lecture Heavy, Test Heavy, Amazing Lectures, Caring",2.3,100%
+KELLY THOMASSON,2.3,https://www.ratemyprofessors.com/professor/2336694,"Tough Grader, Lecture Heavy, Test Heavy, Caring, Extra Credit, Accessible, Clear Grading",3.7,29%
+CHRISTOPHER EVELYN,3.1,https://www.ratemyprofessors.com/professor/2213601,"Tough Grader, Caring, Extra Credit, Group Projects, Accessible, Clear Grading",2.7,60%
+STEPHEN PROULX,3.7,https://www.ratemyprofessors.com/professor/1887738,"Lecture Heavy, Caring, Group Projects, Clear Grading",2.7,67%
+HUA LEE,2.8,https://www.ratemyprofessors.com/professor/241213,"Tough Grader, Lecture Heavy, Test Heavy, Hilarious",3.8,34%
+DIVYAKANT AGRAWAL,2.9,https://www.ratemyprofessors.com/professor/552298,"Tough Grader, Lecture Heavy, Hilarious, Caring, Group Projects, Clear Grading",3.5,35%
+WENBO GUO,4.5,https://www.ratemyprofessors.com/professor/3107946,"Respected, Amazing Lectures, Hilarious, Caring, Accessible, Clear Grading",2,75%
+DEBRA PERRONE,4.9,https://www.ratemyprofessors.com/professor/2654734,"Tough Grader, Amazing Lectures, Caring, Group Projects, Accessible, Many Papers, Participation Matters, Inspirational",2.9,100%
+DESTINY HOERBERG,5.0,https://www.ratemyprofessors.com/professor/2883131,"Caring, Extra Credit, Group Projects, Clear Grading, Participation Matters",2,100%
+UTATHYA CHATTOPADHYAYA,3.3,https://www.ratemyprofessors.com/professor/2470078,"Tough Grader, Good Feedback, Lecture Heavy, Caring, Participation Matters",3.9,54%
+MARK PAGE,4.3,https://www.ratemyprofessors.com/professor/887948,"Tough Grader, Test Heavy, Group Projects, Many Papers, Clear Grading",3.7,50%
+EMMANUELA SCHOINOPLOKAKI,5.0,https://www.ratemyprofessors.com/professor/2891855,"Good Feedback, Amazing Lectures, Hilarious, Caring, Participation Matters",2,100%
+JULIE SIMPSON,3.6,https://www.ratemyprofessors.com/professor/2355570,"Tough Grader, Respected, Lecture Heavy, Test Heavy, Amazing Lectures, Caring, Clear Grading, Inspirational",3.9,69%
+CHENHAO JIN,2.6,https://www.ratemyprofessors.com/professor/2705072,"Tough Grader, Respected, Test Heavy, Caring, Accessible, Clear Grading",4.5,37%
+RAISA FELDMAN,2.8,https://www.ratemyprofessors.com/professor/118255,"Tough Grader, Good Feedback, Lecture Heavy, Test Heavy, Hilarious, Caring, Accessible",3.3,64%
+CASEY WALSH,3.3,https://www.ratemyprofessors.com/professor/1150564,"Tough Grader, Lecture Heavy, Caring, Clear Grading",2.3,63%
+AJ RICE,1.5,https://www.ratemyprofessors.com/professor/2936026,"Tough Grader, Respected, Amazing Lectures, Clear Grading",2.5,0%
+LORELEI MOOSBRUGGER,4.4,https://www.ratemyprofessors.com/professor/1112805,"Tough Grader, Respected, Amazing Lectures",3.3,84%
+XIAORONG LI,3.2,https://www.ratemyprofessors.com/professor/1623399,"Tough Grader, Lecture Heavy, Pop Quizzes, Participation Matters",3.1,36%
+ALLIE APPINO-TABONE,3.7,https://www.ratemyprofessors.com/professor/2876017,"Good Feedback, Caring, Group Projects, Clear Grading, Participation Matters",2,67%
+QIAN YU,3.3,https://www.ratemyprofessors.com/professor/3020035,"Respected, Hilarious, Caring, Extra Credit, Inspirational",4,50%
+MELODY JUE,4.3,https://www.ratemyprofessors.com/professor/2352490,"Lecture Heavy, Test Heavy, Amazing Lectures, Caring, Extra Credit, Clear Grading, Participation Matters, Inspirational",2.8,82%
+DEBORA IGLESIAS-RODRIGUEZ,1.2,https://www.ratemyprofessors.com/professor/2610276,"Tough Grader, Lecture Heavy, Extra Credit, Participation Matters",3.6,0%
+IAN DUNCAN,3.0,https://www.ratemyprofessors.com/professor/1795165,"Tough Grader, Respected, Test Heavy, Amazing Lectures, Hilarious",4,57%
+JEFFREY STOPPLE,3.0,https://www.ratemyprofessors.com/professor/118256,"Tough Grader, Lecture Heavy, Test Heavy",3.6,30%
+SUMMER GRAY,4.9,https://www.ratemyprofessors.com/professor/1997141,"Respected, Amazing Lectures, Caring, Clear Grading, Participation Matters, Inspirational",2.1,100%
+LUPITA MADRIGAL,5.0,https://www.ratemyprofessors.com/professor/3085078,"Good Feedback, Caring, Group Projects, Clear Grading, Participation Matters, Inspirational",1.5,100%
+AMY BODDY,4.8,https://www.ratemyprofessors.com/professor/2578600,"Good Feedback, Respected, Amazing Lectures, Clear Grading, Inspirational",2.1,100%
+HYUNJIN YUN,5.0,https://www.ratemyprofessors.com/professor/3109662,"Amazing Lectures, Accessible",3,100%
+CHRIS KRUEGEL,4.8,https://www.ratemyprofessors.com/professor/1262548,"Good Feedback, Amazing Lectures, Caring, Accessible, Clear Grading, Inspirational",3.6,100%
+MIREILLE MILLER-YOUNG,4.2,https://www.ratemyprofessors.com/professor/1047530,"Respected, Lecture Heavy, Amazing Lectures, Hilarious, Caring, Extra Credit, Accessible, Inspirational",2.7,91%
+HENRY MAAR,4.5,https://www.ratemyprofessors.com/professor/2293587,"Tough Grader, Good Feedback, Respected, Caring, Accessible, Many Papers, Clear Grading, Inspirational",2.4,85%
+XIAO LUO,3.0,https://www.ratemyprofessors.com/professor/2915832,"Lecture Heavy, Amazing Lectures, Caring, Clear Grading",3.1,58%
+LESLIE HAMMER,4.4,https://www.ratemyprofessors.com/professor/1195750,"Tough Grader, Good Feedback, Caring, Participation Matters, Inspirational",3,85%
+HUIJIA (RACHEL LIN,2.2,https://www.ratemyprofessors.com/professor/2000411,"Tough Grader, Lecture Heavy, Hilarious, Caring, Participation Matters",4.3,24%
+NANCY COLLINS,4.7,https://www.ratemyprofessors.com/professor/161714,"Good Feedback, Amazing Lectures, Hilarious, Extra Credit, Clear Grading",2.3,0%
+KEVIN HATCHER,4.1,https://www.ratemyprofessors.com/professor/2558883,"Good Feedback, Lecture Heavy, Amazing Lectures, Group Projects, Clear Grading",1.9,89%
+MAHNOOSH ALIZADEH,4.0,https://www.ratemyprofessors.com/professor/2669799,"Lecture Heavy, Test Heavy, Hilarious, Caring, Participation Matters, Inspirational",2.4,56%
+YON VISELL,2.7,https://www.ratemyprofessors.com/professor/2497339,"Good Feedback, Lecture Heavy, Group Projects",3,34%
+DAVID PAUL,3.7,https://www.ratemyprofessors.com/professor/1105492,"Tough Grader, Good Feedback, Respected, Amazing Lectures, Caring, Accessible, Many Papers, Participation Matters, Inspirational",3.1,84%
+MICAELA DIAZ SANCHEZ,3.0,https://www.ratemyprofessors.com/professor/2153389,"Lecture Heavy, Caring, Extra Credit, Clear Grading, Participation Matters",2.4,43%
+CHENG-ZHONG QIN,2.6,https://www.ratemyprofessors.com/professor/648448,"Tough Grader, Test Heavy, Amazing Lectures",3.8,47%
+BARBARA THAYER,3.6,https://www.ratemyprofessors.com/professor/2286233,"Lecture Heavy, Test Heavy, Amazing Lectures, Hilarious, Caring, Accessible, Pop Quizzes, Clear Grading, Participation Matters, Inspirational",3.7,68%
+SARAH MCCLURE,4.7,https://www.ratemyprofessors.com/professor/2562402,"Tough Grader, Respected, Lecture Heavy, Amazing Lectures, Caring, Many Papers, Clear Grading, Participation Matters",2.5,85%
+GONZALO VAZQUEZ-BARE,2.1,https://www.ratemyprofessors.com/professor/2696645,"Tough Grader, Test Heavy, Amazing Lectures, Clear Grading",4.4,28%
+RAMTIN PEDARSANI,4.0,https://www.ratemyprofessors.com/professor/3074577,"Test Heavy, Amazing Lectures",3,80%
+DAWN HOLMES,3.2,https://www.ratemyprofessors.com/professor/11147,"Tough Grader, Lecture Heavy, Test Heavy",2.9,47%
+MILLER YOUNG,4.8,https://www.ratemyprofessors.com/professor/1518585,"Amazing Lectures, Hilarious, Caring, Extra Credit, Clear Grading, Inspirational",1.4,89%
+SUSAN CASSELS,3.6,https://www.ratemyprofessors.com/professor/2054922,"Tough Grader, Good Feedback, Lecture Heavy, Amazing Lectures, Caring, Pop Quizzes, Participation Matters, Inspirational",2.7,67%
+DEBANUJ DASGUPTA,4.0,https://www.ratemyprofessors.com/professor/2678118,"Good Feedback, Hilarious, Accessible, Clear Grading, Participation Matters",2.6,75%
+DANA KORNBERG,3.0,https://www.ratemyprofessors.com/professor/2672015,"Tough Grader, Lecture Heavy, Amazing Lectures, Caring, Participation Matters, Inspirational",2.8,50%
+AMIT SHILO,3.1,https://www.ratemyprofessors.com/professor/2137401,"Tough Grader, Lecture Heavy, Test Heavy, Group Projects, Pop Quizzes, Many Papers, Participation Matters",2.7,58%
+JIANWEN SU,2.1,https://www.ratemyprofessors.com/professor/1046333,"Tough Grader, Amazing Lectures, Extra Credit, Group Projects, Accessible",3.7,43%
+RAUL RODRIGUEZ,2.5,https://www.ratemyprofessors.com/professor/2933544,"Tough Grader, Lecture Heavy, Test Heavy, Clear Grading",3.9,39%
+SANG-YUN OH,2.3,https://www.ratemyprofessors.com/professor/2081738,"Tough Grader, Group Projects, Pop Quizzes, Clear Grading, Participation Matters",3.8,37%
+ALEXANDER SHKOLNIK,3.7,https://www.ratemyprofessors.com/professor/2524082,"Respected, Amazing Lectures, Hilarious, Extra Credit, Group Projects, Accessible, Inspirational",4.1,74%
+JAMES PREISS,2.1,https://www.ratemyprofessors.com/professor/3106808,"Tough Grader, Lecture Heavy, Test Heavy, Amazing Lectures, Caring, Extra Credit, Group Projects, Accessible, Clear Grading",4.3,29%
+GRACE WU,4.6,https://www.ratemyprofessors.com/professor/2917481,"Respected, Caring, Extra Credit, Group Projects, Accessible, Clear Grading",3,100%
+EVELYNE LAURENT-PERRAULT,2.8,https://www.ratemyprofessors.com/professor/2417559,"Lecture Heavy, Amazing Lectures, Many Papers, Clear Grading",2.4,40%
+ALICE NGUYEN,1.2,https://www.ratemyprofessors.com/professor/2109478,"Tough Grader, Test Heavy, Clear Grading",3.9,3%
+PHILL CONRAD,4.5,https://www.ratemyprofessors.com/professor/1146063,"Tough Grader, Good Feedback, Respected, Amazing Lectures, Caring, Extra Credit, Group Projects, Accessible, Participation Matters, Inspirational",2,88%
+YUAN-FANG WANG,1.8,https://www.ratemyprofessors.com/professor/356046,"Tough Grader, Amazing Lectures, Accessible, Clear Grading, Inspirational",4.1,19%
+PAULA POPESCU,3.6,https://www.ratemyprofessors.com/professor/2275527,"Test Heavy, Caring, Extra Credit, Group Projects, Accessible, Clear Grading",3,77%
+DOLORES CASILLAS,4.3,https://www.ratemyprofessors.com/professor/1237945,"Amazing Lectures, Caring, Extra Credit, Many Papers, Participation Matters",2.2,75%
+SREENIVASA JAMMALAMADAKA,4.4,https://www.ratemyprofessors.com/professor/125860,"Respected, Lecture Heavy, Amazing Lectures, Caring, Clear Grading, Participation Matters, Inspirational",2.4,83%
+JONATHAN BALKIND,3.5,https://www.ratemyprofessors.com/professor/2685406,"Tough Grader, Amazing Lectures, Accessible, Clear Grading, Inspirational",3.2,74%
+SOWON PARK,4.3,https://www.ratemyprofessors.com/professor/2237922,"Good Feedback, Respected, Lecture Heavy, Amazing Lectures, Caring, Accessible, Inspirational",3.2,80%
+RACHAEL KING,3.3,https://www.ratemyprofessors.com/professor/2098222,"Good Feedback, Amazing Lectures, Caring, Accessible, Many Papers, Clear Grading, Participation Matters",3.1,58%
+MATTHIEU LOUIS,3.4,https://www.ratemyprofessors.com/professor/2501631,"Tough Grader, Lecture Heavy, Caring, Accessible, Clear Grading",4.1,36%
+COBY HARMON,3.6,https://www.ratemyprofessors.com/professor/214353,"Lecture Heavy, Test Heavy, Amazing Lectures, Hilarious, Caring, Extra Credit, Participation Matters",3.1,74%
+YUEYUAN MA,2.0,https://www.ratemyprofessors.com/professor/2843379,"Tough Grader, Lecture Heavy, Test Heavy, Extra Credit, Clear Grading",4.2,31%
+JUAN COBO,3.7,https://www.ratemyprofessors.com/professor/2345405,"Lecture Heavy, Amazing Lectures, Caring, Clear Grading, Participation Matters",3.3,72%
+SASHA RAZOR,4.9,https://www.ratemyprofessors.com/professor/2947522,"Good Feedback, Respected, Amazing Lectures, Caring, Accessible, Participation Matters",2,100%
+MHOZE CHIKOWERO,2.9,https://www.ratemyprofessors.com/professor/1581077,"Tough Grader, Accessible, Pop Quizzes, Many Papers, Clear Grading, Participation Matters",2.9,40%
+ANDREAS LUDWIG,4.3,https://www.ratemyprofessors.com/professor/355291,"Respected, Amazing Lectures, Participation Matters, Inspirational",3.9,100%
+RALPH GALLUCCI,4.1,https://www.ratemyprofessors.com/professor/13635,"Caring, Extra Credit, Accessible, Clear Grading",1.9,77%
+JIAYIN PAN,3.4,https://www.ratemyprofessors.com/professor/2415205,"Tough Grader, Good Feedback, Lecture Heavy, Test Heavy, Hilarious, Group Projects, Accessible, Clear Grading",3.4,61%
+ERIC PRIETO,4.1,https://www.ratemyprofessors.com/professor/617561,"Good Feedback, Respected, Amazing Lectures, Caring, Extra Credit, Accessible, Pop Quizzes",2.8,89%
+ANNA KROKHMAL,5.0,https://www.ratemyprofessors.com/professor/2937734,"Respected, Caring, Clear Grading, Inspirational",1.5,100%
+ROBERT THACKER,4.0,https://www.ratemyprofessors.com/professor/3050162,"Respected, Lecture Heavy, Caring, Extra Credit, Clear Grading",2,100%
+FRANCESC CASTELLA,4.5,https://www.ratemyprofessors.com/professor/2564548,"Good Feedback, Respected, Lecture Heavy, Amazing Lectures, Accessible, Clear Grading",2.1,96%
+MAITANE MURUAMENDIARAZ,5.0,https://www.ratemyprofessors.com/professor/2901540,"Good Feedback, Respected, Caring, Accessible, Clear Grading, Participation Matters",1.8,100%
+CARLA BORROMEO,3.4,https://www.ratemyprofessors.com/professor/2265213,"Tough Grader, Amazing Lectures, Caring, Participation Matters, Inspirational",3.2,60%
+CECILIA MENDEZ,1.9,https://www.ratemyprofessors.com/professor/128337,"Tough Grader, Good Feedback, Lecture Heavy, Amazing Lectures, Many Papers, Participation Matters",4,11%
+LEROY LAVERMAN,4.1,https://www.ratemyprofessors.com/professor/244462,"Tough Grader, Good Feedback, Lecture Heavy, Amazing Lectures, Caring",3.2,100%
+JUNTAO DUAN,2.0,https://www.ratemyprofessors.com/professor/3101508,"Lecture Heavy, Test Heavy",4.2,0%
+ANTONIO CORTIJO,3.7,https://www.ratemyprofessors.com/professor/13637,"Good Feedback, Respected, Amazing Lectures, Hilarious, Caring, Clear Grading, Participation Matters",2.6,100%
+JENNIFER KAM,3.9,https://www.ratemyprofessors.com/professor/2163740,"Tough Grader, Lecture Heavy, Test Heavy, Caring, Group Projects, Clear Grading",2.9,65%
+PRADEEP SEN,3.3,https://www.ratemyprofessors.com/professor/1906513,"Tough Grader, Lecture Heavy, Test Heavy, Amazing Lectures, Accessible, Many Papers, Clear Grading, Participation Matters, Inspirational",3.9,55%
+VOJTECH VLCEK,2.6,https://www.ratemyprofessors.com/professor/2633497,"Tough Grader, Lecture Heavy, Test Heavy, Extra Credit, Accessible, Clear Grading, Inspirational",4,50%
+SHAUN NOWICKI,4.5,https://www.ratemyprofessors.com/professor/3015467,"Amazing Lectures, Caring, Extra Credit, Accessible, Many Papers, Clear Grading",2.8,100%
+ALINE DE ALMEIDA,4.0,https://www.ratemyprofessors.com/professor/2808730,"Good Feedback, Hilarious, Caring, Inspirational",3,100%
+CLAUDIO FOGU,3.5,https://www.ratemyprofessors.com/professor/821758,"Tough Grader, Lecture Heavy, Inspirational",3.3,52%
+ALLISON SLADE,2.8,https://www.ratemyprofessors.com/professor/2290687,"Tough Grader, Lecture Heavy, Test Heavy, Many Papers, Participation Matters",3.5,32%
+JUAN PABLO LUPI,3.9,https://www.ratemyprofessors.com/professor/1114279,"Tough Grader, Amazing Lectures, Caring, Many Papers, Clear Grading, Participation Matters",3.3,78%
+TODD OAKLEY,3.3,https://www.ratemyprofessors.com/professor/592505,"Tough Grader, Lecture Heavy, Test Heavy, Hilarious, Clear Grading",3,50%
+FELICE BLAKE,4.3,https://www.ratemyprofessors.com/professor/1259723,"Respected, Amazing Lectures, Caring, Group Projects, Pop Quizzes, Participation Matters, Inspirational",2.9,88%
+BENJAMIN SUNG,2.0,https://www.ratemyprofessors.com/professor/2826527,"Lecture Heavy, Test Heavy, Accessible",3.6,18%
+VIOLA MIGLIO,4.2,https://www.ratemyprofessors.com/professor/480533,"Good Feedback, Respected, Caring, Group Projects, Clear Grading, Participation Matters",2.3,100%
+LIZ ACKERT,4.7,https://www.ratemyprofessors.com/professor/2558388,"Respected, Lecture Heavy, Test Heavy, Amazing Lectures, Caring, Clear Grading, Inspirational",2.8,100%
+JENNIFER KING,4.8,https://www.ratemyprofessors.com/professor/1297121,"Good Feedback, Amazing Lectures, Caring, Extra Credit, Group Projects, Accessible, Clear Grading, Participation Matters",2.8,88%
+ERIC BELTZ,4.7,https://www.ratemyprofessors.com/professor/914510,"Tough Grader, Good Feedback, Amazing Lectures, Accessible, Inspirational",3.7,100%
+RUGANG YE,1.8,https://www.ratemyprofessors.com/professor/2107437,"Tough Grader, Test Heavy, Many Papers",3.1,34%
+ANDRÉAS-BENJAMIN SEYFERT,5.0,https://www.ratemyprofessors.com/professor/2995736,"Amazing Lectures, Hilarious, Caring, Group Projects, Accessible, Participation Matters, Inspirational",1.8,100%
+GUSTAVO PONCE,2.5,https://www.ratemyprofessors.com/professor/215272,"Tough Grader, Test Heavy, Caring",3.3,31%
+MEGAN SPENCER,5.0,https://www.ratemyprofessors.com/professor/2716934,"Amazing Lectures, Caring, Clear Grading",1.2,100%
+ANDREA CARLINI,2.8,https://www.ratemyprofessors.com/professor/2988223,"Tough Grader, Test Heavy, Extra Credit, Accessible, Clear Grading, Participation Matters",3.5,50%
+LINDSAY MILLER,5.0,https://www.ratemyprofessors.com/professor/3107715,"Caring, Group Projects",2,100%
+ZOE LIBERMAN,3.3,https://www.ratemyprofessors.com/professor/2202602,"Lecture Heavy, Test Heavy, Amazing Lectures, Caring, Clear Grading",3.1,57%
+HOLLY MOELLER,4.4,https://www.ratemyprofessors.com/professor/2386182,"Lecture Heavy, Test Heavy, Amazing Lectures, Caring, Group Projects, Accessible",3.6,82%
+KATIE MOORE,4.0,https://www.ratemyprofessors.com/professor/2656708,"Tough Grader, Lecture Heavy, Amazing Lectures, Many Papers, Clear Grading",2,76%
+IKUKO SMITH,3.8,https://www.ratemyprofessors.com/professor/2500627,"Test Heavy, Amazing Lectures, Hilarious, Caring, Accessible, Many Papers, Clear Grading, Inspirational",3,60%
+STEVE SMITH,5.0,https://www.ratemyprofessors.com/professor/2319672,"Amazing Lectures, Clear Grading, Inspirational",2,100%
+MEGHAN MORRISSEY,5.0,https://www.ratemyprofessors.com/professor/2914997,"Lecture Heavy, Test Heavy, Amazing Lectures, Accessible, Clear Grading, Inspirational",2.3,100%
+JANNA HAIDER,3.5,https://www.ratemyprofessors.com/professor/2936369,"Tough Grader, Good Feedback, Lecture Heavy, Hilarious, Caring, Accessible, Clear Grading, Participation Matters",2.9,67%
+ANDY ALEXANDER,4.4,https://www.ratemyprofessors.com/professor/3017006,"Lecture Heavy, Amazing Lectures, Hilarious, Caring, Extra Credit, Group Projects, Accessible, Clear Grading, Inspirational",3,80%
+AARON ZIMMERMAN,4.0,https://www.ratemyprofessors.com/professor/377357,"Tough Grader, Lecture Heavy, Amazing Lectures, Hilarious, Many Papers, Participation Matters",2.8,59%
+PAUL SPICKARD,3.9,https://www.ratemyprofessors.com/professor/54687,"Respected, Amazing Lectures, Hilarious, Caring, Participation Matters, Inspirational",3,71%
+RITA RALEY,4.1,https://www.ratemyprofessors.com/professor/651406,"Tough Grader, Amazing Lectures, Group Projects, Many Papers, Clear Grading, Inspirational",3.3,40%
+GUO YU,2.8,https://www.ratemyprofessors.com/professor/2631936,"Tough Grader, Good Feedback, Amazing Lectures, Extra Credit, Group Projects",3.3,45%
+RASHA AL OMARI,3.8,https://www.ratemyprofessors.com/professor/1307566,Participation Matters,3.5,50%
+RACHA EL OMARI,4.8,https://www.ratemyprofessors.com/professor/2309169,"Good Feedback, Respected, Lecture Heavy, Participation Matters",3,100%
+DAHLIA MALKHI,5.0,https://www.ratemyprofessors.com/professor/3105910,None,3,100%
+YUXIN JIN,5.0,https://www.ratemyprofessors.com/professor/3105697,"Amazing Lectures, Caring, Participation Matters",2,100%
+SUBHASH SURI,4.6,https://www.ratemyprofessors.com/professor/583532,"Respected, Test Heavy, Amazing Lectures, Caring, Clear Grading",2.8,91%
+BOB YORK,4.6,https://www.ratemyprofessors.com/professor/362322,"Good Feedback, Hilarious",2.9,100%
+VALENTINA PADULA,4.6,https://www.ratemyprofessors.com/professor/361236,"Good Feedback, Amazing Lectures, Hilarious, Caring, Extra Credit, Clear Grading",2.1,89%
+NICOLAS JURKOWSKI,4.1,https://www.ratemyprofessors.com/professor/2462864,"Tough Grader, Good Feedback, Lecture Heavy, Amazing Lectures, Accessible, Clear Grading",2.2,78%
+NICHOLAS DUNGEY,5.0,https://www.ratemyprofessors.com/professor/824422,"Amazing Lectures, Hilarious, Caring, Participation Matters",2.3,100%
+DERON BURKEPILE,4.3,https://www.ratemyprofessors.com/professor/2594409,"Tough Grader, Respected, Lecture Heavy, Test Heavy, Amazing Lectures, Caring, Clear Grading, Participation Matters, Inspirational",3.1,75%
+RAQUEL PACHECO,4.8,https://www.ratemyprofessors.com/professor/2612409,"Good Feedback, Caring, Group Projects, Participation Matters",2.2,100%
+GUFONG WEI,2.3,https://www.ratemyprofessors.com/professor/12657,"Tough Grader, Good Feedback, Test Heavy, Amazing Lectures, Hilarious, Clear Grading",3.5,47%
+TUG GODDARD,1.2,https://www.ratemyprofessors.com/professor/2830573,"Tough Grader, Lecture Heavy, Participation Matters",3.4,9%
+DAVID MOAK,4.1,https://www.ratemyprofessors.com/professor/2520906,"Good Feedback, Lecture Heavy, Amazing Lectures, Hilarious, Caring, Extra Credit, Accessible, Clear Grading, Inspirational",2.6,83%
+ELISABETH WEBER,4.3,https://www.ratemyprofessors.com/professor/133368,"Good Feedback, Caring, Extra Credit, Group Projects, Clear Grading, Participation Matters, Inspirational",2.9,80%
+GLENN BELTZ,4.8,https://www.ratemyprofessors.com/professor/318786,"Good Feedback, Respected, Lecture Heavy, Amazing Lectures, Participation Matters",2.5,92%
+GEN LI,4.8,https://www.ratemyprofessors.com/professor/2843242,"Good Feedback, Respected, Amazing Lectures, Caring, Accessible, Clear Grading",1.3,92%
+KENNETH SMITH,4.9,https://www.ratemyprofessors.com/professor/2198091,"Good Feedback, Amazing Lectures, Caring, Accessible, Clear Grading, Participation Matters, Inspirational",2.1,100%
+AHMAD AHMAD,2.8,https://www.ratemyprofessors.com/professor/1143221,"Tough Grader, Respected, Lecture Heavy, Pop Quizzes, Participation Matters",3,50%
+ANSHUMAN DASH,5.0,https://www.ratemyprofessors.com/professor/2941185,"Hilarious, Caring, Accessible, Participation Matters, Inspirational",3.5,100%
+LISA PARKS,4.4,https://www.ratemyprofessors.com/professor/41973,"Tough Grader, Respected, Lecture Heavy, Extra Credit, Participation Matters",3,67%
+IRENE BEYERLEIN,5.0,https://www.ratemyprofessors.com/professor/3101123,"Lecture Heavy, Accessible",2,100%
+MARISA PLASENCIA,3.7,https://www.ratemyprofessors.com/professor/2498130,"Tough Grader, Good Feedback, Caring, Clear Grading, Participation Matters, Inspirational",2.7,67%
+ALAN LIU,2.8,https://www.ratemyprofessors.com/professor/511842,"Tough Grader, Respected, Lecture Heavy, Amazing Lectures, Caring, Accessible, Many Papers, Participation Matters, Inspirational",4,30%
+CHASE MORGAN-HOBBS,4.4,https://www.ratemyprofessors.com/professor/2659278,"Tough Grader, Good Feedback, Lecture Heavy, Test Heavy, Amazing Lectures, Caring, Accessible",3.8,83%
+CHARMAINE CHUA,4.3,https://www.ratemyprofessors.com/professor/2650121,"Respected, Amazing Lectures, Caring, Extra Credit, Accessible, Pop Quizzes, Clear Grading, Participation Matters",3.1,83%
+BRANDON GREENE,2.7,https://www.ratemyprofessors.com/professor/2628632,"Tough Grader, Test Heavy, Caring, Accessible, Participation Matters",4.7,34%
+KEVIN FALVEY,2.7,https://www.ratemyprofessors.com/professor/37446,"Tough Grader, Lecture Heavy",3.2,5%
+GUNHEE CHO,3.4,https://www.ratemyprofessors.com/professor/2772851,"Lecture Heavy, Test Heavy, Amazing Lectures, Caring, Clear Grading",3.2,61%
+JENNIFER GIBBS,4.4,https://www.ratemyprofessors.com/professor/2431306,"Good Feedback, Respected, Lecture Heavy, Test Heavy, Amazing Lectures, Caring, Group Projects, Accessible, Many Papers, Clear Grading, Inspirational",2.6,84%
+CHANTEL HAUGHTON,3.7,https://www.ratemyprofessors.com/professor/2719965,"Caring, Pop Quizzes, Many Papers",3,67%
+AMIT AHUJA,4.3,https://www.ratemyprofessors.com/professor/1673908,"Respected, Test Heavy, Amazing Lectures, Caring, Extra Credit, Accessible, Participation Matters, Inspirational",3.6,80%
+FRANCE WINDDANCE TWINE,2.6,https://www.ratemyprofessors.com/professor/239948,"Tough Grader, Respected, Lecture Heavy, Test Heavy, Pop Quizzes, Inspirational",3.5,10%
+RUSIRU GAMBHEERA,3.5,https://www.ratemyprofessors.com/professor/2938376,"Tough Grader, Lecture Heavy, Test Heavy, Accessible, Clear Grading",3.1,60%
+ROBERTA RUDNICK,2.8,https://www.ratemyprofessors.com/professor/2235441,"Tough Grader, Lecture Heavy, Caring, Accessible",3.5,42%
+JEFFERY HARRIS,3.5,https://www.ratemyprofessors.com/professor/3019287,"Respected, Caring, Extra Credit, Clear Grading",3.3,50%
+HANGPING XU,5.0,https://www.ratemyprofessors.com/professor/2772101,"Good Feedback, Respected, Amazing Lectures, Caring, Extra Credit, Group Projects, Participation Matters, Inspirational",2.9,100%
+ERIK NELSON,3.3,https://www.ratemyprofessors.com/professor/2688255,"Respected, Lecture Heavy, Caring, Group Projects, Many Papers",1.3,75%
+AMBUJ SINGH,2.4,https://www.ratemyprofessors.com/professor/331308,"Tough Grader, Hilarious, Accessible, Clear Grading",3.7,34%
+DANA HUGHES,4.7,https://www.ratemyprofessors.com/professor/2990323,"Good Feedback, Respected, Caring, Group Projects, Clear Grading",1.8,100%
+HAROLD MARCUSE,3.0,https://www.ratemyprofessors.com/professor/361823,"Tough Grader, Good Feedback, Lecture Heavy, Caring, Extra Credit, Accessible, Participation Matters",2.5,34%
+TAYLOR MOORE,4.5,https://www.ratemyprofessors.com/professor/3075017,"Good Feedback, Lecture Heavy, Caring, Participation Matters",2,100%
+KEVIN BURK,3.0,https://www.ratemyprofessors.com/professor/2836014,"Tough Grader, Extra Credit, Accessible",4.4,55%
+XIN SU,2.3,https://www.ratemyprofessors.com/professor/3034228,"Tough Grader, Test Heavy, Hilarious, Caring, Extra Credit, Clear Grading",3.3,20%
+XU YANG,2.8,https://www.ratemyprofessors.com/professor/1860302,"Tough Grader, Good Feedback, Lecture Heavy, Test Heavy, Amazing Lectures, Clear Grading, Inspirational",3.3,43%
+MAURIZIA BOSCAGLI,3.5,https://www.ratemyprofessors.com/professor/421505,"Lecture Heavy, Participation Matters",3.2,59%
+TOM CARLSON,3.9,https://www.ratemyprofessors.com/professor/569952,"Tough Grader, Lecture Heavy, Test Heavy, Amazing Lectures, Hilarious, Participation Matters, Inspirational",4.4,50%
+YA ZUO,4.2,https://www.ratemyprofessors.com/professor/2764746,"Good Feedback, Amazing Lectures, Caring, Group Projects, Participation Matters",2.2,77%
+MICHAEL GOARD,4.3,https://www.ratemyprofessors.com/professor/2462097,"Respected, Lecture Heavy, Amazing Lectures, Caring, Many Papers, Participation Matters",3.7,87%
+MISA NGUYEN,3.0,https://www.ratemyprofessors.com/professor/2988113,Caring,2.8,50%
+JERRY GIBSON,5.0,https://www.ratemyprofessors.com/professor/1484232,"Good Feedback, Lecture Heavy, Amazing Lectures, Hilarious",2.3,100%
+DARREN LONG,3.5,https://www.ratemyprofessors.com/professor/147442,"Tough Grader, Lecture Heavy, Test Heavy, Amazing Lectures, Hilarious, Pop Quizzes, Clear Grading, Participation Matters, Inspirational",3.4,38%
+DMITRI STRUKOV,4.2,https://www.ratemyprofessors.com/professor/1648443,"Tough Grader, Respected, Caring, Extra Credit, Pop Quizzes, Clear Grading, Inspirational",3.3,100%
+JESSICA ZISA,2.4,https://www.ratemyprofessors.com/professor/2914684,"Tough Grader, Good Feedback, Lecture Heavy, Amazing Lectures, Accessible, Many Papers, Participation Matters",3.3,36%
+AVANI TANNA,3.4,https://www.ratemyprofessors.com/professor/2977367,"Tough Grader, Extra Credit, Group Projects, Clear Grading",2.6,40%
+MURPHY NIU,2.5,https://www.ratemyprofessors.com/professor/3036271,"Good Feedback, Amazing Lectures, Group Projects",4,50%
+AMANDA STANSELL,4.3,https://www.ratemyprofessors.com/professor/327347,"Tough Grader, Good Feedback, Group Projects, Clear Grading, Participation Matters",2.4,69%
+ERIC MATTHYS,1.9,https://www.ratemyprofessors.com/professor/407329,"Tough Grader, Clear Grading",4.6,50%
+RANJIT DESHMUKH,3.9,https://www.ratemyprofessors.com/professor/2571648,"Lecture Heavy, Amazing Lectures, Caring, Group Projects, Accessible, Clear Grading, Inspirational",2.9,77%
+KOSTAS GOULIAS,4.3,https://www.ratemyprofessors.com/professor/963228,"Respected, Hilarious, Caring, Group Projects, Accessible",1.5,100%
+YUKSEL ASLANDOGAN,4.0,https://www.ratemyprofessors.com/professor/3075870,"Respected, Caring, Extra Credit",1.5,100%
+SYLVESTER OGBECHIE,2.4,https://www.ratemyprofessors.com/professor/355137,"Tough Grader, Lecture Heavy, Test Heavy, Participation Matters",3.2,32%
+YOUSSEF BENZARTI,4.6,https://www.ratemyprofessors.com/professor/2622730,"Respected, Amazing Lectures, Hilarious, Caring, Accessible, Clear Grading",2.3,90%
+JOHN PARK,4.4,https://www.ratemyprofessors.com/professor/1920676,"Tough Grader, Respected, Lecture Heavy, Amazing Lectures, Hilarious, Accessible, Inspirational",3.7,73%
+YUEDONG WANG,3.4,https://www.ratemyprofessors.com/professor/1694378,"Tough Grader, Clear Grading",2.5,75%
+SYEE WELDEAB,3.3,https://www.ratemyprofessors.com/professor/2353146,"Tough Grader, Lecture Heavy, Test Heavy, Caring, Accessible, Pop Quizzes, Clear Grading",3.3,72%
+TOSHIRO TANIMOTO,3.3,https://www.ratemyprofessors.com/professor/968778,"Test Heavy, Extra Credit",2.7,50%
+JEREMY JACOBS,5.0,https://www.ratemyprofessors.com/professor/2994774,"Good Feedback, Amazing Lectures, Group Projects, Participation Matters",3,100%
+CHRISTINE THOMAS,4.2,https://www.ratemyprofessors.com/professor/160805,"Good Feedback, Respected, Lecture Heavy, Amazing Lectures, Caring, Extra Credit, Clear Grading",2.7,80%
+ANISHA THOMAS,4.0,https://www.ratemyprofessors.com/professor/2995587,"Tough Grader, Respected, Amazing Lectures, Caring, Extra Credit, Clear Grading, Participation Matters, Inspirational",1.6,80%
+LIZ CARLISLE,4.8,https://www.ratemyprofessors.com/professor/2769977,"Respected, Amazing Lectures, Caring, Clear Grading, Inspirational",1.6,80%
+RUIMENG HU,4.4,https://www.ratemyprofessors.com/professor/2621722,"Good Feedback, Lecture Heavy, Test Heavy, Amazing Lectures, Caring, Accessible, Clear Grading",4,80%
+JEAN-PIERRE FOUQUE,4.0,https://www.ratemyprofessors.com/professor/1261312,"Tough Grader, Respected, Lecture Heavy, Amazing Lectures, Caring, Accessible, Clear Grading",3.2,67%
+DAN MONTELLO,3.0,https://www.ratemyprofessors.com/professor/180785,"Tough Grader, Lecture Heavy, Test Heavy, Hilarious",3.3,28%
+TIM COOLEY,3.3,https://www.ratemyprofessors.com/professor/727320,"Lecture Heavy, Amazing Lectures, Hilarious, Caring, Group Projects, Participation Matters",2.2,75%
+MICHELLE O'MALLEY,4.4,https://www.ratemyprofessors.com/professor/2097062,"Tough Grader, Respected, Lecture Heavy, Accessible, Participation Matters",3.4,100%
+CYRUS SAFINYA,2.7,https://www.ratemyprofessors.com/professor/1229323,Lecture Heavy,1.7,0%
+DANIEL REEVE,3.2,https://www.ratemyprofessors.com/professor/2647205,"Good Feedback, Lecture Heavy, Caring, Clear Grading",3.4,25%
+GARETH PETERS,3.6,https://www.ratemyprofessors.com/professor/2795516,"Tough Grader, Respected, Lecture Heavy, Amazing Lectures, Caring, Accessible, Inspirational",3.6,80%
+DAN KLEMANN,4.3,https://www.ratemyprofessors.com/professor/2996845,"Hilarious, Pop Quizzes",3.3,75%
+LISA SIDERIS,5.0,https://www.ratemyprofessors.com/professor/2778342,"Amazing Lectures, Caring, Extra Credit, Accessible",2,100%
+STEVE BURATTO,4.1,https://www.ratemyprofessors.com/professor/348467,"Tough Grader, Good Feedback, Test Heavy, Amazing Lectures, Caring, Accessible, Inspirational",3.2,91%
+MAYFAIR YANG,2.9,https://www.ratemyprofessors.com/professor/509514,"Tough Grader, Respected, Lecture Heavy, Test Heavy, Amazing Lectures, Caring, Extra Credit, Inspirational",2.9,75%
+DANIEL CONROY-BEAM,4.2,https://www.ratemyprofessors.com/professor/2258031,"Respected, Lecture Heavy, Test Heavy, Amazing Lectures, Hilarious, Caring, Clear Grading",2.8,77%
+TED BENNETT,3.1,https://www.ratemyprofessors.com/professor/616066,"Tough Grader, Lecture Heavy, Participation Matters",4.7,32%
+ANTHONY DE TOMASO,3.1,https://www.ratemyprofessors.com/professor/2112995,"Tough Grader, Lecture Heavy, Test Heavy, Accessible, Clear Grading",4.6,43%
+REBECCA CHENOWETH,4.6,https://www.ratemyprofessors.com/professor/1918905,"Tough Grader, Good Feedback, Caring, Extra Credit, Accessible, Clear Grading, Participation Matters",3.1,94%
+KELSEY WHITE,5.0,https://www.ratemyprofessors.com/professor/2094556,"Good Feedback, Respected, Amazing Lectures, Hilarious, Caring, Participation Matters",2.3,100%
+PRABHANJAN ANANTH,3.6,https://www.ratemyprofessors.com/professor/2669130,"Tough Grader, Respected, Lecture Heavy, Test Heavy, Caring, Accessible, Clear Grading",4,67%
+LAURA ROMO,1.6,https://www.ratemyprofessors.com/professor/1536947,"Tough Grader, Lecture Heavy, Test Heavy, Group Projects, Participation Matters",3.4,0%
+BRADLEY CHMELKA,3.5,https://www.ratemyprofessors.com/professor/705349,"Tough Grader, Good Feedback, Lecture Heavy, Amazing Lectures, Caring, Accessible, Clear Grading",3.3,84%
+MIKAEL GAYEN,4.4,https://www.ratemyprofessors.com/professor/2852789,"Tough Grader, Respected, Hilarious, Caring, Extra Credit, Group Projects, Accessible, Participation Matters",3.2,91%
+JORGE LUIS CASTILLO,4.7,https://www.ratemyprofessors.com/professor/1082286,"Tough Grader, Respected, Lecture Heavy, Amazing Lectures, Hilarious, Caring, Extra Credit, Clear Grading, Participation Matters, Inspirational",3.1,100%
+ARNAB MUKHERJEE,3.0,https://www.ratemyprofessors.com/professor/2368006,"Good Feedback, Lecture Heavy, Test Heavy, Group Projects, Participation Matters, Inspirational",2.6,72%
+MICHAEL GORDON,4.6,https://www.ratemyprofessors.com/professor/1040598,"Good Feedback, Respected, Amazing Lectures, Hilarious, Caring, Accessible, Clear Grading, Inspirational",3.2,100%
+SHIV CHANDRASEKARAN,4.5,https://www.ratemyprofessors.com/professor/653728,"Good Feedback, Respected, Amazing Lectures, Caring, Accessible, Clear Grading",3.1,100%
+JULIE MALDONADO,4.8,https://www.ratemyprofessors.com/professor/2204306,"Good Feedback, Respected, Caring, Extra Credit, Clear Grading, Participation Matters",2.6,92%
+MISHA SRA,3.0,https://www.ratemyprofessors.com/professor/2884233,"Tough Grader, Good Feedback, Amazing Lectures, Group Projects, Participation Matters",2.2,67%
+EMIKO SALDIVAR,4.0,https://www.ratemyprofessors.com/professor/2295573,"Good Feedback, Amazing Lectures, Caring, Inspirational",1.9,89%
+NORAH DUNBAR,3.9,https://www.ratemyprofessors.com/professor/2117643,"Tough Grader, Good Feedback, Respected, Lecture Heavy, Test Heavy, Amazing Lectures, Caring, Many Papers, Clear Grading",2.6,79%
+ROLF CHRISTOFFERSEN,3.0,https://www.ratemyprofessors.com/professor/275767,"Tough Grader, Lecture Heavy, Test Heavy, Amazing Lectures, Clear Grading",3.6,44%
+TOM SOH,4.2,https://www.ratemyprofessors.com/professor/581833,None,2.9,0%
+DAVID STEIN,4.0,https://www.ratemyprofessors.com/professor/3001826,"Good Feedback, Lecture Heavy, Amazing Lectures, Clear Grading, Participation Matters",2.2,67%
+MAYRA PUENTE,3.5,https://www.ratemyprofessors.com/professor/2986324,"Caring, Extra Credit, Accessible, Clear Grading, Participation Matters, Inspirational",2.3,50%
+LEO CABRANES-GRANT,3.9,https://www.ratemyprofessors.com/professor/149984,"Good Feedback, Amazing Lectures, Hilarious, Caring, Clear Grading, Participation Matters, Inspirational",2.5,100%
+TODD SQUIRES,4.6,https://www.ratemyprofessors.com/professor/859177,"Good Feedback, Respected, Test Heavy, Amazing Lectures, Hilarious, Caring, Group Projects, Many Papers, Participation Matters, Inspirational",2.7,100%
+KALJU KAHN,3.2,https://www.ratemyprofessors.com/professor/358063,"Tough Grader, Good Feedback, Amazing Lectures, Caring, Extra Credit, Pop Quizzes, Participation Matters, Inspirational",4.5,46%
+DEBRA BLUMENTHAL,2.5,https://www.ratemyprofessors.com/professor/628936,"Tough Grader, Group Projects, Accessible",3,10%
+ROBIN MATOZA,4.1,https://www.ratemyprofessors.com/professor/2115795,"Good Feedback, Respected, Amazing Lectures, Extra Credit, Clear Grading",2.2,88%
+ANGELA PITENIS,4.3,https://www.ratemyprofessors.com/professor/2422726,"Tough Grader, Respected, Lecture Heavy, Test Heavy, Caring, Accessible, Inspirational",2.6,86%
+SAHAJ PARIKH,5.0,https://www.ratemyprofessors.com/professor/2942980,"Good Feedback, Respected, Amazing Lectures, Hilarious, Caring, Accessible, Clear Grading, Inspirational",2.9,100%
+EVA GEULEN,1.3,https://www.ratemyprofessors.com/professor/3081574,"Tough Grader, Lecture Heavy, Accessible",4.3,0%
+JEFFREY STEWART,3.2,https://www.ratemyprofessors.com/professor/1144419,"Tough Grader, Lecture Heavy, Amazing Lectures, Group Projects",2.9,53%
+DAVID NOVAK,1.7,https://www.ratemyprofessors.com/professor/1535314,"Tough Grader, Lecture Heavy, Amazing Lectures, Group Projects, Participation Matters",3.8,34%
+KALI YAMBOLIEV,2.6,https://www.ratemyprofessors.com/professor/2597955,"Tough Grader, Good Feedback, Accessible, Many Papers, Participation Matters",4,12%
+NATHAN ROBERTS,2.8,https://www.ratemyprofessors.com/professor/3041761,"Tough Grader, Lecture Heavy, Test Heavy, Amazing Lectures, Caring, Accessible",4.3,34%
+BILL JACOB,3.1,https://www.ratemyprofessors.com/professor/229281,"Tough Grader, Good Feedback, Lecture Heavy, Amazing Lectures, Hilarious, Group Projects, Participation Matters, Inspirational",3.9,84%
+J J KEARNEY,4.3,https://www.ratemyprofessors.com/professor/1002196,"Lecture Heavy, Amazing Lectures, Hilarious, Caring, Many Papers, Clear Grading",2.4,88%
+HELEN TASCHIAN,3.4,https://www.ratemyprofessors.com/professor/568297,"Tough Grader, Caring, Many Papers",3.3,60%
+ALISON BRYSK,3.8,https://www.ratemyprofessors.com/professor/1546875,"Respected, Lecture Heavy, Caring, Group Projects, Accessible, Pop Quizzes, Clear Grading, Inspirational",2.4,69%
+BERNIE KIRTMAN,2.4,https://www.ratemyprofessors.com/professor/125598,"Tough Grader, Lecture Heavy, Caring",4.2,40%
+MIKE MAHAN,4.2,https://www.ratemyprofessors.com/professor/129749,"Tough Grader, Respected, Lecture Heavy, Test Heavy, Hilarious, Accessible",4.1,34%
+AMANDA HALL,4.3,https://www.ratemyprofessors.com/professor/3021318,"Lecture Heavy, Accessible, Clear Grading, Participation Matters",3.3,100%
