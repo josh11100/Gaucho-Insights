@@ -105,8 +105,7 @@ def main():
     with tab1:
         st.markdown("---")
         
-        # --- NEW 3D INTERACTIVE UI ---
-        # Define the HTML/CSS/JS for the 3D card
+        # --- 3D INTERACTIVE UI (MOUSE FOLLOW) ---
         three_d_card = """
         <style>
             .container {
@@ -115,10 +114,11 @@ def main():
                 justify-content: center;
                 align-items: center;
                 padding-top: 20px;
+                height: 400px;
             }
             .card {
                 width: 300px;
-                height: 380px;
+                height: 350px;
                 background: linear-gradient(135deg, #001f3f 0%, #0074D9 100%);
                 border-radius: 20px;
                 border: 2px solid #FFD700;
@@ -161,7 +161,7 @@ def main():
                     <b>Created By:</b> Joshua Chung
                 </div>
                 <div class="card-footer">
-                    Move cursor over me!<br>ദ്ദി(˵ •̀ ᴗ - ˵ ) ✧
+                    Move cursor to rotate!<br>ദ്ദി(˵ •̀ ᴗ - ˵ ) ✧
                 </div>
             </div>
         </div>
@@ -175,11 +175,11 @@ def main():
                 let x = e.clientX - rect.left;
                 let y = e.clientY - rect.top;
                 
-                // Calculate rotation based on cursor position relative to card center
-                let xAxis = (rect.width / 2 - x) / 10;
-                let yAxis = (rect.height / 2 - y) / 10;
+                // Map mouse position to rotation angles
+                let rotateY = (x - rect.width / 2) / 5;
+                let rotateX = (rect.height / 2 - y) / 5;
                 
-                card.style.transform = `rotateY(${-xAxis}deg) rotateX(${yAxis}deg)`;
+                card.style.transform = `rotateY(${rotateY}deg) rotateX(${rotateX}deg)`;
             });
 
             container.addEventListener('mouseleave', (e) => {
@@ -217,7 +217,7 @@ def main():
         
         with col_right:
             # Render the 3D Component
-            components.html(three_d_card, height=450)
+            components.html(three_d_card, height=400)
             
             st.markdown(f"""
             <div style="background-color: #0077b5; padding: 15px; border-radius: 10px; color: white; text-align: center; margin-top: 10px; border: 2px solid #FFD700;">
