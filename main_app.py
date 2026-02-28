@@ -3,6 +3,7 @@ import pandas as pd
 import os
 import re
 import plotly.express as px
+import streamlit.components.v1 as components 
 
 st.set_page_config(page_title="Gaucho Insights", layout="wide", page_icon="🎓")
 
@@ -103,6 +104,95 @@ def main():
 
     with tab1:
         st.markdown("---")
+        
+        # --- NEW 3D INTERACTIVE UI ---
+        # Define the HTML/CSS/JS for the 3D card
+        three_d_card = """
+        <style>
+            .container {
+                perspective: 1000px;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                padding-top: 20px;
+            }
+            .card {
+                width: 300px;
+                height: 380px;
+                background: linear-gradient(135deg, #001f3f 0%, #0074D9 100%);
+                border-radius: 20px;
+                border: 2px solid #FFD700;
+                box-shadow: 0 20px 20px rgba(0,0,0,0.5), 0 0 15px rgba(255, 215, 0, 0.3);
+                transform-style: preserve-3d;
+                transition: transform 0.1s ease;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+                padding: 20px;
+                color: white;
+                text-align: center;
+            }
+            .card-title {
+                font-size: 1.5em;
+                font-weight: bold;
+                color: #FFD700;
+                transform: translateZ(50px);
+            }
+            .card-body {
+                font-size: 1em;
+                transform: translateZ(30px);
+                line-height: 1.5;
+            }
+            .card-footer {
+                font-size: 0.9em;
+                transform: translateZ(20px);
+                background-color: rgba(255,255,255,0.1);
+                padding: 10px;
+                border-radius: 10px;
+            }
+        </style>
+        
+        <div class="container">
+            <div class="card" id="card">
+                <div class="card-title">📊 Gaucho Info</div>
+                <div class="card-body">
+                    <b>Data Recency:</b> Through Summer 2025.<br><br>
+                    <b>Sources:</b> UCSB Registrar & RMP.<br><br>
+                    <b>Created By:</b> Joshua Chung
+                </div>
+                <div class="card-footer">
+                    Move cursor over me!<br>ദ്ദി(˵ •̀ ᴗ - ˵ ) ✧
+                </div>
+            </div>
+        </div>
+        
+        <script>
+            const card = document.getElementById('card');
+            const container = document.querySelector('.container');
+
+            container.addEventListener('mousemove', (e) => {
+                let rect = container.getBoundingClientRect();
+                let x = e.clientX - rect.left;
+                let y = e.clientY - rect.top;
+                
+                // Calculate rotation based on cursor position relative to card center
+                let xAxis = (rect.width / 2 - x) / 10;
+                let yAxis = (rect.height / 2 - y) / 10;
+                
+                card.style.transform = `rotateY(${-xAxis}deg) rotateX(${yAxis}deg)`;
+            });
+
+            container.addEventListener('mouseleave', (e) => {
+                card.style.transform = `rotateY(0deg) rotateX(0deg)`;
+                card.style.transition = 'transform 0.5s ease';
+            });
+            
+            container.addEventListener('mouseenter', (e) => {
+                card.style.transition = 'transform 0.1s ease';
+            });
+        </script>
+        """
+
         col_left, col_right = st.columns([2, 1])
         
         with col_left:
@@ -126,15 +216,11 @@ def main():
             """)
         
         with col_right:
-            st.success(f"""
-            **( 📊 ) Project Info**
-            - **Data Recency:** Through Summer 2025.
-            - **Sources:** UCSB Registrar & RMP.
-            - **Created By:** Joshua Chung
-            """)
+            # Render the 3D Component
+            components.html(three_d_card, height=450)
             
             st.markdown(f"""
-            <div style="background-color: #0077b5; padding: 15px; border-radius: 10px; color: white; text-align: center; margin-top: 10px;">
+            <div style="background-color: #0077b5; padding: 15px; border-radius: 10px; color: white; text-align: center; margin-top: 10px; border: 2px solid #FFD700;">
                 <p style="margin-bottom: 10px; font-weight: bold;">ദ്ദി(˵ •̀ ᴗ - ˵ ) ✧ Like this project?</p>
                 <a href="https://www.linkedin.com/in/joshua-chung858/" target="_blank" style="color: white; text-decoration: none; background-color: #005582; padding: 8px 15px; border-radius: 5px; font-size: 0.9em; font-weight: bold;">
                     Follow me on LinkedIn
@@ -234,7 +320,6 @@ def main():
                         else:
                             gpa_emo = "(╥﹏╥)"
                             
-                        # Removed emoji from RMP text
                         r_score = row.get('rmp_rating', 'N/A')
                         
                         st.write(f"**Dept:** {row['dept']} | **GPA:** {gpa_emo} `{gpa_val:.2f}` | **RMP:** {r_score}")
