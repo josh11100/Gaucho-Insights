@@ -105,55 +105,52 @@ def main():
     with tab1:
         st.markdown("---")
         
-        # --- WHOLE PAGE 3D INTERACTION (MOUSE FOLLOW) ---
+        # --- ROBUST WHOLE PAGE 3D INTERACTION ---
         whole_page_3d = """
-        <style>
-            /* Apply perspective to the main Streamlit container */
-            .main .block-container {
-                perspective: 1500px;
-            }
-            
-            /* Class to be added via JS to the content wrapper */
-            .interactive-content {
-                transition: transform 0.1s ease-out;
-                transform-style: preserve-3d;
-            }
-        </style>
-        
         <script>
-            // Wait for Streamlit to render
-            setTimeout(() => {
-                // Target the main content wrapper
-                const contentWrapper = window.parent.document.querySelector('.main .block-container');
-                if (contentWrapper) {
-                    contentWrapper.classList.add('interactive-content');
+            // Use an interval to find the element if it hasn't loaded yet
+            const interval = setInterval(() => {
+                // Target the specific Streamlit main container
+                const container = window.parent.document.querySelector('.main .block-container');
+                
+                if (container) {
+                    clearInterval(interval);
                     
+                    // Apply necessary CSS directly via JS
+                    container.style.transition = 'transform 0.1s ease-out';
+                    container.style.transformStyle = 'preserve-3d';
+                    
+                    // Set perspective on the parent for 3D effect
+                    container.parentElement.style.perspective = '1500px';
+
                     window.parent.document.body.addEventListener('mousemove', (e) => {
-                        let rect = contentWrapper.getBoundingClientRect();
+                        let rect = container.getBoundingClientRect();
+                        
+                        // Calculate mouse position relative to container center
                         let x = e.clientX - rect.left - rect.width / 2;
                         let y = e.clientY - rect.top - rect.height / 2;
                         
-                        // Calculate rotation - subtle effect for whole page
-                        let rotateY = x / 30; 
-                        let rotateX = -y / 30;
+                        // Calculate rotation - subtle effect
+                        let rotateY = x / 40; 
+                        let rotateX = -y / 40;
                         
-                        contentWrapper.style.transform = `rotateY(${rotateY}deg) rotateX(${rotateX}deg)`;
+                        container.style.transform = `rotateY(${rotateY}deg) rotateX(${rotateX}deg)`;
                     });
                     
                     // Reset on mouse leave
                     window.parent.document.body.addEventListener('mouseleave', () => {
-                        contentWrapper.style.transform = `rotateY(0deg) rotateX(0deg)`;
-                        contentWrapper.style.transition = 'transform 0.5s ease';
+                        container.style.transform = `rotateY(0deg) rotateX(0deg)`;
+                        container.style.transition = 'transform 0.5s ease';
                     });
                     
                     window.parent.document.body.addEventListener('mouseenter', () => {
-                        contentWrapper.style.transition = 'transform 0.1s ease-out';
+                        container.style.transition = 'transform 0.1s ease-out';
                     });
                 }
-            }, 500);
+            }, 100);
         </script>
         """
-        # Inject the script
+        # Inject the script (height 0 so it's invisible)
         components.html(whole_page_3d, height=0)
 
         col_left, col_right = st.columns([2, 1])
@@ -179,7 +176,7 @@ def main():
             """)
         
         with col_right:
-            # Replaced 3D card with standard project info panel since the whole page is now 3D
+            # Stylized panel for Gaucho Info
             st.markdown(f"""
             <div style="background-color: #001f3f; padding: 20px; border-radius: 10px; color: white; border: 2px solid #FFD700; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
                 <h3 style="color: #FFD700; text-align: center;">📊 Gaucho Info</h3>
@@ -204,7 +201,6 @@ def main():
             st.info("( 💡 ) Tip: Switch to the 'Search Tool' tab to check your schedule!")
 
     with tab2:
-        # ... (keep tab2 filters and search results as they were) ...
         # --- SIDEBAR FILTERS ---
         st.sidebar.header("( 🔍 ) FILTERS")
         all_depts = sorted(full_df['dept'].unique().tolist())
