@@ -8,14 +8,14 @@
 
 /* 2. Fold/Unfold (Expander) Cards */
 div[data-testid="stExpander"] {
-    background-color: #111111 !important; /* Slightly lighter than black to see the card */
+    background-color: #111111 !important;
     border: 1px solid #333333 !important;
     border-radius: 12px;
     margin-bottom: 15px;
     box-shadow: 0 4px 10px rgba(255, 255, 255, 0.05);
 }
 
-/* 3. Expander Labels (The clickable text) */
+/* 3. Expander Labels */
 div[data-testid="stExpander"] p {
     color: #FFFFFF !important;
     font-weight: 600;
@@ -23,7 +23,7 @@ div[data-testid="stExpander"] p {
 
 /* 4. Metrics Styling */
 [data-testid="stMetricValue"] {
-    color: #00CCFF !important; /* Electric Blue */
+    color: #00CCFF !important; 
     font-family: 'Inter', sans-serif;
 }
 
@@ -35,18 +35,18 @@ div[data-testid="stExpander"] p {
     background-color: #1a1a1a;
     padding: 15px;
     border-radius: 10px;
-    border-left: 4px solid #00CCFF; /* Blue accent line */
+    border-left: 4px solid #00CCFF; 
 }
 
 /* 5. Headers */
 h1, h2, h3 {
-    color: #FFD700 !important; /* Bright Yellow */
+    color: #FFD700 !important; 
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 1px;
 }
 
-/* 6. Fix for Sidebar Visibility */
+/* 6. Sidebar Visibility */
 section[data-testid="stSidebar"] {
     background-color: #0a0a0a !important;
 }
@@ -55,7 +55,13 @@ section[data-testid="stSidebar"] .stMarkdown p {
     color: #FFFFFF !important;
 }
 
-/* 7. Yellow highlight for specific labels */
+/* 7. Yellow highlight */
 .highlight-yellow {
     color: #FFD700 !important;
+}
+
+/* 8. Fix for the 3D Component Container */
+.welcome-3d-frame {
+    margin-top: -20px;
+    margin-bottom: 20px;
 }
