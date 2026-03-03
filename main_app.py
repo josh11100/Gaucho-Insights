@@ -72,36 +72,44 @@ def reset_filters():
     st.session_state.course_query = ""
     st.session_state.prof_query = ""
 
-# --- GLOBAL STYLES & FULL-SCREEN MESH ---
+# --- GLOBAL STYLES & FULL-SCREEN STATISTICAL MESH ---
 st.markdown("""
     <style>
     .stApp { background-color: #000b1a; }
-    /* Hide default Streamlit borders for a cleaner look */
-    [data-testid="stMetricContainer"] { background: rgba(255, 255, 255, 0.05); border-radius: 10px; padding: 10px; }
+    /* Transparent backgrounds for standard Streamlit containers to show the mesh */
+    [data-testid="stHeader"], [data-testid="stToolbar"] { background: transparent; }
+    
+    /* Glassmorphism for containers */
+    div[data-testid="stVerticalBlock"] > div:has(div.stMarkdown) {
+        background: rgba(255, 255, 255, 0.02);
+        backdrop-filter: blur(8px);
+        border-radius: 20px;
+    }
     </style>
-    <canvas id="fullScreenMesh" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; pointer-events: none;"></canvas>
+    <canvas id="meshCanvas" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; pointer-events: none;"></canvas>
     <script>
-        const canvas = document.getElementById('fullScreenMesh');
+        const canvas = document.getElementById('meshCanvas');
         const ctx = canvas.getContext('2d');
         let particles = [];
         let mouse = { x: null, y: null, radius: 150 };
 
-        function initCanvas() {
+        function init() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
             particles = [];
-            for (let i = 0; i < 80; i++) {
+            for (let i = 0; i < 100; i++) {
                 particles.push({
                     x: Math.random() * canvas.width,
                     y: Math.random() * canvas.height,
-                    vx: (Math.random() - 0.5) * 0.6,
-                    vy: (Math.random() - 0.5) * 0.6,
-                    size: Math.random() * 2 + 1
+                    vx: (Math.random() - 0.5) * 0.7,
+                    vy: (Math.random() - 0.5) * 0.7,
+                    radius: 2
                 });
             }
         }
+
         window.addEventListener('mousemove', (e) => { mouse.x = e.x; mouse.y = e.y; });
-        window.addEventListener('resize', initCanvas);
+        window.addEventListener('resize', init);
 
         function animate() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -111,34 +119,31 @@ st.markdown("""
                 if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
 
                 ctx.beginPath();
-                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-                ctx.fillStyle = 'rgba(255, 215, 0, 0.4)';
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fillStyle = "rgba(255, 215, 0, 0.5)";
                 ctx.fill();
 
                 for (let j = i + 1; j < particles.length; j++) {
                     let p2 = particles[j];
                     let dist = Math.hypot(p.x - p2.x, p.y - p2.y);
-                    if (dist < 130) {
-                        ctx.strokeStyle = `rgba(0, 116, 217, ${1 - dist/130})`;
-                        ctx.lineWidth = 0.6;
-                        ctx.beginPath();
-                        ctx.moveTo(p.x, p.y);
-                        ctx.lineTo(p2.x, p2.y);
-                        ctx.stroke();
+                    if (dist < 120) {
+                        ctx.strokeStyle = `rgba(0, 116, 217, ${1 - dist/120})`;
+                        ctx.lineWidth = 0.5;
+                        ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
                     }
                 }
+                
                 if (mouse.x) {
                     let mdist = Math.hypot(p.x - mouse.x, p.y - mouse.y);
                     if (mdist < mouse.radius) {
-                        ctx.strokeStyle = 'rgba(255, 215, 0, 0.15)';
+                        ctx.strokeStyle = `rgba(255, 215, 0, ${1 - mdist/mouse.radius})`;
                         ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(mouse.x, mouse.y); ctx.stroke();
                     }
                 }
             });
             requestAnimationFrame(animate);
         }
-        initCanvas();
-        animate();
+        init(); animate();
     </script>
 """, unsafe_allow_html=True)
 
@@ -149,23 +154,19 @@ def main():
     hero_html = """
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@900&display=swap');
-        .hero-title {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 3.5rem; color: #FFD700; text-align: center;
-            perspective: 1000px; padding: 20px 0;
-        }
-        .inner-text { transition: transform 0.1s; display: inline-block; cursor: default; }
+        .hero-container { perspective: 1000px; display: flex; justify-content: center; height: 120px; align-items: center; }
+        .hero-title { font-family: 'Orbitron', sans-serif; font-size: 3.5rem; color: #FFD700; transform-style: preserve-3d; transition: transform 0.1s; cursor: default; }
     </style>
-    <div class="hero-title" id="hb"><span class="inner-text" id="ht">(つ▀¯▀ )つ GAUCHO INSIGHTS ⊂(▀¯▀⊂ )</span></div>
+    <div class="hero-container" id="hBox">
+        <div class="hero-title" id="hText">(つ▀¯▀ )つ GAUCHO INSIGHTS ⊂(▀¯▀⊂ )</div>
+    </div>
     <script>
-        const hb = document.getElementById('hb'); const ht = document.getElementById('ht');
-        hb.onmousemove = (e) => {
-            let r = hb.getBoundingClientRect();
-            let x = (e.clientX - r.left - r.width/2)/20;
-            let y = (e.clientY - r.top - r.height/2)/10;
-            ht.style.transform = `rotateY(${x}deg) rotateX(${-y}deg) translateZ(30px)`;
+        const hBox = document.getElementById('hBox'); const hText = document.getElementById('hText');
+        hBox.onmousemove = (e) => {
+            let r = hBox.getBoundingClientRect();
+            hText.style.transform = `rotateY(${(e.clientX - r.left - r.width/2)/15}deg) rotateX(${-(e.clientY - r.top - r.height/2)/5}deg) translateZ(30px)`;
         }
-        hb.onmouseleave = () => ht.style.transform = 'rotateY(0) rotateX(0)';
+        hBox.onmouseleave = () => hText.style.transform = 'rotateY(0) rotateX(0)';
     </script>
     """
     components.html(hero_html, height=140)
@@ -176,57 +177,48 @@ def main():
         col_left, col_right = st.columns([2, 1])
         with col_left:
             st.markdown(f"""
-                <div style="background: rgba(0, 31, 63, 0.6); padding: 35px; border-radius: 20px; border: 1px solid rgba(255, 215, 0, 0.3); backdrop-filter: blur(15px);">
-                    <h1 style="color: #FFD700; font-family: 'Orbitron'; margin-bottom: 15px;">WELCOME GAUCHOS!</h1>
-                    <p style="font-size: 1.15em; color: white; line-height: 1.6;">
-                        This is <b>Gaucho Insights</b>—the intersection of registrar data and student experience. 
-                        As a Stats and Data Science major, I built this dashboard to provide transparency into grading trends and professor ratings.
+                <div style="background: rgba(0, 31, 63, 0.6); padding: 35px; border-radius: 20px; border: 1px solid rgba(255, 215, 0, 0.3); backdrop-filter: blur(12px); color: white;">
+                    <h2 style="color: #FFD700; font-family: 'Orbitron';">WELCOME GAUCHOS! ٩(◕‿◕)۶</h2>
+                    <p style="font-size: 1.1em; line-height: 1.6;">
+                        <b>WHAT IS THIS?</b><br>
+                        Gaucho Insights is a tool designed to help you survive your schedule. As a Stats and Data Science major, I built this to visualize exactly how stressful 
+                        certain classes are. <b>The mesh background represents live data nodes connecting in real-time.</b>
                     </p>
-                    <hr style="border: 0.5px solid rgba(255,215,0,0.2); margin: 25px 0;">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                        <div style="background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px; border-left: 4px solid #FFD700;">
-                            <h4 style="color: #FFD700; margin-top:0;">( 📍 ) MISSION</h4>
-                            <p style="color: #ccc; font-size: 0.95em; margin-bottom:0;">Empowering students to optimize their schedules using historical success metrics.</p>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 30px;">
+                        <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px; border-left: 4px solid #FFD700;">
+                            <b>( 📍 ) HOW TO USE</b><br>Filter by dept/prof in the Search Tool to see grade distributions.
                         </div>
-                        <div style="background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px; border-left: 4px solid #0074D9;">
-                            <h4 style="color: #0074D9; margin-top:0;">( 🔍 ) THE TECH</h4>
-                            <p style="color: #ccc; font-size: 0.95em; margin-bottom:0;">Built with Python and live JavaScript mesh networking to represent complex data structures.</p>
+                        <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px; border-left: 4px solid #0074D9;">
+                            <b>( 📖 ) GLOSSARY</b><br>Avg GPA and RMP ratings help you gauge difficulty.
                         </div>
                     </div>
                 </div>
             """, unsafe_allow_html=True)
 
         with col_right:
-            gaucho_info_3d = """
+            # 3D Project Info Card
+            components.html("""
             <style>
-                .card {
-                    width: 280px; height: 320px; background: linear-gradient(135deg, rgba(0,31,63,0.9), rgba(0,116,217,0.8));
-                    border-radius: 20px; border: 2px solid #FFD700; transform-style: preserve-3d; transition: transform 0.1s;
-                    display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; text-align: center; padding: 20px;
-                }
+                .card { width: 280px; height: 320px; background: linear-gradient(135deg, #001f3f 0%, #0074D9 100%); border-radius: 20px; border: 2px solid #FFD700; transform-style: preserve-3d; transition: transform 0.1s; display: flex; flex-direction: column; justify-content: space-around; padding: 20px; color: white; text-align: center; }
             </style>
-            <div style="perspective: 1000px; display: flex; justify-content: center; height: 350px;">
+            <div style="perspective: 1000px; display: flex; justify-content: center;">
                 <div class="card" id="c">
-                    <h2 style="color:#FFD700; margin-bottom: 10px;">📊 Project Info</h2>
-                    <p style="font-size: 0.9em;"><b>Data:</b> Through 2025<br><b>Source:</b> UCSB & RMP<br><b>Created By:</b> Joshua Chung</p>
-                    <div style="margin-top: 20px; background: rgba(255,255,255,0.1); padding: 8px; border-radius: 10px; font-size: 0.8em;">Stats & Data Science</div>
+                    <h2 style="color: #FFD700">📊 Info</h2>
+                    <p><b>Data:</b> Thru 2025<br><b>Created By:</b> Joshua Chung</p>
+                    <div style="background: rgba(255,255,255,0.1); padding: 10px; border-radius: 10px;">ദ്ദി(˵ •̀ ᴗ - ˵ ) ✧</div>
                 </div>
             </div>
             <script>
                 const c = document.getElementById('c');
-                c.onmousemove = (e) => {
+                window.onmousemove = (e) => {
                     let r = c.getBoundingClientRect();
-                    c.style.transform = `rotateY(${(e.clientX - r.left - r.width/2)/10}deg) rotateX(${-(e.clientY - r.top - r.height/2)/10}deg)`;
+                    c.style.transform = `rotateY(${(e.clientX - r.left - r.width/2)/12}deg) rotateX(${-(e.clientY - r.top - r.height/2)/12}deg)`;
                 }
-                c.onmouseleave = () => c.style.transform = 'rotateY(0) rotateX(0)';
             </script>
-            """
-            components.html(gaucho_info_3d, height=360)
+            """, height=350)
             
             st.markdown("""<a href="https://www.linkedin.com/in/joshua-chung858/" target="_blank" style="text-decoration: none;">
-                <div style="background: #0077b5; padding: 12px; border-radius: 12px; text-align: center; color: white; font-weight: bold; border: 1px solid #FFD700; transition: 0.3s;" onmouseover="this.style.background='#005e93'" onmouseout="this.style.background='#0077b5'">
-                    Follow on LinkedIn 🎓
-                </div>
+                <div style="background: #0077b5; padding: 12px; border-radius: 12px; text-align: center; color: white; font-weight: bold; border: 1px solid #FFD700;">Follow on LinkedIn</div>
             </a>""", unsafe_allow_html=True)
 
     with tab2:
@@ -244,28 +236,23 @@ def main():
         if not data.empty:
             for idx, row in data.head(15).iterrows():
                 gpa_val = row[gpa_col]
-                # Dynamic Stress Badging
-                if gpa_val >= 3.5: status, color = "CHILL", "#2ecc71"
-                elif gpa_val >= 3.0: status, color = "MODERATE", "#f1c40f"
-                else: status, color = "STRESSFUL", "#e74c3c"
-
-                c1, c2 = st.columns([1.5, 1])
-                with c1:
-                    st.markdown(f"""
-                        <div style="background: rgba(255, 255, 255, 0.04); backdrop-filter: blur(10px); border-left: 5px solid {color}; padding: 18px; border-radius: 12px; margin-bottom: 15px; border-top: 1px solid rgba(255,255,255,0.05); border-right: 1px solid rgba(255,255,255,0.05);">
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <h3 style="margin: 0; color: white; font-family: 'Orbitron';">{row['course']}</h3>
-                                <span style="background: {color}; color: black; padding: 2px 10px; border-radius: 20px; font-weight: 800; font-size: 0.75em;">{status}</span>
+                color = "#2ecc71" if gpa_val >= 3.5 else "#f1c40f" if gpa_val >= 3.0 else "#e74c3c"
+                
+                with st.container():
+                    c1, c2 = st.columns([1.5, 1])
+                    with c1:
+                        st.markdown(f"""
+                            <div style="background: rgba(255, 255, 255, 0.05); padding: 20px; border-radius: 15px; border-left: 5px solid {color}; margin-bottom: 15px;">
+                                <h3 style="margin: 0; color: white;">{row['course']}</h3>
+                                <p style="color: #FFD700; font-weight: bold; margin: 5px 0;">{row['instructor']}</p>
+                                <p style="font-size: 0.9em; color: #bbb;">{row['quarter']} {row['year']} | GPA: {gpa_val:.2f}</p>
                             </div>
-                            <p style="margin: 8px 0 2px 0; color: #FFD700; font-weight: bold; font-size: 1.1em;">{row['instructor']}</p>
-                            <p style="margin: 0; color: #bbb; font-size: 0.85em;">{row['quarter']} {row['year']} | Avg GPA: <b style="color: white;">{gpa_val:.2f}</b></p>
-                        </div>
-                    """, unsafe_allow_html=True)
-                with c2:
-                    grades = pd.DataFrame({'Grade': ['A', 'B', 'C', 'D', 'F'], 'Count': [row['a'], row['b'], row['c'], row['d'], row['f']]})
-                    fig = px.bar(grades, x='Grade', y='Count', color='Grade', color_discrete_sequence=["#0074D9", "#00458b", "#FFD700", "#c0c0c0", "#e74c3c"], template="plotly_dark", height=130)
-                    fig.update_layout(margin=dict(l=0,r=0,t=10,b=0), showlegend=False, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', xaxis_visible=False, yaxis_visible=False)
-                    st.plotly_chart(fig, use_container_width=True, key=f"f_{idx}")
+                        """, unsafe_allow_html=True)
+                    with c2:
+                        grades = pd.DataFrame({'Grade': ['A', 'B', 'C', 'D', 'F'], 'Count': [row['a'], row['b'], row['c'], row['d'], row['f']]})
+                        fig = px.bar(grades, x='Grade', y='Count', color='Grade', template="plotly_dark", height=130)
+                        fig.update_layout(margin=dict(l=0,r=0,t=10,b=0), showlegend=False, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', xaxis_visible=False, yaxis_visible=False)
+                        st.plotly_chart(fig, use_container_width=True, key=f"f_{idx}")
         else:
             st.warning("( ⊙_⊙ ) No matches found.")
 
