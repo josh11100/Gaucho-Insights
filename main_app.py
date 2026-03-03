@@ -105,18 +105,17 @@ def main():
     with tab1:
         st.markdown("---")
         
-        # --- 3D INTERACTIVE UI (MOUSE FOLLOW) ---
-        three_d_card = """
+        # --- 3D CSS AND JS ---
+        three_d_styles = """
         <style>
-            .container {
+            .container-3d {
                 perspective: 1000px;
                 display: flex;
                 justify-content: center;
                 align-items: center;
-                padding-top: 20px;
-                height: 400px;
+                padding-top: 10px;
             }
-            .card {
+            .card-3d {
                 width: 300px;
                 height: 350px;
                 background: linear-gradient(135deg, #001f3f 0%, #0074D9 100%);
@@ -150,48 +149,31 @@ def main():
                 padding: 10px;
                 border-radius: 10px;
             }
-        </style>
-        
-        <div class="container">
-            <div class="card" id="card">
-                <div class="card-title">📊 Gaucho Info</div>
-                <div class="card-body">
-                    <b>Data Recency:</b> Through Summer 2025.<br><br>
-                    <b>Sources:</b> UCSB Registrar & RMP.<br><br>
-                    <b>Created By:</b> Joshua Chung
-                </div>
-                <div class="card-footer">
-                    Move cursor to rotate!<br>ദ്ദി(˵ •̀ ᴗ - ˵ ) ✧
-                </div>
-            </div>
-        </div>
-        
-        <script>
-            const card = document.getElementById('card');
-            const container = document.querySelector('.container');
-
-            container.addEventListener('mousemove', (e) => {
-                let rect = container.getBoundingClientRect();
-                let x = e.clientX - rect.left;
-                let y = e.clientY - rect.top;
-                
-                // Map mouse position to rotation angles
-                let rotateY = (x - rect.width / 2) / 5;
-                let rotateX = (rect.height / 2 - y) / 5;
-                
-                card.style.transform = `rotateY(${rotateY}deg) rotateX(${rotateX}deg)`;
-            });
-
-            container.addEventListener('mouseleave', (e) => {
-                card.style.transform = `rotateY(0deg) rotateX(0deg)`;
-                card.style.transition = 'transform 0.5s ease';
-            });
             
-            container.addEventListener('mouseenter', (e) => {
-                card.style.transition = 'transform 0.1s ease';
-            });
-        </script>
+            /* LinkedIn Button Styling with 3D Effect */
+            .linkedIn-container {
+                perspective: 1000px;
+                margin-top: 15px;
+            }
+            .linkedIn-button {
+                display: block;
+                background-color: #0077b5;
+                color: white;
+                text-decoration: none;
+                padding: 15px;
+                border-radius: 10px;
+                text-align: center;
+                border: 2px solid #FFD700;
+                font-weight: bold;
+                transition: transform 0.1s ease;
+                transform-style: preserve-3d;
+            }
+            .linkedIn-content {
+                transform: translateZ(30px);
+            }
+        </style>
         """
+        st.markdown(three_d_styles, unsafe_allow_html=True)
 
         col_left, col_right = st.columns([2, 1])
         
@@ -216,18 +198,83 @@ def main():
             """)
         
         with col_right:
-            # Render the 3D Component
-            components.html(three_d_card, height=400)
-            
-            st.markdown(f"""
-            <div style="background-color: #0077b5; padding: 15px; border-radius: 10px; color: white; text-align: center; margin-top: 10px; border: 2px solid #FFD700;">
-                <p style="margin-bottom: 10px; font-weight: bold;">ദ്ദി(˵ •̀ ᴗ - ˵ ) ✧ Like this project?</p>
-                <a href="https://www.linkedin.com/in/joshua-chung858/" target="_blank" style="color: white; text-decoration: none; background-color: #005582; padding: 8px 15px; border-radius: 5px; font-size: 0.9em; font-weight: bold;">
-                    Follow me on LinkedIn
-                </a>
-                <p style="margin-top: 10px; font-size: 0.8em;">For more useful Gaucho tools!</p>
+            # --- 3D GAUCHO INFO CARD ---
+            gaucho_info_html = """
+            <div class="container-3d">
+                <div class="card-3d" id="gauchoCard">
+                    <div class="card-title">📊 Gaucho Info</div>
+                    <div class="card-body">
+                        <b>Data Recency:</b> Through Summer 2025.<br><br>
+                        <b>Sources:</b> UCSB Registrar & RMP.<br><br>
+                        <b>Created By:</b> Joshua Chung
+                    </div>
+                    <div class="card-footer">
+                        Move cursor over me!<br>ദ്ദി(˵ •̀ ᴗ - ˵ ) ✧
+                    </div>
+                </div>
             </div>
-            """, unsafe_allow_html=True)
+            <script>
+                const gauchoCard = document.getElementById('gauchoCard');
+                const gauchoContainer = gauchoCard.parentElement;
+
+                gauchoContainer.addEventListener('mousemove', (e) => {
+                    let rect = gauchoContainer.getBoundingClientRect();
+                    let x = e.clientX - rect.left - rect.width / 2;
+                    let y = e.clientY - rect.top - rect.height / 2;
+                    
+                    let rotateY = x / 10;
+                    let rotateX = -y / 10;
+                    
+                    gauchoCard.style.transform = `rotateY(${rotateY}deg) rotateX(${rotateX}deg)`;
+                });
+
+                gauchoContainer.addEventListener('mouseleave', () => {
+                    gauchoCard.style.transform = `rotateY(0deg) rotateX(0deg)`;
+                    gauchoCard.style.transition = 'transform 0.5s ease';
+                });
+                
+                gauchoContainer.addEventListener('mouseenter', () => {
+                    gauchoCard.style.transition = 'transform 0.1s ease';
+                });
+            </script>
+            """
+            components.html(gaucho_info_html, height=360)
+            
+            # --- 3D LINKEDIN BUTTON ---
+            linkedin_html = """
+            <div class="linkedIn-container">
+                <a href="https://www.linkedin.com/in/joshua-chung858/" target="_blank" class="linkedIn-button" id="linkedInBtn">
+                    <div class="linkedIn-content">
+                        ദ്ദി(˵ •̀ ᴗ - ˵ ) ✧ Like this project?<br>
+                        <b>Follow me on LinkedIn</b>
+                    </div>
+                </a>
+            </div>
+            <script>
+                const linkedInBtn = document.getElementById('linkedInBtn');
+                
+                linkedInBtn.addEventListener('mousemove', (e) => {
+                    let rect = linkedInBtn.getBoundingClientRect();
+                    let x = e.clientX - rect.left - rect.width / 2;
+                    let y = e.clientY - rect.top - rect.height / 2;
+                    
+                    let rotateY = x / 15;
+                    let rotateX = -y / 15;
+                    
+                    linkedInBtn.style.transform = `rotateY(${rotateY}deg) rotateX(${rotateX}deg)`;
+                });
+
+                linkedInBtn.addEventListener('mouseleave', () => {
+                    linkedInBtn.style.transform = `rotateY(0deg) rotateX(0deg)`;
+                    linkedInBtn.style.transition = 'transform 0.5s ease';
+                });
+                
+                linkedInBtn.addEventListener('mouseenter', () => {
+                    linkedInBtn.style.transition = 'transform 0.1s ease';
+                });
+            </script>
+            """
+            components.html(linkedin_html, height=100)
 
             st.write("---")
             st.info("( 💡 ) Tip: Switch to the 'Search Tool' tab to check your schedule!")
