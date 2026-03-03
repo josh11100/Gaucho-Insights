@@ -82,4 +82,172 @@ def load_and_clean_data():
 
     df = df.groupby(group_cols).agg(agg_dict).reset_index()
     q_map = {'FALL': 4, 'SUMMER': 3, 'SPRING': 2, 'WINTER': 1}
-    df['q_score'] = df['quarter'].map(q_map).
+    df['q_score'] = df['quarter'].map(q_map).fillna(0)
+    df = df.sort_values(by=['year', 'q_score'], ascending=False)
+    
+    return df, gpa_col
+
+def reset_filters():
+    st.session_state.dept_query = " "
+    st.session_state.course_query = ""
+    st.session_state.prof_query = ""
+
+def main():
+    st.title("(つ▀¯▀ )つ GAUCHO INSIGHTS ⊂(▀¯▀⊂ )")
+    full_df, gpa_col = load_and_clean_data()
+
+    if 'prof_view' not in st.session_state:
+        st.session_state.prof_view = None
+
+    tab1, tab2 = st.tabs(["( 🏠 ) Home", "( 🔍 ) Search Tool"])
+
+    with tab1:
+        st.markdown("---")
+        
+        col_left, col_right = st.columns([2, 1])
+        
+        with col_left:
+            st.header("WELCOME TO GAUCHO INSIGHTS! ٩(◕‿◕)۶")
+            st.markdown("""
+            ### WHAT IS THIS?
+            Gaucho Insights is a tool designed to help you survive your schedule. This dashboard helps you see exactly how stressful 
+            certain classes are with specific professors **(ノಠ益ಠ)ノ彡┻━┻**. 
+            
+            By merging official UCSB Registrar data with RMP reviews, we let you see if that "Easy GE" is actually a GPA killer.
+            
+            ### ( 📍 ) HOW TO USE THE UI
+            - **Sidebar Navigation:** Head to the 'Search Tool' tab and use the filters.
+            - **Result Cards:** High blue bars mean more A's! Low bars mean... well, you know.
+            - **Detailed Profiles:** Click a professor's name to see their historical "Stress Levels" (GPA trends).
+
+            ### ( 📖 ) GLOSSARY & TERMS
+            - **RMP (Rate My Professors):** The student bible for avoiding bad vibes.
+            - **Difficulty:** A 1-5 scale of how much sleep you'll lose (5 = Hardest).
+            - **Avg GPA:** The actual average grade awarded. Numbers don't lie.
+            """)
+        
+        with col_right:
+            # --- RESTORED 3D GAUCHO INFO CARD ---
+            gaucho_info_3d = """
+            <style>
+                .container { perspective: 1000px; display: flex; justify-content: center; align-items: center; height: 360px; }
+                .card {
+                    width: 300px; height: 340px; background: linear-gradient(135deg, #001f3f 0%, #0074D9 100%);
+                    border-radius: 20px; border: 2px solid #FFD700; box-shadow: 0 20px 20px rgba(0,0,0,0.5);
+                    transform-style: preserve-3d; transition: transform 0.1s ease;
+                    display: flex; flex-direction: column; justify-content: space-between; padding: 20px; color: white; text-align: center;
+                }
+                .card-title { font-size: 1.5em; font-weight: bold; color: #FFD700; transform: translateZ(50px); }
+                .card-body { font-size: 1em; transform: translateZ(30px); line-height: 1.5; }
+                .card-footer { font-size: 0.9em; transform: translateZ(20px); background: rgba(255,255,255,0.1); padding: 10px; border-radius: 10px; }
+            </style>
+            <div class="container">
+                <div class="card" id="card">
+                    <div class="card-title">📊 Gaucho Info</div>
+                    <div class="card-body">
+                        <b>Data Recency:</b> Through Summer 2025.<br><br>
+                        <b>Sources:</b> UCSB Registrar & RMP.<br><br>
+                        <b>Created By:</b> Joshua Chung
+                    </div>
+                    <div class="card-footer">Move cursor to rotate!<br>ദ്ദി(˵ •̀ ᴗ - ˵ ) ✧</div>
+                </div>
+            </div>
+            <script>
+                const card = document.getElementById('card');
+                const container = card.parentElement;
+                container.addEventListener('mousemove', (e) => {
+                    let rect = container.getBoundingClientRect();
+                    let x = e.clientX - rect.left - rect.width / 2;
+                    let y = e.clientY - rect.top - rect.height / 2;
+                    card.style.transform = `rotateY(${x / 10}deg) rotateX(${-y / 10}deg)`;
+                });
+                container.addEventListener('mouseleave', () => {
+                    card.style.transform = `rotateY(0deg) rotateX(0deg)`;
+                    card.style.transition = 'transform 0.5s ease';
+                });
+                container.addEventListener('mouseenter', () => { card.style.transition = 'transform 0.1s ease'; });
+            </script>
+            """
+            components.html(gaucho_info_3d, height=360)
+
+            # --- 3D LINKEDIN BUTTON WITH PHYSICS ---
+            linkedin_3d = """
+            <style>
+                .li-container { perspective: 1000px; display: flex; justify-content: center; padding: 10px; }
+                .li-card {
+                    width: 100%; max-width: 300px; background: #0077b5; border-radius: 15px; border: 2px solid #FFD700;
+                    padding: 15px; color: white; text-align: center; text-decoration: none; font-weight: bold;
+                    transform-style: preserve-3d; transition: transform 0.1s ease;
+                }
+                .li-text { transform: translateZ(30px); display: block; }
+            </style>
+            <div class="li-container">
+                <a href="https://www.linkedin.com/in/joshua-chung858/" target="_blank" class="li-card" id="liCard">
+                    <span class="li-text">
+                        ദ്ദി(˵ •̀ ᴗ - ˵ ) ✧ Like this project?<br>
+                        Follow me on LinkedIn
+                    </span>
+                </a>
+            </div>
+            <script>
+                const liCard = document.getElementById('liCard');
+                const liContainer = liCard.parentElement;
+                liContainer.addEventListener('mousemove', (e) => {
+                    let rect = liContainer.getBoundingClientRect();
+                    let x = e.clientX - rect.left - rect.width / 2;
+                    let y = e.clientY - rect.top - rect.height / 2;
+                    liCard.style.transform = `rotateY(${x / 15}deg) rotateX(${-y / 15}deg)`;
+                });
+                liContainer.addEventListener('mouseleave', () => {
+                    liCard.style.transform = `rotateY(0deg) rotateX(0deg)`;
+                    liCard.style.transition = 'transform 0.5s ease';
+                });
+                liContainer.addEventListener('mouseenter', () => { liCard.style.transition = 'transform 0.1s ease'; });
+            </script>
+            """
+            components.html(linkedin_3d, height=120)
+
+            st.write("---")
+            st.info("( 💡 ) Tip: Switch to the 'Search Tool' tab to check your schedule!")
+
+    with tab2:
+        # --- (Existing Search Tool Logic remains the same) ---
+        st.sidebar.header("( 🔍 ) FILTERS")
+        all_depts = sorted(full_df['dept'].unique().tolist())
+        selected_dept = st.sidebar.selectbox("Select Department", options=[" "] + all_depts, key="dept_query")
+        course_q = st.sidebar.text_input("COURSE #", key="course_query").strip().upper()
+        prof_q = st.sidebar.text_input("PROFESSOR NAME", key="prof_query").strip().upper()
+
+        if st.sidebar.button("( ✖ ) Clear All", on_click=reset_filters):
+            st.rerun()
+
+        data = full_df.copy()
+        if selected_dept != " ":
+            data = data[data['dept'] == selected_dept]
+        if course_q:
+            query = course_q.replace("CS", "CMPSC")
+            data = data[data['course'].str.contains(query, na=False)]
+        if prof_q:
+            data = data[data['instructor'].str.contains(prof_q, na=False)]
+
+        if not data.empty:
+            st.write(f"( ─‿─ ) Showing results:")
+            for idx, row in data.head(25).iterrows():
+                with st.container(border=True):
+                    colA, colB = st.columns([2, 1])
+                    with colA:
+                        st.markdown(f"### {row['course']} | {row['quarter']} {row['year']}")
+                        st.write(f"**Instructor:** {row['instructor']}")
+                        gpa_val = row[gpa_col]
+                        gpa_emo = "°˖✧◝(⁰▿⁰)◜✧˖°" if gpa_val > 3.4 else "┐(~ー~;)┌" if gpa_val >= 3.1 else "(╥﹏╥)"
+                        st.write(f"**GPA:** {gpa_emo} `{gpa_val:.2f}`")
+                    with colB:
+                        grades = pd.DataFrame({'Grade': ['A', 'B', 'C', 'D', 'F'], 'Count': [row['a'], row['b'], row['c'], row['d'], row['f']]})
+                        fig = px.bar(grades, x='Grade', y='Count', color='Grade', template="plotly_dark", height=120)
+                        fig.update_layout(margin=dict(l=0,r=0,t=0,b=0), showlegend=False, xaxis_visible=False, yaxis_visible=False)
+                        st.plotly_chart(fig, use_container_width=True, key=f"fig_{idx}")
+        else:
+            st.warning("( ⊙_⊙ ) No matches found.")
+
+if __name__ == "__main__":
+    main()
