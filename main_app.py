@@ -79,8 +79,8 @@ def main():
     hero_html = """
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap');
-        .hero-container { perspective: 1000px; display: flex; justify-content: center; align-items: center; height: 150px; background: transparent; margin-bottom: 20px; }
-        .hero-title { font-family: 'Orbitron', sans-serif; font-size: 3.5rem; font-weight: 900; color: #FFD700; text-shadow: 0 10px 20px rgba(0,0,0,0.3); transform-style: preserve-3d; transition: transform 0.1s ease; cursor: default; }
+        .hero-container { perspective: 1000px; display: flex; justify-content: center; align-items: center; height: 150px; background: transparent; margin-bottom: 30px; }
+        .hero-title { font-family: 'Orbitron', sans-serif; font-size: 3.5rem; font-weight: 900; color: #FFD700; text-shadow: 0 10px 20px rgba(0,0,0,0.3); transform-style: preserve-3d; transition: transform 0.1s ease; cursor: default; white-space: nowrap; }
     </style>
     <div class="hero-container" id="heroBox">
         <div class="hero-title" id="heroText">(つ▀¯▀ )つ GAUCHO INSIGHTS ⊂(▀¯▀⊂ )</div>
@@ -90,8 +90,8 @@ def main():
         const heroText = document.getElementById('heroText');
         heroBox.addEventListener('mousemove', (e) => {
             let rect = heroBox.getBoundingClientRect();
-            let x = (e.clientX - rect.left - rect.width / 2) / 10;
-            let y = (e.clientY - rect.top - rect.height / 2) / 5;
+            let x = (e.clientX - rect.left - rect.width / 2) / 15;
+            let y = (e.clientY - rect.top - rect.height / 2) / 8;
             heroText.style.transform = `rotateY(${x}deg) rotateX(${-y}deg) translateZ(50px)`;
         });
         heroBox.addEventListener('mouseleave', () => {
@@ -99,29 +99,29 @@ def main():
         });
     </script>
     """
-    components.html(hero_html, height=160)
+    components.html(hero_html, height=180)
 
     tab1, tab2 = st.tabs(["( 🏠 ) Home", "( 🔍 ) Search Tool"])
 
     with tab1:
         col_left, col_right = st.columns([2, 1])
         with col_left:
+            # HOME CONTENT WITH ANIMATED MESH
             stats_bg_html = """
-            <div style="background: rgba(0, 31, 63, 0.4); border-radius: 25px; padding: 30px; border: 1px solid rgba(255, 215, 0, 0.3); position: relative; overflow: hidden; min-height: 500px;">
+            <div style="background: rgba(0, 31, 63, 0.4); border-radius: 25px; padding: 30px; border: 1px solid rgba(255, 215, 0, 0.3); position: relative; overflow: hidden; min-height: 520px;">
                 <canvas id="statsCanvas" style="position: absolute; top: 0; left: 0; z-index: 0; width: 100%; height: 100%; pointer-events: none;"></canvas>
                 <div style="position: relative; z-index: 1; color: white;">
                     <h2 style="color: #FFD700; font-family: 'Orbitron', sans-serif;">WELCOME GAUCHOS! ٩(◕‿◕)۶</h2>
                     <p style="font-size: 1.1em; line-height: 1.6;">
                         <b>WHAT IS THIS?</b><br>
-                        Gaucho Insights is a tool designed to help you survive your schedule. This dashboard helps you see exactly how stressful 
-                        certain classes are with specific professors. <b>Numbers don't lie!</b>
+                        Gaucho Insights helps you navigate UCSB's curriculum using actual registrar data and student sentiment. <b>Numbers don't lie!</b>
                     </p>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 30px;">
                         <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px; border-left: 4px solid #FFD700;">
-                            <b>( 📍 ) HOW TO USE</b><br>Head to the 'Search Tool' tab and filter by department or prof. Check the bar charts for grade distributions!
+                            <b>( 📍 ) MISSION</b><br>Empowering students to make informed decisions about their quarterly schedules.
                         </div>
                         <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px; border-left: 4px solid #0074D9;">
-                            <b>( 📖 ) GLOSSARY</b><br><b>RMP:</b> Rate My Professors rating.<br><b>Difficulty:</b> 1-5 scale of workload.
+                            <b>( 🔍 ) THE TECH</b><br>Utilizing Python, Streamlit, and D3-inspired mesh networks to visualize data.
                         </div>
                     </div>
                 </div>
@@ -165,18 +165,19 @@ def main():
                 init(); animate();
             </script>
             """
-            components.html(stats_bg_html, height=520)
+            components.html(stats_bg_html, height=550)
 
         with col_right:
+            # GAUCHO INFO CARD
             gaucho_info_3d = """
             <style>
-                .container { perspective: 1000px; display: flex; justify-content: center; align-items: center; height: 380px; }
-                .card { width: 280px; height: 330px; background: linear-gradient(135deg, #001f3f 0%, #0074D9 100%); border-radius: 20px; border: 2px solid #FFD700; box-shadow: 0 20px 20px rgba(0,0,0,0.5); transform-style: preserve-3d; transition: transform 0.1s ease; display: flex; flex-direction: column; justify-content: space-between; padding: 20px; color: white; text-align: center; }
+                .container { perspective: 1000px; display: flex; justify-content: center; align-items: center; height: 350px; margin-bottom: 20px;}
+                .card { width: 280px; height: 320px; background: linear-gradient(135deg, #001f3f 0%, #0074D9 100%); border-radius: 20px; border: 2px solid #FFD700; box-shadow: 0 15px 25px rgba(0,0,0,0.5); transform-style: preserve-3d; transition: transform 0.1s ease; display: flex; flex-direction: column; justify-content: space-between; padding: 20px; color: white; text-align: center; }
             </style>
             <div class="container"><div class="card" id="card">
                 <div style="font-size: 1.4em; font-weight: bold; color: #FFD700;">📊 Gaucho Info</div>
-                <div style="font-size: 0.95em; line-height: 1.4;"><b>Data Recency:</b> Through Summer 2025.<br><br><b>Sources:</b> UCSB Registrar & RMP.<br><br><b>Created By:</b> Joshua Chung</div>
-                <div style="font-size: 0.85em; background: rgba(255,255,255,0.1); padding: 8px; border-radius: 10px;">ദ്ദി(˵ •̀ ᴗ - ˵ ) ✧</div>
+                <div style="font-size: 0.95em; line-height: 1.4;"><b>Data:</b> Thru Summer 2025.<br><br><b>Source:</b> Registrar & RMP.<br><br><b>Created By:</b> Joshua Chung</div>
+                <div style="font-size: 0.8em; color: #FFD700;">Move cursor to tilt!</div>
             </div></div>
             <script>
                 const card = document.getElementById('card'); const container = card.parentElement;
@@ -187,8 +188,40 @@ def main():
                 container.addEventListener('mouseleave', () => card.style.transform = `rotateY(0deg) rotateX(0deg)`);
             </script>
             """
-            components.html(gaucho_info_3d, height=400)
-            st.markdown("""<a href="https://www.linkedin.com/in/joshua-chung858/" target="_blank" style="text-decoration: none;"><div style="background: #0077b5; padding: 12px; border-radius: 15px; text-align: center; color: white; font-weight: bold; border: 2px solid #FFD700;">Follow on LinkedIn</div></a>""", unsafe_allow_html=True)
+            components.html(gaucho_info_3d, height=360)
+            
+            # LINKEDIN BUTTON WITH BETTER HEIGHT BUFFER
+            linkedin_3d = """
+            <style>
+                .li-container { perspective: 1000px; display: flex; justify-content: center; align-items: center; height: 100px; width: 100%; }
+                .li-card {
+                    width: 280px; background: #0077b5; border-radius: 15px; border: 2px solid #FFD700;
+                    padding: 15px; color: white; text-align: center; text-decoration: none; font-weight: bold;
+                    transform-style: preserve-3d; transition: transform 0.1s ease; box-shadow: 0 10px 15px rgba(0,0,0,0.3);
+                    display: block;
+                }
+                .li-card:hover { border-color: white; }
+            </style>
+            <div class="li-container">
+                <a href="https://www.linkedin.com/in/joshua-chung858/" target="_blank" class="li-card" id="liCard">
+                    Follow on LinkedIn
+                </a>
+            </div>
+            <script>
+                const liCard = document.getElementById('liCard');
+                const liCont = liCard.parentElement;
+                liCont.addEventListener('mousemove', (e) => {
+                    let rect = liCont.getBoundingClientRect();
+                    let x = (e.clientX - rect.left - rect.width / 2) / 10;
+                    let y = (e.clientY - rect.top - rect.height / 2) / 5;
+                    liCard.style.transform = `rotateY(${x}deg) rotateX(${-y}deg)`;
+                });
+                liCont.addEventListener('mouseleave', () => {
+                    liCard.style.transform = `rotateY(0deg) rotateX(0deg)`;
+                });
+            </script>
+            """
+            components.html(linkedin_3d, height=150)
 
     with tab2:
         st.sidebar.header("( 🔍 ) FILTERS")
