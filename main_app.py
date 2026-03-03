@@ -39,6 +39,7 @@ def load_and_clean_data():
         return f"{parts[0]}{parts[1][0] if len(parts) > 1 else ''}"
 
     df['join_key'] = df['instructor'].apply(get_registrar_key)
+    
     if rmp_path:
         rmp_df = pd.read_csv(rmp_path)
         rmp_df.columns = [c.strip().lower() for c in rmp_df.columns]
@@ -62,12 +63,12 @@ def reset_filters():
 def main():
     full_df, gpa_col = load_and_clean_data()
 
-    # --- 3D HERO HEADER ---
+    # --- 3D HERO HEADER (Increased Height Buffer) ---
     hero_html = """
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap');
-        .hero-container { perspective: 1000px; display: flex; justify-content: center; align-items: center; height: 140px; margin-bottom: 40px; }
-        .hero-title { font-family: 'Orbitron', sans-serif; font-size: 3.5rem; font-weight: 900; color: #FFD700; text-shadow: 0 10px 20px rgba(0,0,0,0.4); transform-style: preserve-3d; transition: transform 0.1s ease; cursor: default; }
+        .hero-container { perspective: 1000px; display: flex; justify-content: center; align-items: center; height: 160px; margin-bottom: 20px; }
+        .hero-title { font-family: 'Orbitron', sans-serif; font-size: 3.5rem; font-weight: 900; color: #FFD700; text-shadow: 0 10px 20px rgba(0,0,0,0.4); transform-style: preserve-3d; transition: transform 0.1s ease; cursor: default; white-space: nowrap; }
     </style>
     <div class="hero-container" id="heroBox">
         <div class="hero-title" id="heroText">(つ▀¯▀ )つ GAUCHO INSIGHTS ⊂(▀¯▀⊂ )</div>
@@ -84,7 +85,7 @@ def main():
         heroBox.addEventListener('mouseleave', () => { heroText.style.transform = `rotateY(0deg) rotateX(0deg) translateZ(0px)`; });
     </script>
     """
-    components.html(hero_html, height=180)
+    components.html(hero_html, height=200)
 
     tab1, tab2 = st.tabs(["( 🏠 ) Home", "( 🔍 ) Search Tool"])
 
@@ -92,7 +93,7 @@ def main():
         col_left, col_right = st.columns([2, 1])
         
         with col_left:
-            # MAIN WELCOME COMPONENT - HEIGHT INCREASED TO 600
+            # --- MAIN WELCOME BOX (Fixed Cutting Off) ---
             stats_bg_html = """
             <div style="background: rgba(0, 31, 63, 0.4); border-radius: 25px; padding: 35px; border: 2px solid rgba(255, 215, 0, 0.4); position: relative; overflow: hidden; min-height: 550px; box-shadow: 0 0 20px rgba(255, 215, 0, 0.1);">
                 <canvas id="statsCanvas" style="position: absolute; top: 0; left: 0; z-index: 0; width: 100%; height: 100%; pointer-events: none;"></canvas>
@@ -103,12 +104,12 @@ def main():
                         Gaucho Insights is a tool designed to help you survive your schedule. This dashboard helps you see exactly how stressful 
                         certain classes are with specific professors. <b>Numbers don't lie!</b>
                     </p>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-top: 40px;">
-                        <div style="background: rgba(255,255,255,0.07); padding: 20px; border-radius: 15px; border-left: 5px solid #FFD700;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-top: 40px; padding-bottom: 30px;">
+                        <div style="background: rgba(255,255,255,0.07); padding: 20px; border-radius: 15px; border-left: 5px solid #FFD700; min-height: 140px;">
                             <b style="color: #FFD700;">( 📍 ) MISSION</b><br>
                             Empowering students to make informed decisions about their quarterly schedules and academic path.
                         </div>
-                        <div style="background: rgba(255,255,255,0.07); padding: 20px; border-radius: 15px; border-left: 5px solid #0074D9;">
+                        <div style="background: rgba(255,255,255,0.07); padding: 20px; border-radius: 15px; border-left: 5px solid #0074D9; min-height: 140px;">
                             <b style="color: #0074D9;">( 🔍 ) THE TECH</b><br>
                             Utilizing Python, Streamlit, and D3-inspired mesh networks to visualize grade distributions.
                         </div>
@@ -154,10 +155,10 @@ def main():
                 init(); animate();
             </script>
             """
-            components.html(stats_bg_html, height=600)
+            components.html(stats_bg_html, height=620)
 
         with col_right:
-            # 3D INFO CARD
+            # --- 3D INFO CARD ---
             gaucho_info_3d = """
             <style>
                 .container { perspective: 1000px; display: flex; justify-content: center; align-items: center; height: 350px; margin-bottom: 20px; }
@@ -179,12 +180,12 @@ def main():
             """
             components.html(gaucho_info_3d, height=380)
 
-            # 3D LINKEDIN BUTTON - INCREASED HEIGHT TO 150
+            # --- 3D LINKEDIN BUTTON (Centered & Spaced) ---
             linkedin_3d = """
             <style>
-                .li-container { perspective: 1000px; display: flex; justify-content: center; align-items: center; height: 100px; }
+                .li-container { perspective: 1000px; display: flex; justify-content: center; align-items: center; height: 110px; padding-top: 10px; }
                 .li-card { width: 280px; background: #0077b5; border-radius: 15px; border: 2px solid #FFD700; padding: 15px; color: white; text-align: center; text-decoration: none; font-weight: bold; transform-style: preserve-3d; transition: transform 0.1s ease; box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
-                .li-card:hover { background: #008fdb; }
+                .li-card:hover { background: #008fdb; border-color: white; }
             </style>
             <div class="li-container">
                 <a href="https://www.linkedin.com/in/joshua-chung858/" target="_blank" class="li-card" id="liCard">Follow on LinkedIn</a>
@@ -198,10 +199,9 @@ def main():
                 liCont.addEventListener('mouseleave', () => liCard.style.transform = `rotateY(0deg) rotateX(0deg)`);
             </script>
             """
-            components.html(linkedin_3d, height=150)
+            components.html(linkedin_3d, height=160)
 
     with tab2:
-        # (Rest of your Search Tool code remains here...)
         st.sidebar.header("( 🔍 ) FILTERS")
         all_depts = sorted(full_df['dept'].unique().tolist())
         selected_dept = st.sidebar.selectbox("Select Department", options=[" "] + all_depts, key="dept_query")
