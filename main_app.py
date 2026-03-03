@@ -63,7 +63,7 @@ def reset_filters():
 def main():
     full_df, gpa_col = load_and_clean_data()
 
-    # --- 3D HERO HEADER (Increased Height Buffer) ---
+    # --- 3D HERO HEADER ---
     hero_html = """
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap');
@@ -93,23 +93,23 @@ def main():
         col_left, col_right = st.columns([2, 1])
         
         with col_left:
-            # --- MAIN WELCOME BOX (Fixed Cutting Off) ---
+            # --- MAIN WELCOME BOX (PADDING ADDED TO FIX CUT-OFF) ---
             stats_bg_html = """
-            <div style="background: rgba(0, 31, 63, 0.4); border-radius: 25px; padding: 35px; border: 2px solid rgba(255, 215, 0, 0.4); position: relative; overflow: hidden; min-height: 550px; box-shadow: 0 0 20px rgba(255, 215, 0, 0.1);">
+            <div style="background: rgba(0, 31, 63, 0.4); border-radius: 25px; padding: 35px 35px 50px 35px; border: 2px solid rgba(255, 215, 0, 0.4); position: relative; overflow: hidden; min-height: 520px; box-shadow: 0 0 20px rgba(255, 215, 0, 0.1);">
                 <canvas id="statsCanvas" style="position: absolute; top: 0; left: 0; z-index: 0; width: 100%; height: 100%; pointer-events: none;"></canvas>
                 <div style="position: relative; z-index: 1; color: white; font-family: 'sans-serif';">
                     <h2 style="color: #FFD700; font-family: 'Orbitron', sans-serif; margin-bottom: 20px;">WELCOME GAUCHOS! ٩(◕‿◕)۶</h2>
-                    <p style="font-size: 1.15em; line-height: 1.7;">
+                    <p style="font-size: 1.15em; line-height: 1.7; margin-bottom: 30px;">
                         <b>WHAT IS THIS?</b><br>
                         Gaucho Insights is a tool designed to help you survive your schedule. This dashboard helps you see exactly how stressful 
                         certain classes are with specific professors. <b>Numbers don't lie!</b>
                     </p>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-top: 40px; padding-bottom: 30px;">
-                        <div style="background: rgba(255,255,255,0.07); padding: 20px; border-radius: 15px; border-left: 5px solid #FFD700; min-height: 140px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px;">
+                        <div style="background: rgba(255,255,255,0.07); padding: 20px; border-radius: 15px; border-left: 5px solid #FFD700; min-height: 150px;">
                             <b style="color: #FFD700;">( 📍 ) MISSION</b><br>
                             Empowering students to make informed decisions about their quarterly schedules and academic path.
                         </div>
-                        <div style="background: rgba(255,255,255,0.07); padding: 20px; border-radius: 15px; border-left: 5px solid #0074D9; min-height: 140px;">
+                        <div style="background: rgba(255,255,255,0.07); padding: 20px; border-radius: 15px; border-left: 5px solid #0074D9; min-height: 150px;">
                             <b style="color: #0074D9;">( 🔍 ) THE TECH</b><br>
                             Utilizing Python, Streamlit, and D3-inspired mesh networks to visualize grade distributions.
                         </div>
@@ -155,7 +155,8 @@ def main():
                 init(); animate();
             </script>
             """
-            components.html(stats_bg_html, height=620)
+            # Height increased from 620 to 650 to ensure bottom border closes
+            components.html(stats_bg_html, height=650)
 
         with col_right:
             # --- 3D INFO CARD ---
@@ -180,7 +181,7 @@ def main():
             """
             components.html(gaucho_info_3d, height=380)
 
-            # --- 3D LINKEDIN BUTTON (Centered & Spaced) ---
+            # --- 3D LINKEDIN BUTTON ---
             linkedin_3d = """
             <style>
                 .li-container { perspective: 1000px; display: flex; justify-content: center; align-items: center; height: 110px; padding-top: 10px; }
