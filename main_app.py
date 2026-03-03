@@ -10,7 +10,6 @@ st.set_page_config(page_title="Gaucho Insights", layout="wide", page_icon="🎓"
 # --- CSS INJECTION FOR BETTER TABS ---
 st.markdown("""
     <style>
-        /* Target the tab bar container */
         .stTabs [data-baseweb="tab-list"] {
             gap: 50px;
             justify-content: center;
@@ -19,27 +18,21 @@ st.markdown("""
             border-radius: 15px;
             margin-bottom: 20px;
         }
-
-        /* Target the individual tabs */
         .stTabs [data-baseweb="tab"] {
             height: 60px;
             white-space: pre-wrap;
             background-color: transparent;
             border-radius: 10px;
-            color: #888; /* Dim inactive tabs */
-            font-size: 22px !important; /* MUCH larger text */
+            color: #888;
+            font-size: 22px !important;
             font-weight: 700;
             font-family: 'Orbitron', sans-serif;
             transition: all 0.3s ease;
         }
-
-        /* Hover effect */
         .stTabs [data-baseweb="tab"]:hover {
             color: #FFD700;
             background-color: rgba(255, 215, 0, 0.1);
         }
-
-        /* Active tab styling */
         .stTabs [aria-selected="true"] {
             color: #FFD700 !important;
             border-bottom: 3px solid #FFD700 !important;
@@ -131,43 +124,73 @@ def main():
     """
     components.html(hero_html, height=200)
 
-    # --- TABS (NOW STYLED VIA CSS ABOVE) ---
     tab1, tab2 = st.tabs(["🏠 HOME", "🔍 SEARCH TOOL"])
 
     with tab1:
         col_left, col_right = st.columns([2, 1])
         with col_left:
-            stats_bg_html = """
-            <div style="background: rgba(0, 31, 63, 0.4); border-radius: 25px; padding: 35px 35px 50px 35px; border: 2px solid rgba(255, 215, 0, 0.4); position: relative; overflow: hidden; min-height: 520px; box-shadow: 0 0 20px rgba(255, 215, 0, 0.1);">
-                <canvas id="statsCanvas" style="position: absolute; top: 0; left: 0; z-index: 0; width: 100%; height: 100%; pointer-events: none;"></canvas>
-                <div style="position: relative; z-index: 1; color: white; font-family: 'sans-serif';">
-                    <h2 style="color: #FFD700; font-family: 'Orbitron', sans-serif; margin-bottom: 20px;">WELCOME GAUCHOS! ٩(◕‿◕)۶</h2>
-                    <p style="font-size: 1.15em; line-height: 1.7; margin-bottom: 30px;">
-                        <b>WHAT IS THIS?</b><br>
-                        Gaucho Insights is a tool designed to help you survive your schedule. This dashboard helps you see exactly how stressful 
-                        certain classes are with specific professors. <b>Numbers don't lie!</b>
-                    </p>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px;">
-                        <div style="background: rgba(255,255,255,0.07); padding: 20px; border-radius: 15px; border-left: 5px solid #FFD700; min-height: 150px;">
-                            <b style="color: #FFD700;">( 📍 ) MISSION</b><br>
-                            Empowering students to make informed decisions about their quarterly schedules and academic path.
-                        </div>
-                        <div style="background: rgba(255,255,255,0.07); padding: 20px; border-radius: 15px; border-left: 5px solid #0074D9; min-height: 150px;">
-                            <b style="color: #0074D9;">( 🔍 ) THE TECH</b><br>
-                            Utilizing Python, Streamlit, and D3-inspired mesh networks to visualize grade distributions.
+            # --- 3D WELCOME BOX WITH MESH ---
+            stats_3d_html = """
+            <style>
+                @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+                .welcome-perspective { perspective: 1500px; width: 100%; height: 620px; display: flex; justify-content: center; align-items: center; }
+                .welcome-card { 
+                    width: 95%; height: 580px; 
+                    background: rgba(0, 31, 63, 0.6); 
+                    border-radius: 25px; 
+                    border: 2px solid rgba(255, 215, 0, 0.4); 
+                    position: relative; 
+                    overflow: hidden; 
+                    box-shadow: 0 20px 50px rgba(0,0,0,0.5); 
+                    transform-style: preserve-3d; 
+                    transition: transform 0.1s ease-out;
+                    padding: 40px;
+                }
+                .content-layer { position: relative; z-index: 2; color: white; font-family: 'sans-serif'; pointer-events: none; }
+                canvas { position: absolute; top: 0; left: 0; z-index: 1; width: 100%; height: 100%; }
+            </style>
+            <div class="welcome-perspective" id="welcomeCont">
+                <div class="welcome-card" id="welcomeCard">
+                    <canvas id="statsCanvas"></canvas>
+                    <div class="content-layer">
+                        <h2 style="color: #FFD700; font-family: 'Orbitron', sans-serif; font-size: 2.2em; margin-bottom: 20px; text-shadow: 0 0 10px rgba(255,215,0,0.3);">WELCOME GAUCHOS! ٩(◕‿◕)۶</h2>
+                        <p style="font-size: 1.2em; line-height: 1.8; margin-bottom: 35px; max-width: 90%;">
+                            <b>WHAT IS THIS?</b><br>
+                            Gaucho Insights is a tool designed to help you survive your schedule. This dashboard helps you see exactly how stressful 
+                            certain classes are with specific professors. <b>Numbers don't lie!</b>
+                        </p>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; pointer-events: auto;">
+                            <div style="background: rgba(255,255,255,0.07); padding: 25px; border-radius: 15px; border-left: 5px solid #FFD700; backdrop-filter: blur(5px);">
+                                <b style="color: #FFD700; font-size: 1.1em;">( 📍 ) MISSION</b><br>
+                                Empowering students to make informed decisions about their quarterly schedules and academic path.
+                            </div>
+                            <div style="background: rgba(255,255,255,0.07); padding: 25px; border-radius: 15px; border-left: 5px solid #0074D9; backdrop-filter: blur(5px);">
+                                <b style="color: #0074D9; font-size: 1.1em;">( 🔍 ) THE TECH</b><br>
+                                Utilizing Python, Streamlit, and D3-inspired mesh networks to visualize grade distributions.
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
             <script>
+                const card = document.getElementById('welcomeCard');
+                const cont = document.getElementById('welcomeCont');
+                cont.addEventListener('mousemove', (e) => {
+                    let rect = cont.getBoundingClientRect();
+                    let x = (e.clientX - rect.left - rect.width / 2) / 40;
+                    let y = (e.clientY - rect.top - rect.height / 2) / 30;
+                    card.style.transform = `rotateY(${x}deg) rotateX(${-y}deg)`;
+                });
+                cont.addEventListener('mouseleave', () => card.style.transform = `rotateY(0deg) rotateX(0deg)`);
+
                 const canvas = document.getElementById('statsCanvas'); const ctx = canvas.getContext('2d');
                 let particles = [];
-                function resize() { canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight; }
+                function resize() { canvas.width = card.offsetWidth; canvas.height = card.offsetHeight; }
                 window.onresize = resize; resize();
                 class Particle {
                     constructor() {
                         this.x = Math.random() * canvas.width; this.y = Math.random() * canvas.height;
-                        this.vx = (Math.random() - 0.5) * 1.2; this.vy = (Math.random() - 0.5) * 1.2;
+                        this.vx = (Math.random() - 0.5) * 1.5; this.vy = (Math.random() - 0.5) * 1.5;
                         this.radius = 2;
                     }
                     update() {
@@ -177,28 +200,28 @@ def main():
                     }
                     draw() {
                         ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                        ctx.fillStyle = "rgba(255, 215, 0, 0.5)"; ctx.fill();
+                        ctx.fillStyle = "rgba(255, 215, 0, 0.4)"; ctx.fill();
                     }
                 }
-                function init() { for (let i = 0; i < 50; i++) particles.push(new Particle()); }
+                for (let i = 0; i < 60; i++) particles.push(new Particle());
                 function animate() {
                     ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    particles.forEach((p, index) => {
+                    particles.forEach((p, idx) => {
                         p.update(); p.draw();
-                        for (let j = index + 1; j < particles.length; j++) {
-                            const p2 = particles[j]; const dist = Math.hypot(p.x - p2.x, p.y - p2.y);
-                            if (dist < 110) {
-                                ctx.beginPath(); ctx.strokeStyle = `rgba(0, 116, 217, ${1 - dist/110})`;
-                                ctx.lineWidth = 0.6; ctx.moveTo(p.x, p.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+                        for (let j = idx + 1; j < particles.length; j++) {
+                            const p2 = particles[j]; const d = Math.hypot(p.x - p2.x, p.y - p2.y);
+                            if (d < 120) {
+                                ctx.beginPath(); ctx.strokeStyle = `rgba(0, 116, 217, ${1 - d/120})`;
+                                ctx.lineWidth = 0.8; ctx.moveTo(p.x, p.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
                             }
                         }
                     });
                     requestAnimationFrame(animate);
                 }
-                init(); animate();
+                animate();
             </script>
             """
-            components.html(stats_bg_html, height=660)
+            components.html(stats_3d_html, height=650)
 
         with col_right:
             gaucho_info_3d = """
@@ -243,6 +266,7 @@ def main():
             components.html(linkedin_3d, height=160)
 
     with tab2:
+        # (Search Tool logic remains exactly the same as previous)
         st.sidebar.header("( 🔍 ) FILTERS")
         all_depts = sorted(full_df['dept'].unique().tolist())
         selected_dept = st.sidebar.selectbox("Select Department", options=[" "] + all_depts, key="dept_query")
@@ -267,28 +291,17 @@ def main():
                 else: status, color, shadow = "CHILL", "#0074D9", "rgba(0, 116, 217, 0.4)"
 
                 prof_display = row['instructor']
-                if 'rmp_url' in row and pd.notna(row['rmp_url']):
-                    prof_html = f"<a href='{row['rmp_url']}' target='_blank' style='color:#FFD700; text-decoration:none; border-bottom:1px solid transparent;'>{prof_display} 🔗</a>"
-                else:
-                    prof_html = f"<span style='color:white;'>{prof_display}</span>"
+                prof_html = f"<a href='{row['rmp_url']}' target='_blank' style='color:#FFD700; text-decoration:none;'>{prof_display} 🔗</a>" if 'rmp_url' in row and pd.notna(row['rmp_url']) else f"<span>{prof_display}</span>"
 
                 with st.container(border=True):
                     colA, colB = st.columns([2, 1])
                     with colA:
                         st.markdown(f"### {row['course']} | {row['quarter']} {row['year']}")
                         st.markdown(f"**Instructor:** {prof_html}", unsafe_allow_html=True)
-                        badge_html = f"""
-                        <div style="display: flex; align-items: center; gap: 10px; margin-top: 10px;">
-                            <span style="font-size: 1.1em; font-weight: bold; color: white;">GPA: {gpa_val:.2f}</span>
-                            <span style="background: {color}; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.8em; font-weight: 900; box-shadow: 0 0 10px {shadow}; text-transform: uppercase;">{status}</span>
-                        </div>
-                        """
-                        st.markdown(badge_html, unsafe_allow_html=True)
+                        st.markdown(f"""<div style="display: flex; align-items: center; gap: 10px; margin-top: 10px;"><span style="font-weight: bold; color: white;">GPA: {gpa_val:.2f}</span><span style="background: {color}; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.8em; font-weight: 900; box-shadow: 0 0 10px {shadow}; text-transform: uppercase;">{status}</span></div>""", unsafe_allow_html=True)
                     with colB:
                         grades = pd.DataFrame({'Grade': ['A', 'B', 'C', 'D', 'F'], 'Count': [row['a'], row['b'], row['c'], row['d'], row['f']]})
-                        fig = px.bar(grades, x='Grade', y='Count', color='Grade', 
-                                    color_discrete_map={'A':'#2ECC40','B':'#0074D9','C':'#FFDC00','D':'#FF851B','F':'#FF4136'},
-                                    template="plotly_dark", height=130)
+                        fig = px.bar(grades, x='Grade', y='Count', color='Grade', color_discrete_map={'A':'#2ECC40','B':'#0074D9','C':'#FFDC00','D':'#FF851B','F':'#FF4136'}, template="plotly_dark", height=130)
                         fig.update_layout(margin=dict(l=0,r=0,t=10,b=0), showlegend=False, xaxis_title=None, yaxis_title=None)
                         st.plotly_chart(fig, use_container_width=True, key=f"fig_{idx}", config={'displayModeBar': False})
         else:
