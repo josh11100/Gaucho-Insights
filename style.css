@@ -1,46 +1,39 @@
 /* style.css */
 
-/* 1. Main Background and Global Text */
+/* 1. Global Theme */
 .stApp {
     background-color: #000000 !important;
     color: #FFFFFF !important;
 }
 
-/* 2. Cards and Expanders */
+/* 2. Professor Link Styling (Transparent Button) */
+div.stButton > button {
+    background-color: transparent !important;
+    color: #00CCFF !important;
+    border: none !important;
+    padding: 0 !important;
+    font-size: 1.1em !important;
+    text-decoration: underline !important;
+    font-weight: bold !important;
+    text-align: left !important;
+}
+
+div.stButton > button:hover {
+    color: #FFD700 !important;
+    background-color: transparent !important;
+}
+
+/* 3. Headers and Metrics */
+h1, h2, h3 { color: #FFD700 !important; font-weight: 800; text-transform: uppercase; }
+[data-testid="stMetricValue"] { color: #00CCFF !important; }
+.stMetric { background-color: #1a1a1a; padding: 15px; border-radius: 10px; border-left: 4px solid #00CCFF; }
+
+/* 4. Containers */
 div[data-testid="stExpander"], .stContainer {
     background-color: #111111 !important;
     border: 1px solid #333333 !important;
     border-radius: 12px;
-    margin-bottom: 15px;
 }
 
-/* 3. Headers */
-h1, h2, h3 {
-    color: #FFD700 !important;
-    font-weight: 800;
-    text-transform: uppercase;
-}
-
-/* 4. Sidebar Styling */
-section[data-testid="stSidebar"] {
-    background-color: #0a0a0a !important;
-}
-
-/* 5. 3D Container Fix - Ensures borders aren't cut off */
-.welcome-3d-frame {
-    margin-top: 10px;
-    margin-bottom: 20px;
-    overflow: visible !important;
-}
-
-/* 6. Metrics */
-[data-testid="stMetricValue"] {
-    color: #00CCFF !important;
-}
-
-.stMetric {
-    background-color: #1a1a1a;
-    padding: 15px;
-    border-radius: 10px;
-    border-left: 4px solid #00CCFF;
-}
+/* 5. 3D Frame Fix */
+.welcome-3d-frame { margin-top: 10px; margin-bottom: 20px; overflow: visible !important; }
