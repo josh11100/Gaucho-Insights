@@ -213,9 +213,9 @@ def main():
         st.sidebar.markdown("---")
         st.sidebar.subheader("( 📝 ) GRADING SYSTEM")
         st.sidebar.markdown("""
-        * **STRESSFUL:** GPA < 2.5 (Hard mode)
-        * **CHILL:** GPA 2.5 - 3.3 (Standard)
-        * **EASY:** GPA > 3.3 (GPA Booster)
+        * **STRESSFUL:** GPA < 2.5
+        * **CHILL:** GPA 2.5 - 3.3
+        * **EASY:** GPA > 3.3
         """)
 
         data = full_df.copy()
@@ -227,23 +227,32 @@ def main():
             for idx, row in data.head(20).iterrows():
                 # Logic for Grading System tag
                 gpa_val = row[gpa_col]
-                if gpa_val < 2.5: status, color = "STRESSFUL", "#FF4136"
-                elif gpa_val > 3.3: status, color = "EASY", "#2ECC40"
-                else: status, color = "CHILL", "#0074D9"
+                if gpa_val < 2.5: status, color, shadow = "STRESSFUL", "#FF4136", "rgba(255, 65, 54, 0.4)"
+                elif gpa_val > 3.3: status, color, shadow = "EASY", "#2ECC40", "rgba(46, 204, 64, 0.4)"
+                else: status, color, shadow = "CHILL", "#0074D9", "rgba(0, 116, 217, 0.4)"
 
                 with st.container(border=True):
                     colA, colB = st.columns([2, 1])
                     with colA:
                         st.markdown(f"### {row['course']} | {row['quarter']} {row['year']}")
-                        # Professor name is now plain text, no link
+                        # NO LINKS - Professor name is now static text
                         st.markdown(f"**Instructor:** {row['instructor']}")
-                        st.markdown(f"**GPA:** `{gpa_val:.2f}` <span style='color:{color}; font-weight:bold;'>({status})</span>", unsafe_allow_html=True)
+                        
+                        # Glowing Badge HTML
+                        badge_html = f"""
+                        <div style="display: flex; align-items: center; gap: 10px; margin-top: 10px;">
+                            <span style="font-size: 1.1em; font-weight: bold; color: white;">GPA: {gpa_val:.2f}</span>
+                            <span style="background: {color}; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.8em; font-weight: 900; box-shadow: 0 0 10px {shadow}; text-transform: uppercase;">{status}</span>
+                        </div>
+                        """
+                        st.markdown(badge_html, unsafe_allow_html=True)
+
                     with colB:
                         grades = pd.DataFrame({'Grade': ['A', 'B', 'C', 'D', 'F'], 'Count': [row['a'], row['b'], row['c'], row['d'], row['f']]})
                         fig = px.bar(grades, x='Grade', y='Count', color='Grade', 
                                     color_discrete_map={'A':'#2ECC40','B':'#0074D9','C':'#FFDC00','D':'#FF851B','F':'#FF4136'},
-                                    template="plotly_dark", height=120)
-                        fig.update_layout(margin=dict(l=0,r=0,t=0,b=0), showlegend=False, xaxis_title=None, yaxis_title=None)
+                                    template="plotly_dark", height=130)
+                        fig.update_layout(margin=dict(l=0,r=0,t=10,b=0), showlegend=False, xaxis_title=None, yaxis_title=None)
                         st.plotly_chart(fig, use_container_width=True, key=f"fig_{idx}", config={'displayModeBar': False})
         else:
             st.warning("No matches found. Try adjusting your filters!")
