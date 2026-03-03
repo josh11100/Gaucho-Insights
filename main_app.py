@@ -7,6 +7,47 @@ import streamlit.components.v1 as components
 
 st.set_page_config(page_title="Gaucho Insights", layout="wide", page_icon="🎓")
 
+# --- CSS INJECTION FOR BETTER TABS ---
+st.markdown("""
+    <style>
+        /* Target the tab bar container */
+        .stTabs [data-baseweb="tab-list"] {
+            gap: 50px;
+            justify-content: center;
+            background-color: rgba(0, 0, 0, 0.2);
+            padding: 10px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+
+        /* Target the individual tabs */
+        .stTabs [data-baseweb="tab"] {
+            height: 60px;
+            white-space: pre-wrap;
+            background-color: transparent;
+            border-radius: 10px;
+            color: #888; /* Dim inactive tabs */
+            font-size: 22px !important; /* MUCH larger text */
+            font-weight: 700;
+            font-family: 'Orbitron', sans-serif;
+            transition: all 0.3s ease;
+        }
+
+        /* Hover effect */
+        .stTabs [data-baseweb="tab"]:hover {
+            color: #FFD700;
+            background-color: rgba(255, 215, 0, 0.1);
+        }
+
+        /* Active tab styling */
+        .stTabs [aria-selected="true"] {
+            color: #FFD700 !important;
+            border-bottom: 3px solid #FFD700 !important;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+    </style>
+""", unsafe_allow_html=True)
+
 # --- DATA LOADING & CLEANING ---
 @st.cache_data
 def load_and_clean_data():
@@ -52,6 +93,9 @@ def load_and_clean_data():
     gpa_col = next((c for c in ['avggpa', 'avg_gpa', 'avg gpa'] if c in df.columns), 'avggpa')
     group_cols = ['instructor', 'quarter', 'year', 'course', 'dept']
     agg_dict = {gpa_col: 'mean', 'a': 'sum', 'b': 'sum', 'c': 'sum', 'd': 'sum', 'f': 'sum'}
+    if 'rmp_url' in df.columns:
+        agg_dict['rmp_url'] = 'first'
+        
     df = df.groupby(group_cols).agg(agg_dict).reset_index()
     return df, gpa_col
 
@@ -87,13 +131,12 @@ def main():
     """
     components.html(hero_html, height=200)
 
-    tab1, tab2 = st.tabs(["( 🏠 ) Home", "( 🔍 ) Search Tool"])
+    # --- TABS (NOW STYLED VIA CSS ABOVE) ---
+    tab1, tab2 = st.tabs(["🏠 HOME", "🔍 SEARCH TOOL"])
 
     with tab1:
         col_left, col_right = st.columns([2, 1])
-        
         with col_left:
-            # --- MAIN WELCOME BOX ---
             stats_bg_html = """
             <div style="background: rgba(0, 31, 63, 0.4); border-radius: 25px; padding: 35px 35px 50px 35px; border: 2px solid rgba(255, 215, 0, 0.4); position: relative; overflow: hidden; min-height: 520px; box-shadow: 0 0 20px rgba(255, 215, 0, 0.1);">
                 <canvas id="statsCanvas" style="position: absolute; top: 0; left: 0; z-index: 0; width: 100%; height: 100%; pointer-events: none;"></canvas>
@@ -155,10 +198,9 @@ def main():
                 init(); animate();
             </script>
             """
-            components.html(stats_bg_html, height=650)
+            components.html(stats_bg_html, height=660)
 
         with col_right:
-            # --- 3D INFO CARD ---
             gaucho_info_3d = """
             <style>
                 .container { perspective: 1000px; display: flex; justify-content: center; align-items: center; height: 350px; margin-bottom: 20px; }
@@ -180,7 +222,6 @@ def main():
             """
             components.html(gaucho_info_3d, height=380)
 
-            # --- 3D LINKEDIN BUTTON ---
             linkedin_3d = """
             <style>
                 .li-container { perspective: 1000px; display: flex; justify-content: center; align-items: center; height: 110px; padding-top: 10px; }
@@ -209,14 +250,9 @@ def main():
         prof_q = st.sidebar.text_input("PROFESSOR NAME", key="prof_query").strip().upper()
         if st.sidebar.button("( ✖ ) Clear All", on_click=reset_filters): st.rerun()
 
-        # --- GRADING SYSTEM LEGEND ---
         st.sidebar.markdown("---")
         st.sidebar.subheader("( 📝 ) GRADING SYSTEM")
-        st.sidebar.markdown("""
-        * **STRESSFUL:** GPA < 2.5
-        * **CHILL:** GPA 2.5 - 3.3
-        * **EASY:** GPA > 3.3
-        """)
+        st.sidebar.markdown("* **STRESSFUL:** GPA < 2.5\n* **CHILL:** GPA 2.5 - 3.3\n* **EASY:** GPA > 3.3")
 
         data = full_df.copy()
         if selected_dept != " ": data = data[data['dept'] == selected_dept]
@@ -225,20 +261,22 @@ def main():
 
         if not data.empty:
             for idx, row in data.head(20).iterrows():
-                # Logic for Grading System tag
                 gpa_val = row[gpa_col]
                 if gpa_val < 2.5: status, color, shadow = "STRESSFUL", "#FF4136", "rgba(255, 65, 54, 0.4)"
                 elif gpa_val > 3.3: status, color, shadow = "EASY", "#2ECC40", "rgba(46, 204, 64, 0.4)"
                 else: status, color, shadow = "CHILL", "#0074D9", "rgba(0, 116, 217, 0.4)"
 
+                prof_display = row['instructor']
+                if 'rmp_url' in row and pd.notna(row['rmp_url']):
+                    prof_html = f"<a href='{row['rmp_url']}' target='_blank' style='color:#FFD700; text-decoration:none; border-bottom:1px solid transparent;'>{prof_display} 🔗</a>"
+                else:
+                    prof_html = f"<span style='color:white;'>{prof_display}</span>"
+
                 with st.container(border=True):
                     colA, colB = st.columns([2, 1])
                     with colA:
                         st.markdown(f"### {row['course']} | {row['quarter']} {row['year']}")
-                        # NO LINKS - Professor name is now static text
-                        st.markdown(f"**Instructor:** {row['instructor']}")
-                        
-                        # Glowing Badge HTML
+                        st.markdown(f"**Instructor:** {prof_html}", unsafe_allow_html=True)
                         badge_html = f"""
                         <div style="display: flex; align-items: center; gap: 10px; margin-top: 10px;">
                             <span style="font-size: 1.1em; font-weight: bold; color: white;">GPA: {gpa_val:.2f}</span>
@@ -246,7 +284,6 @@ def main():
                         </div>
                         """
                         st.markdown(badge_html, unsafe_allow_html=True)
-
                     with colB:
                         grades = pd.DataFrame({'Grade': ['A', 'B', 'C', 'D', 'F'], 'Count': [row['a'], row['b'], row['c'], row['d'], row['f']]})
                         fig = px.bar(grades, x='Grade', y='Count', color='Grade', 
@@ -255,7 +292,7 @@ def main():
                         fig.update_layout(margin=dict(l=0,r=0,t=10,b=0), showlegend=False, xaxis_title=None, yaxis_title=None)
                         st.plotly_chart(fig, use_container_width=True, key=f"fig_{idx}", config={'displayModeBar': False})
         else:
-            st.warning("No matches found. Try adjusting your filters!")
+            st.warning("No matches found.")
 
 if __name__ == "__main__":
     main()
