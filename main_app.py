@@ -127,19 +127,19 @@ def main():
             """)
         
         with col_right:
-            # --- RESTORED 3D GAUCHO INFO CARD ---
+            # --- FIXED 3D GAUCHO INFO CARD ---
             gaucho_info_3d = """
             <style>
-                .container { perspective: 1000px; display: flex; justify-content: center; align-items: center; height: 360px; }
+                .container { perspective: 1000px; display: flex; justify-content: center; align-items: center; height: 380px; }
                 .card {
-                    width: 300px; height: 340px; background: linear-gradient(135deg, #001f3f 0%, #0074D9 100%);
+                    width: 280px; height: 330px; background: linear-gradient(135deg, #001f3f 0%, #0074D9 100%);
                     border-radius: 20px; border: 2px solid #FFD700; box-shadow: 0 20px 20px rgba(0,0,0,0.5);
                     transform-style: preserve-3d; transition: transform 0.1s ease;
                     display: flex; flex-direction: column; justify-content: space-between; padding: 20px; color: white; text-align: center;
                 }
-                .card-title { font-size: 1.5em; font-weight: bold; color: #FFD700; transform: translateZ(50px); }
-                .card-body { font-size: 1em; transform: translateZ(30px); line-height: 1.5; }
-                .card-footer { font-size: 0.9em; transform: translateZ(20px); background: rgba(255,255,255,0.1); padding: 10px; border-radius: 10px; }
+                .card-title { font-size: 1.4em; font-weight: bold; color: #FFD700; transform: translateZ(50px); }
+                .card-body { font-size: 0.95em; transform: translateZ(30px); line-height: 1.4; }
+                .card-footer { font-size: 0.85em; transform: translateZ(20px); background: rgba(255,255,255,0.1); padding: 8px; border-radius: 10px; }
             </style>
             <div class="container">
                 <div class="card" id="card">
@@ -159,7 +159,7 @@ def main():
                     let rect = container.getBoundingClientRect();
                     let x = e.clientX - rect.left - rect.width / 2;
                     let y = e.clientY - rect.top - rect.height / 2;
-                    card.style.transform = `rotateY(${x / 10}deg) rotateX(${-y / 10}deg)`;
+                    card.style.transform = `rotateY(${x / 12}deg) rotateX(${-y / 12}deg)`;
                 });
                 container.addEventListener('mouseleave', () => {
                     card.style.transform = `rotateY(0deg) rotateX(0deg)`;
@@ -168,16 +168,16 @@ def main():
                 container.addEventListener('mouseenter', () => { card.style.transition = 'transform 0.1s ease'; });
             </script>
             """
-            components.html(gaucho_info_3d, height=360)
+            components.html(gaucho_info_3d, height=400)
 
-            # --- 3D LINKEDIN BUTTON WITH PHYSICS ---
+            # --- 3D LINKEDIN BUTTON ---
             linkedin_3d = """
             <style>
-                .li-container { perspective: 1000px; display: flex; justify-content: center; padding: 10px; }
+                .li-container { perspective: 1000px; display: flex; justify-content: center; padding: 10px; height: 130px; align-items: center; }
                 .li-card {
-                    width: 100%; max-width: 300px; background: #0077b5; border-radius: 15px; border: 2px solid #FFD700;
+                    width: 100%; max-width: 280px; background: #0077b5; border-radius: 15px; border: 2px solid #FFD700;
                     padding: 15px; color: white; text-align: center; text-decoration: none; font-weight: bold;
-                    transform-style: preserve-3d; transition: transform 0.1s ease;
+                    transform-style: preserve-3d; transition: transform 0.1s ease; display: block;
                 }
                 .li-text { transform: translateZ(30px); display: block; }
             </style>
@@ -205,13 +205,12 @@ def main():
                 liContainer.addEventListener('mouseenter', () => { liCard.style.transition = 'transform 0.1s ease'; });
             </script>
             """
-            components.html(linkedin_3d, height=120)
+            components.html(linkedin_3d, height=150)
 
             st.write("---")
             st.info("( 💡 ) Tip: Switch to the 'Search Tool' tab to check your schedule!")
 
     with tab2:
-        # --- (Existing Search Tool Logic remains the same) ---
         st.sidebar.header("( 🔍 ) FILTERS")
         all_depts = sorted(full_df['dept'].unique().tolist())
         selected_dept = st.sidebar.selectbox("Select Department", options=[" "] + all_depts, key="dept_query")
