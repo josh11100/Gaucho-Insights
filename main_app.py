@@ -13,13 +13,11 @@ def load_and_clean_data():
     def find_file(name):
         paths_to_check = [name, os.path.join('data', name)]
         for p in paths_to_check:
-            if os.path.exists(p):
-                return p
+            if os.path.exists(p): return p
         return None
 
     csv_path = find_file('courseGrades.csv')
     rmp_path = find_file('rmp_final_data.csv')
-
     if not csv_path:
         st.error("Missing 'courseGrades.csv'.")
         st.stop()
@@ -81,25 +79,8 @@ def main():
     hero_html = """
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap');
-        .hero-container {
-            perspective: 1000px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 150px;
-            background: transparent;
-            margin-bottom: 20px;
-        }
-        .hero-title {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 3.5rem;
-            font-weight: 900;
-            color: #FFD700;
-            text-shadow: 0 10px 20px rgba(0,0,0,0.3);
-            transform-style: preserve-3d;
-            transition: transform 0.1s ease;
-            cursor: default;
-        }
+        .hero-container { perspective: 1000px; display: flex; justify-content: center; align-items: center; height: 150px; background: transparent; margin-bottom: 20px; }
+        .hero-title { font-family: 'Orbitron', sans-serif; font-size: 3.5rem; font-weight: 900; color: #FFD700; text-shadow: 0 10px 20px rgba(0,0,0,0.3); transform-style: preserve-3d; transition: transform 0.1s ease; cursor: default; }
     </style>
     <div class="hero-container" id="heroBox">
         <div class="hero-title" id="heroText">(つ▀¯▀ )つ GAUCHO INSIGHTS ⊂(▀¯▀⊂ )</div>
@@ -124,10 +105,7 @@ def main():
 
     with tab1:
         col_left, col_right = st.columns([2, 1])
-        
         with col_left:
-            # --- ANIMATED STATISTICAL DATA NODE BACKGROUND ---
-            # This script creates a canvas with particles that connect and react to mouse
             stats_bg_html = """
             <div style="background: rgba(0, 31, 63, 0.4); border-radius: 25px; padding: 30px; border: 1px solid rgba(255, 215, 0, 0.3); position: relative; overflow: hidden; min-height: 500px;">
                 <canvas id="statsCanvas" style="position: absolute; top: 0; left: 0; z-index: 0; width: 100%; height: 100%; pointer-events: none;"></canvas>
@@ -140,151 +118,77 @@ def main():
                     </p>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 30px;">
                         <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px; border-left: 4px solid #FFD700;">
-                            <b>( 📍 ) HOW TO USE</b><br>
-                            Head to the 'Search Tool' tab and filter by department or prof. Check the bar charts for grade distributions!
+                            <b>( 📍 ) HOW TO USE</b><br>Head to the 'Search Tool' tab and filter by department or prof. Check the bar charts for grade distributions!
                         </div>
                         <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px; border-left: 4px solid #0074D9;">
-                            <b>( 📖 ) GLOSSARY</b><br>
-                            <b>RMP:</b> Rate My Professors rating.<br>
-                            <b>Difficulty:</b> 1-5 scale of workload.
+                            <b>( 📖 ) GLOSSARY</b><br><b>RMP:</b> Rate My Professors rating.<br><b>Difficulty:</b> 1-5 scale of workload.
                         </div>
                     </div>
                 </div>
             </div>
-
             <script>
-                const canvas = document.getElementById('statsCanvas');
-                const ctx = canvas.getContext('2d');
+                const canvas = document.getElementById('statsCanvas'); const ctx = canvas.getContext('2d');
                 let particles = [];
-                
-                function resize() {
-                    canvas.width = canvas.offsetWidth;
-                    canvas.height = canvas.offsetHeight;
-                }
-                window.onresize = resize;
-                resize();
-
+                function resize() { canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight; }
+                window.onresize = resize; resize();
                 class Particle {
                     constructor() {
-                        this.x = Math.random() * canvas.width;
-                        this.y = Math.random() * canvas.height;
-                        this.vx = (Math.random() - 0.5) * 1.5;
-                        this.vy = (Math.random() - 0.5) * 1.5;
+                        this.x = Math.random() * canvas.width; this.y = Math.random() * canvas.height;
+                        this.vx = (Math.random() - 0.5) * 1.5; this.vy = (Math.random() - 0.5) * 1.5;
                         this.radius = 2;
                     }
                     update() {
-                        this.x += this.vx;
-                        this.y += this.vy;
+                        this.x += this.vx; this.y += this.vy;
                         if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
                         if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
                     }
                     draw() {
-                        ctx.beginPath();
-                        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                        ctx.fillStyle = "rgba(255, 215, 0, 0.6)";
-                        ctx.fill();
+                        ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                        ctx.fillStyle = "rgba(255, 215, 0, 0.6)"; ctx.fill();
                     }
                 }
-
-                function init() {
-                    for (let i = 0; i < 60; i++) particles.push(new Particle());
-                }
-
+                function init() { for (let i = 0; i < 60; i++) particles.push(new Particle()); }
                 function animate() {
                     ctx.clearRect(0, 0, canvas.width, canvas.height);
                     particles.forEach((p, index) => {
-                        p.update();
-                        p.draw();
+                        p.update(); p.draw();
                         for (let j = index + 1; j < particles.length; j++) {
-                            const p2 = particles[j];
-                            const dist = Math.hypot(p.x - p2.x, p.y - p2.y);
+                            const p2 = particles[j]; const dist = Math.hypot(p.x - p2.x, p.y - p2.y);
                             if (dist < 100) {
-                                ctx.beginPath();
-                                ctx.strokeStyle = `rgba(0, 116, 217, ${1 - dist/100})`;
-                                ctx.lineWidth = 0.5;
-                                ctx.moveTo(p.x, p.y);
-                                ctx.lineTo(p2.x, p2.y);
-                                ctx.stroke();
+                                ctx.beginPath(); ctx.strokeStyle = `rgba(0, 116, 217, ${1 - dist/100})`;
+                                ctx.lineWidth = 0.5; ctx.moveTo(p.x, p.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
                             }
                         }
                     });
                     requestAnimationFrame(animate);
                 }
-                init();
-                animate();
+                init(); animate();
             </script>
             """
             components.html(stats_bg_html, height=520)
 
         with col_right:
-            # --- 3D GAUCHO INFO CARD ---
             gaucho_info_3d = """
             <style>
                 .container { perspective: 1000px; display: flex; justify-content: center; align-items: center; height: 380px; }
-                .card {
-                    width: 280px; height: 330px; background: linear-gradient(135deg, #001f3f 0%, #0074D9 100%);
-                    border-radius: 20px; border: 2px solid #FFD700; box-shadow: 0 20px 20px rgba(0,0,0,0.5);
-                    transform-style: preserve-3d; transition: transform 0.1s ease;
-                    display: flex; flex-direction: column; justify-content: space-between; padding: 20px; color: white; text-align: center;
-                }
-                .card-title { font-size: 1.4em; font-weight: bold; color: #FFD700; transform: translateZ(50px); }
-                .card-body { font-size: 0.95em; transform: translateZ(30px); line-height: 1.4; }
-                .card-footer { font-size: 0.85em; transform: translateZ(20px); background: rgba(255,255,255,0.1); padding: 8px; border-radius: 10px; }
+                .card { width: 280px; height: 330px; background: linear-gradient(135deg, #001f3f 0%, #0074D9 100%); border-radius: 20px; border: 2px solid #FFD700; box-shadow: 0 20px 20px rgba(0,0,0,0.5); transform-style: preserve-3d; transition: transform 0.1s ease; display: flex; flex-direction: column; justify-content: space-between; padding: 20px; color: white; text-align: center; }
             </style>
-            <div class="container">
-                <div class="card" id="card">
-                    <div class="card-title">📊 Gaucho Info</div>
-                    <div class="card-body">
-                        <b>Data Recency:</b> Through Summer 2025.<br><br>
-                        <b>Sources:</b> UCSB Registrar & RMP.<br><br>
-                        <b>Created By:</b> Joshua Chung
-                    </div>
-                    <div class="card-footer">ദ്ദി(˵ •̀ ᴗ - ˵ ) ✧</div>
-                </div>
-            </div>
+            <div class="container"><div class="card" id="card">
+                <div style="font-size: 1.4em; font-weight: bold; color: #FFD700;">📊 Gaucho Info</div>
+                <div style="font-size: 0.95em; line-height: 1.4;"><b>Data Recency:</b> Through Summer 2025.<br><br><b>Sources:</b> UCSB Registrar & RMP.<br><br><b>Created By:</b> Joshua Chung</div>
+                <div style="font-size: 0.85em; background: rgba(255,255,255,0.1); padding: 8px; border-radius: 10px;">ദ്ദി(˵ •̀ ᴗ - ˵ ) ✧</div>
+            </div></div>
             <script>
-                const card = document.getElementById('card');
-                const container = card.parentElement;
+                const card = document.getElementById('card'); const container = card.parentElement;
                 container.addEventListener('mousemove', (e) => {
                     let rect = container.getBoundingClientRect();
-                    let x = (e.clientX - rect.left - rect.width / 2) / 12;
-                    let y = (e.clientY - rect.top - rect.height / 2) / 12;
-                    card.style.transform = `rotateY(${x}deg) rotateX(${-y}deg)`;
+                    card.style.transform = `rotateY(${(e.clientX-rect.left-rect.width/2)/12}deg) rotateX(${-(e.clientY-rect.top-rect.height/2)/12}deg)`;
                 });
-                container.addEventListener('mouseleave', () => {
-                    card.style.transform = `rotateY(0deg) rotateX(0deg)`;
-                });
+                container.addEventListener('mouseleave', () => card.style.transform = `rotateY(0deg) rotateX(0deg)`);
             </script>
             """
             components.html(gaucho_info_3d, height=400)
-
-            # --- 3D LINKEDIN BUTTON ---
-            linkedin_3d = """
-            <style>
-                .li-container { perspective: 1000px; display: flex; justify-content: center; align-items: center; height: 100px; }
-                .li-card {
-                    width: 280px; background: #0077b5; border-radius: 15px; border: 2px solid #FFD700;
-                    padding: 12px; color: white; text-align: center; text-decoration: none; font-weight: bold;
-                    transform-style: preserve-3d; transition: transform 0.1s ease;
-                }
-            </style>
-            <div class="li-container">
-                <a href="https://www.linkedin.com/in/joshua-chung858/" target="_blank" class="li-card" id="liCard">
-                    Follow on LinkedIn
-                </a>
-            </div>
-            <script>
-                const liCard = document.getElementById('liCard');
-                const liCont = liCard.parentElement;
-                liCont.addEventListener('mousemove', (e) => {
-                    let rect = liCont.getBoundingClientRect();
-                    let x = (e.clientX - rect.left - rect.width / 2) / 10;
-                    let y = (e.clientY - rect.top - rect.height / 2) / 5;
-                    liCard.style.transform = `rotateY(${x}deg) rotateX(${-y}deg)`;
-                });
-            </script>
-            """
-            components.html(linkedin_3d, height=120)
+            st.markdown("""<a href="https://www.linkedin.com/in/joshua-chung858/" target="_blank" style="text-decoration: none;"><div style="background: #0077b5; padding: 12px; border-radius: 15px; text-align: center; color: white; font-weight: bold; border: 2px solid #FFD700;">Follow on LinkedIn</div></a>""", unsafe_allow_html=True)
 
     with tab2:
         st.sidebar.header("( 🔍 ) FILTERS")
@@ -292,7 +196,6 @@ def main():
         selected_dept = st.sidebar.selectbox("Select Department", options=[" "] + all_depts, key="dept_query")
         course_q = st.sidebar.text_input("COURSE #", key="course_query").strip().upper()
         prof_q = st.sidebar.text_input("PROFESSOR NAME", key="prof_query").strip().upper()
-
         if st.sidebar.button("( ✖ ) Clear All", on_click=reset_filters): st.rerun()
 
         data = full_df.copy()
