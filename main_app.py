@@ -93,7 +93,7 @@ def main():
         col_left, col_right = st.columns([2, 1])
         
         with col_left:
-            # --- MAIN WELCOME BOX (PADDING ADDED TO FIX CUT-OFF) ---
+            # --- MAIN WELCOME BOX ---
             stats_bg_html = """
             <div style="background: rgba(0, 31, 63, 0.4); border-radius: 25px; padding: 35px 35px 50px 35px; border: 2px solid rgba(255, 215, 0, 0.4); position: relative; overflow: hidden; min-height: 520px; box-shadow: 0 0 20px rgba(255, 215, 0, 0.1);">
                 <canvas id="statsCanvas" style="position: absolute; top: 0; left: 0; z-index: 0; width: 100%; height: 100%; pointer-events: none;"></canvas>
@@ -155,7 +155,6 @@ def main():
                 init(); animate();
             </script>
             """
-            # Height increased from 620 to 650 to ensure bottom border closes
             components.html(stats_bg_html, height=650)
 
         with col_right:
@@ -210,6 +209,15 @@ def main():
         prof_q = st.sidebar.text_input("PROFESSOR NAME", key="prof_query").strip().upper()
         if st.sidebar.button("( ✖ ) Clear All", on_click=reset_filters): st.rerun()
 
+        # --- GRADING SYSTEM LEGEND ---
+        st.sidebar.markdown("---")
+        st.sidebar.subheader("( 📝 ) GRADING SYSTEM")
+        st.sidebar.markdown("""
+        * **STRESSFUL:** GPA < 2.5 (Hard mode)
+        * **CHILL:** GPA 2.5 - 3.3 (Standard)
+        * **EASY:** GPA > 3.3 (GPA Booster)
+        """)
+
         data = full_df.copy()
         if selected_dept != " ": data = data[data['dept'] == selected_dept]
         if course_q: data = data[data['course'].str.contains(course_q, na=False)]
@@ -217,19 +225,28 @@ def main():
 
         if not data.empty:
             for idx, row in data.head(20).iterrows():
+                # Logic for Grading System tag
+                gpa_val = row[gpa_col]
+                if gpa_val < 2.5: status, color = "STRESSFUL", "#FF4136"
+                elif gpa_val > 3.3: status, color = "EASY", "#2ECC40"
+                else: status, color = "CHILL", "#0074D9"
+
                 with st.container(border=True):
                     colA, colB = st.columns([2, 1])
                     with colA:
                         st.markdown(f"### {row['course']} | {row['quarter']} {row['year']}")
-                        st.write(f"**Instructor:** {row['instructor']}")
-                        st.write(f"**GPA:** `{row[gpa_col]:.2f}`")
+                        # Professor name is now plain text, no link
+                        st.markdown(f"**Instructor:** {row['instructor']}")
+                        st.markdown(f"**GPA:** `{gpa_val:.2f}` <span style='color:{color}; font-weight:bold;'>({status})</span>", unsafe_allow_html=True)
                     with colB:
                         grades = pd.DataFrame({'Grade': ['A', 'B', 'C', 'D', 'F'], 'Count': [row['a'], row['b'], row['c'], row['d'], row['f']]})
-                        fig = px.bar(grades, x='Grade', y='Count', color='Grade', template="plotly_dark", height=120)
-                        fig.update_layout(margin=dict(l=0,r=0,t=0,b=0), showlegend=False)
-                        st.plotly_chart(fig, use_container_width=True, key=f"fig_{idx}")
+                        fig = px.bar(grades, x='Grade', y='Count', color='Grade', 
+                                    color_discrete_map={'A':'#2ECC40','B':'#0074D9','C':'#FFDC00','D':'#FF851B','F':'#FF4136'},
+                                    template="plotly_dark", height=120)
+                        fig.update_layout(margin=dict(l=0,r=0,t=0,b=0), showlegend=False, xaxis_title=None, yaxis_title=None)
+                        st.plotly_chart(fig, use_container_width=True, key=f"fig_{idx}", config={'displayModeBar': False})
         else:
-            st.warning("No matches found.")
+            st.warning("No matches found. Try adjusting your filters!")
 
 if __name__ == "__main__":
     main()
