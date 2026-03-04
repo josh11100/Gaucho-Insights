@@ -1,32 +1,26 @@
 /* style.css */
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@400;600;800&display=swap');
 
-/* 1. Global Background */
 .stApp {
     background-color: #000000 !important;
     color: #FFFFFF !important;
 }
 
-/* 2. Responsive Cards */
 div[data-testid="stExpander"], .stContainer {
     background-color: #111111 !important; 
     border: 1px solid #333333 !important;
     border-radius: 12px;
     margin-bottom: 15px;
-    box-shadow: 0 4px 10px rgba(255, 255, 255, 0.05);
 }
 
-/* 3. Headers & Metrics */
 h1, h2, h3 {
     color: #FFD700 !important; 
     font-weight: 800;
-    text-transform: uppercase;
 }
 
 [data-testid="stMetricValue"] {
     color: #00CCFF !important; 
     font-family: 'Inter', sans-serif;
-    font-size: clamp(1.2rem, 3vw, 2rem) !important;
 }
 
 .stMetric {
@@ -36,23 +30,16 @@ h1, h2, h3 {
     border-left: 4px solid #00CCFF; 
 }
 
-/* 4. Professor Link Buttons */
 div.stButton > button {
     background-color: transparent !important;
     color: #FFD700 !important;
     border: none !important;
     padding: 0 !important;
-    font-size: 1.1em !important;
     text-decoration: underline !important;
     font-weight: bold !important;
     text-align: left !important;
 }
 
-div.stButton > button:hover {
-    color: #00CCFF !important;
-}
-
-/* 5. Tag Pills (RMP Tags) */
 .tag-pill {
     background-color: rgba(0, 204, 255, 0.15);
     color: #00CCFF;
@@ -63,18 +50,12 @@ div.stButton > button:hover {
     margin: 5px;
     font-size: 0.85em;
     font-weight: bold;
-    font-family: 'Inter', sans-serif;
 }
 
-/* 6. Tabs Styling */
-.stTabs [data-baseweb="tab-list"] {
-    gap: 20px;
-    justify-content: center;
-}
-
-.stTabs [data-baseweb="tab"] {
-    font-family: 'Orbitron', sans-serif;
-    color: #888 !important;
+/* Sidebar multiselect styling */
+span[data-baseweb="tag"] {
+    background-color: #FFD700 !important;
+    color: #000 !important;
 }
 
 .stTabs [aria-selected="true"] {
@@ -82,7 +63,6 @@ div.stButton > button:hover {
     border-bottom: 3px solid #FFD700 !important;
 }
 
-/* 7. Mobile Layout Fix */
 @media (max-width: 768px) {
     [data-testid="column"] {
         width: 100% !important;
