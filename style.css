@@ -1,12 +1,13 @@
 /* style.css */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
 
-/* 1. Main Background and Global Text */
+/* 1. Global Background & Text */
 .stApp {
     background-color: #000000 !important;
     color: #FFFFFF !important;
 }
 
-/* 2. Fold/Unfold (Expander) Cards */
+/* 2. Responsive Cards & Containers */
 div[data-testid="stExpander"], .stContainer {
     background-color: #111111 !important; 
     border: 1px solid #333333 !important;
@@ -15,20 +16,11 @@ div[data-testid="stExpander"], .stContainer {
     box-shadow: 0 4px 10px rgba(255, 255, 255, 0.05);
 }
 
-/* 3. Expander Labels (The clickable text) */
-div[data-testid="stExpander"] p {
-    color: #FFFFFF !important;
-    font-weight: 600;
-}
-
-/* 4. Metrics Styling */
+/* 3. Metrics Styling */
 [data-testid="stMetricValue"] {
-    color: #00CCFF !important; /* Electric Blue */
+    color: #00CCFF !important; 
     font-family: 'Inter', sans-serif;
-}
-
-[data-testid="stMetricLabel"] p {
-    color: #FFFFFF !important;
+    font-size: clamp(1.2rem, 3vw, 2rem) !important;
 }
 
 .stMetric {
@@ -38,30 +30,15 @@ div[data-testid="stExpander"] p {
     border-left: 4px solid #00CCFF; 
 }
 
-/* 5. Headers */
+/* 4. Headers */
 h1, h2, h3 {
-    color: #FFD700 !important; /* Bright Yellow */
+    color: #FFD700 !important; 
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 1px;
 }
 
-/* 6. Fix for Sidebar Visibility */
-section[data-testid="stSidebar"] {
-    background-color: #0a0a0a !important;
-}
-
-section[data-testid="stSidebar"] .stMarkdown p {
-    color: #FFFFFF !important;
-}
-
-/* 7. Yellow highlight for specific labels */
-.highlight-yellow {
-    color: #FFD700 !important;
-}
-
-/* 8. NEW: Professor Button Link Styling */
-/* This makes the st.button in your results look like a clickable gold link */
+/* 5. Professor Link (The Clickable Name) */
 div.stButton > button {
     background-color: transparent !important;
     color: #FFD700 !important;
@@ -75,22 +52,51 @@ div.stButton > button {
 }
 
 div.stButton > button:hover {
-    color: #00CCFF !important; /* Changes to blue on hover */
+    color: #00CCFF !important;
     background-color: transparent !important;
 }
 
-/* 9. Tabs Styling */
+/* 6. Tabs Customization */
 .stTabs [data-baseweb="tab-list"] {
-    gap: 30px;
-    background-color: transparent;
+    gap: clamp(10px, 5vw, 50px);
+    justify-content: center;
 }
 
 .stTabs [data-baseweb="tab"] {
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(14px, 2vw, 22px) !important;
     color: #888 !important;
-    font-weight: 700 !important;
 }
 
 .stTabs [aria-selected="true"] {
     color: #FFD700 !important;
-    border-bottom-color: #FFD700 !important;
+    border-bottom: 3px solid #FFD700 !important;
+}
+
+/* 7. Sidebar Fixes */
+section[data-testid="stSidebar"] {
+    background-color: #0a0a0a !important;
+}
+
+/* style.css additions */
+
+/* Tag Pills for Professor Profile */
+.tag-pill {
+    background-color: rgba(0, 204, 255, 0.1);
+    color: #00CCFF;
+    padding: 5px 12px;
+    border-radius: 15px;
+    border: 1px solid #00CCFF;
+    display: inline-block;
+    margin: 4px;
+    font-size: 0.85em;
+    font-weight: bold;
+}
+
+/* Ensure the columns stack on mobile */
+@media (max-width: 768px) {
+    [data-testid="column"] {
+        width: 100% !important;
+        flex: 1 1 100% !important;
+    }
 }
