@@ -1,13 +1,13 @@
 /* style.css */
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@400;600;800&display=swap');
 
-/* 1. Global Background & Text */
+/* 1. Global Background */
 .stApp {
     background-color: #000000 !important;
     color: #FFFFFF !important;
 }
 
-/* 2. Responsive Cards & Containers */
+/* 2. Responsive Cards */
 div[data-testid="stExpander"], .stContainer {
     background-color: #111111 !important; 
     border: 1px solid #333333 !important;
@@ -16,7 +16,13 @@ div[data-testid="stExpander"], .stContainer {
     box-shadow: 0 4px 10px rgba(255, 255, 255, 0.05);
 }
 
-/* 3. Metrics Styling */
+/* 3. Headers & Metrics */
+h1, h2, h3 {
+    color: #FFD700 !important; 
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
 [data-testid="stMetricValue"] {
     color: #00CCFF !important; 
     font-family: 'Inter', sans-serif;
@@ -30,15 +36,7 @@ div[data-testid="stExpander"], .stContainer {
     border-left: 4px solid #00CCFF; 
 }
 
-/* 4. Headers */
-h1, h2, h3 {
-    color: #FFD700 !important; 
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-/* 5. Professor Link (The Clickable Name) */
+/* 4. Professor Link Buttons */
 div.stButton > button {
     background-color: transparent !important;
     color: #FFD700 !important;
@@ -48,39 +46,13 @@ div.stButton > button {
     text-decoration: underline !important;
     font-weight: bold !important;
     text-align: left !important;
-    transition: 0.3s;
 }
 
 div.stButton > button:hover {
     color: #00CCFF !important;
-    background-color: transparent !important;
 }
 
-/* 6. Tabs Customization */
-.stTabs [data-baseweb="tab-list"] {
-    gap: clamp(10px, 5vw, 50px);
-    justify-content: center;
-}
-
-.stTabs [data-baseweb="tab"] {
-    font-family: 'Orbitron', sans-serif;
-    font-size: clamp(14px, 2vw, 22px) !important;
-    color: #888 !important;
-}
-
-.stTabs [aria-selected="true"] {
-    color: #FFD700 !important;
-    border-bottom: 3px solid #FFD700 !important;
-}
-
-/* 7. Sidebar Fixes */
-section[data-testid="stSidebar"] {
-    background-color: #0a0a0a !important;
-}
-
-/* style.css additions */
-
-/* Tag Pills for Professor Profile */
+/* 5. Tag Pills (RMP Tags) */
 .tag-pill {
     background-color: rgba(0, 204, 255, 0.1);
     color: #00CCFF;
@@ -91,9 +63,26 @@ section[data-testid="stSidebar"] {
     margin: 4px;
     font-size: 0.85em;
     font-weight: bold;
+    font-family: 'Inter', sans-serif;
 }
 
-/* Ensure the columns stack on mobile */
+/* 6. Tabs Styling */
+.stTabs [data-baseweb="tab-list"] {
+    gap: 20px;
+    justify-content: center;
+}
+
+.stTabs [data-baseweb="tab"] {
+    font-family: 'Orbitron', sans-serif;
+    color: #888 !important;
+}
+
+.stTabs [aria-selected="true"] {
+    color: #FFD700 !important;
+    border-bottom: 3px solid #FFD700 !important;
+}
+
+/* 7. Mobile Layout Fix */
 @media (max-width: 768px) {
     [data-testid="column"] {
         width: 100% !important;
