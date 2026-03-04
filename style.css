@@ -54,13 +54,13 @@ div.stButton > button:hover {
 
 /* 5. Tag Pills (RMP Tags) */
 .tag-pill {
-    background-color: rgba(0, 204, 255, 0.1);
+    background-color: rgba(0, 204, 255, 0.15);
     color: #00CCFF;
-    padding: 5px 12px;
-    border-radius: 15px;
+    padding: 6px 14px;
+    border-radius: 20px;
     border: 1px solid #00CCFF;
     display: inline-block;
-    margin: 4px;
+    margin: 5px;
     font-size: 0.85em;
     font-weight: bold;
     font-family: 'Inter', sans-serif;
