@@ -37,11 +37,8 @@ def load_and_clean_data():
 
     def get_join_key(name):
         if pd.isna(name): return "UNKNOWN"
-        # Standardize: "CONRAD, PHILLIP" or "CONRAD P" -> "CONRAD P"
         parts = str(name).upper().replace(',', '').replace('.', '').replace('-', ' ').split()
-        if len(parts) >= 2:
-            return f"{parts[0]} {parts[1][0]}"
-        return parts[0] if parts else "UNKNOWN"
+        return f"{parts[0]} {parts[1][0]}" if len(parts) >= 2 else (parts[0] if parts else "UNKNOWN")
 
     df['join_key'] = df['instructor'].apply(get_join_key)
     
@@ -51,15 +48,12 @@ def load_and_clean_data():
         rmp_df['join_key'] = rmp_df['instructor'].apply(get_join_key)
         rmp_df = rmp_df.drop_duplicates(subset=['join_key'])
 
-        # Rename difficulty to diff if it exists in your specific CSV
         if 'rmp_difficulty' in rmp_df.columns:
             rmp_df = rmp_df.rename(columns={'rmp_difficulty': 'rmp_diff'})
             
-        # Merge all RMP columns available
         rmp_cols = [c for c in rmp_df.columns if c.startswith('rmp_') or c == 'join_key']
         df = pd.merge(df, rmp_df[rmp_cols], on='join_key', how='left')
 
-    # Undergrad Filter (Classes <= 198)
     df['course_num'] = df['course'].apply(lambda x: int(re.search(r'(\d+)', str(x)).group(1)) if re.search(r'(\d+)', str(x)) else None)
     df = df[(df['course_num'].notna()) & (df['course_num'] <= 198)]
 
@@ -75,7 +69,6 @@ if 'selected_prof' not in st.session_state: st.session_state.selected_prof = Non
 def main():
     full_df, gpa_col = load_and_clean_data()
 
-    # Hero Title
     st.markdown('<div style="text-align:center; padding:10px;"><h1 style="color:#FFD700; font-family:\'Orbitron\'; font-size:clamp(1.5rem, 5vw, 3rem);">(つ▀¯▀ )つ GAUCHO INSIGHTS ⊂(▀¯▀⊂ )</h1></div>', unsafe_allow_html=True)
 
     # --- VIEW: PROFESSOR PROFILE ---
@@ -89,9 +82,8 @@ def main():
 
         st.title(f"👤 {prof_name}")
         
-        # Multi-Metric Row
         m1, m2, m3, m4 = st.columns(4)
-        m1.metric("Avg Grade", f"{prof_data[gpa_col].mean():.2f} GPA")
+        m1.metric("Career GPA", f"{prof_data[gpa_col].mean():.2f}")
         
         first = prof_data.iloc[0]
         if 'rmp_rating' in prof_data.columns and pd.notna(first['rmp_rating']):
@@ -99,41 +91,61 @@ def main():
             m3.metric("Difficulty", f"{first.get('rmp_diff', 'N/A')}/5.0")
             m4.metric("Take Again", f"{first.get('rmp_take_again', 'N/A')}")
             
+            st.subheader("Career Grade Distribution")
+            # Aggregated grades for all classes taught
+            grades = ['a', 'b', 'c', 'd', 'f']
+            total_grades = [prof_data[g].sum() for g in grades if g in prof_data.columns]
+            fig_career = px.bar(x=[g.upper() for g in grades], y=total_grades, template="plotly_dark", color_discrete_sequence=['#00CCFF'])
+            fig_career.update_layout(height=300, margin=dict(l=0,r=0,t=20,b=0))
+            st.plotly_chart(fig_career, use_container_width=True)
+
             if 'rmp_tags' in prof_data.columns and pd.notna(first['rmp_tags']):
                 st.subheader("Professor Tags")
                 tags = str(first['rmp_tags']).replace('"', '').split(',')
                 tag_html = "".join([f"<span class='tag-pill'>{t.strip()}</span>" for t in tags if t.strip().lower() != "none"])
                 st.markdown(tag_html, unsafe_allow_html=True)
-            
-            if 'rmp_url' in prof_data.columns and pd.notna(first['rmp_url']):
-                st.markdown(f"**[View Full RateMyProfessors Profile ↗]({first['rmp_url']})**")
         else:
-            st.info("No RMP data found for this instructor.")
+            st.info("No RMP data found.")
 
         st.subheader("Teaching History")
         st.dataframe(prof_data[['course', 'quarter', 'year', gpa_col]].sort_values('year', ascending=False), use_container_width=True)
         st.stop()
 
-    # --- VIEW: MAIN TABS ---
+    # --- VIEW: SEARCH TABS ---
     tab1, tab2 = st.tabs(["🏠 HOME", "🔍 SEARCH TOOL"])
 
     with tab1:
         st.markdown("""<div style="background:rgba(0,31,63,0.7); border:2px solid #FFD700; border-radius:20px; padding:30px;">
             <h2 style="color:#FFD700; font-family:'Orbitron';">WELCOME GAUCHOS!</h2>
-            <p>Explore UCSB grade distributions and professor reviews in one place.</p>
+            <p>Now including <b>Professor Tags</b>. Search for "Amazing Lectures" or "Tough Grader" in the filters!</p>
         </div>""", unsafe_allow_html=True)
 
     with tab2:
         st.sidebar.header("( 🔍 ) FILTERS")
+        
+        # 1. Dept Filter
         all_depts = sorted(full_df['dept'].unique().tolist())
         sel_dept = st.sidebar.selectbox("Department", [" "] + all_depts, key="dept_query")
-        c_q = st.sidebar.text_input("Course # (e.g. 10A)", key="course_query").strip().upper()
+        
+        # 2. Tag Filter
+        all_tags = set()
+        if 'rmp_tags' in full_df.columns:
+            for t_str in full_df['rmp_tags'].dropna():
+                for t in t_str.replace('"', '').split(','):
+                    if t.strip().lower() != "none": all_tags.add(t.strip())
+        sel_tags = st.sidebar.multiselect("Filter by RMP Tags", options=sorted(list(all_tags)))
+
+        c_q = st.sidebar.text_input("Course #", key="course_query").strip().upper()
         p_q = st.sidebar.text_input("Professor Name", key="prof_query").strip().upper()
 
+        # Apply logic
         results = full_df.copy()
         if sel_dept != " ": results = results[results['dept'] == sel_dept]
         if c_q: results = results[results['course'].str.contains(c_q, na=False)]
         if p_q: results = results[results['instructor'].str.contains(p_q, na=False)]
+        if sel_tags:
+            # Filter rows where at least one selected tag is present in rmp_tags string
+            results = results[results['rmp_tags'].apply(lambda x: any(tag in str(x) for tag in sel_tags) if pd.notna(x) else False)]
 
         for idx, row in results.head(15).iterrows():
             with st.container(border=True):
