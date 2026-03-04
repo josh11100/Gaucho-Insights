@@ -3,7 +3,6 @@ import pandas as pd
 import os
 import re
 import plotly.express as px
-import streamlit.components.v1 as components
 
 # --- 1. CONFIG & CSS ---
 st.set_page_config(page_title="Gaucho Insights", layout="wide", page_icon="🎓")
@@ -29,49 +28,57 @@ def load_and_clean_data():
     rmp_path = find_file(['rmp_final_data (1).csv', 'rmp_final_data.csv'])
     
     if not csv_path:
-        st.error("Missing 'courseGrades.csv'.")
+        st.error("Missing 'courseGrades.csv'. Please upload your grade data.")
         st.stop()
         
     df = pd.read_csv(csv_path)
     df.columns = [str(c).strip().lower() for c in df.columns]
 
-    # IMPROVED JOIN KEY: Handles "HILTNER, KENNETH" vs "KENNETH HILTNER"
+    # IMPROVED JOIN KEY: Removes (KEN) and sorts words for perfect matching
     def get_join_key(name):
         if pd.isna(name): return "UNKNOWN"
-        # Remove commas, periods, and extra spaces
-        clean = str(name).upper().replace(',', ' ').replace('.', '').replace('-', ' ')
-        parts = clean.split()
+        # Clean: Remove (KEN), commas, periods, and extra spaces
+        name = re.sub(r'\(.*?\)', '', str(name)).upper()
+        name = name.replace(',', ' ').replace('.', '').replace('-', ' ')
+        parts = sorted(list(set(name.split()))) # Sorting makes "John Smith" == "Smith John"
         if len(parts) >= 2:
-            # We sort them to ensure [HILTNER, KENNETH] and [KENNETH, HILTNER] match
-            # But usually, it's safer to just take the most likely Last Name + First Initial
-            # Let's try: Sort alphabetically and take the first word + first char of second word
-            parts.sort() 
             return f"{parts[0]} {parts[1][0]}"
         return parts[0] if parts else "UNKNOWN"
 
     df['join_key'] = df['instructor'].apply(get_join_key)
     
+    # Identify GPA and Grade Columns
+    gpa_col = next((c for c in ['avggpa', 'avg_gpa', 'avg gpa'] if c in df.columns), 'avggpa')
+    grade_cols = [c for c in ['a', 'b', 'c', 'd', 'f', 'p', 'np'] if c in df.columns]
+
+    # --- NEW FILTERS ---
+    # 1. Filter out 0.0 or 4.0 GPAs
+    if gpa_col in df.columns:
+        df = df[(df[gpa_col] > 0.0) & (df[gpa_col] < 4.0)]
+    
+    # 2. Filter out classes with < 5 people
+    if grade_cols:
+        df['student_count'] = df[grade_cols].sum(axis=1)
+        df = df[df['student_count'] >= 5]
+
+    # Merge RMP Data
     if rmp_path:
         rmp_df = pd.read_csv(rmp_path)
         rmp_df.columns = [c.strip().lower() for c in rmp_df.columns]
         rmp_df['join_key'] = rmp_df['instructor'].apply(get_join_key)
         rmp_df = rmp_df.drop_duplicates(subset=['join_key'])
 
-        # Explicitly ensure column names match your RMP file
-        if 'rmp_difficulty' in rmp_df.columns:
-            rmp_df = rmp_df.rename(columns={'rmp_difficulty': 'rmp_diff'})
-            
+        # Keep relevant RMP columns
         rmp_cols = [c for c in rmp_df.columns if c.startswith('rmp_') or c == 'join_key']
         df = pd.merge(df, rmp_df[rmp_cols], on='join_key', how='left')
 
-    # Data Cleaning
+    # General Cleaning
     df['course_num'] = df['course'].apply(lambda x: int(re.search(r'(\d+)', str(x)).group(1)) if re.search(r'(\d+)', str(x)) else None)
     df = df[(df['course_num'].notna()) & (df['course_num'] <= 198)]
 
     for col in ['instructor', 'quarter', 'course', 'dept']:
         if col in df.columns: df[col] = df[col].astype(str).str.upper().str.strip()
 
-    gpa_col = next((c for c in ['avggpa', 'avg_gpa'] if c in df.columns), 'avggpa')
     return df, gpa_col
 
 # --- 3. UI LOGIC ---
@@ -85,7 +92,6 @@ def main():
     # --- VIEW: PROFESSOR PROFILE ---
     if st.session_state.selected_prof:
         prof_name = st.session_state.selected_prof
-        # Get all rows for this specific instructor name
         prof_rows = full_df[full_df['instructor'] == prof_name]
         
         if st.button("⬅ BACK TO SEARCH"):
@@ -97,16 +103,14 @@ def main():
         m1, m2, m3, m4 = st.columns(4)
         m1.metric("Career GPA", f"{prof_rows[gpa_col].mean():.2f}")
         
-        # Check for RMP data in any of the rows for this professor
-        first_with_rmp = prof_rows[prof_rows['rmp_rating'].notna()]
-        
-        if not first_with_rmp.empty:
-            data = first_with_rmp.iloc[0]
+        # Check for RMP data
+        has_rmp = 'rmp_rating' in prof_rows.columns and pd.notna(prof_rows.iloc[0]['rmp_rating'])
+        if has_rmp:
+            data = prof_rows.iloc[0]
             m2.metric("RMP Quality", f"{data['rmp_rating']}/5.0")
-            m3.metric("Difficulty", f"{data.get('rmp_diff', 'N/A')}/5.0")
+            m3.metric("Difficulty", f"{data.get('rmp_difficulty', data.get('rmp_diff', 'N/A'))}/5.0")
             m4.metric("Take Again", f"{data.get('rmp_take_again', 'N/A')}")
             
-            # Tags Display
             if 'rmp_tags' in data and pd.notna(data['rmp_tags']):
                 st.subheader("Professor Tags")
                 tags = str(data['rmp_tags']).replace('"', '').replace('[', '').replace(']', '').split(',')
@@ -114,21 +118,21 @@ def main():
                 st.markdown(tag_html, unsafe_allow_html=True)
             
             if 'rmp_url' in data and pd.notna(data['rmp_url']):
-                st.markdown(f"🔗 [View on RateMyProfessors]({data['rmp_url']})")
+                st.markdown(f"🔗 [Full RateMyProfessors Profile]({data['rmp_url']})")
         else:
-            st.warning(f"No RMP data matched for join key: {prof_rows['join_key'].iloc[0]}")
+            st.info("No RMP data matched for this instructor.")
 
         st.subheader("Teaching History")
         st.dataframe(prof_rows[['course', 'quarter', 'year', gpa_col]].sort_values('year', ascending=False), use_container_width=True)
         st.stop()
 
-    # --- VIEW: SEARCH TABS ---
+    # --- VIEW: MAIN SEARCH ---
     tab1, tab2 = st.tabs(["🏠 HOME", "🔍 SEARCH TOOL"])
 
     with tab1:
         st.markdown("""<div style="background:rgba(0,31,63,0.7); border:2px solid #FFD700; border-radius:20px; padding:30px;">
             <h2 style="color:#FFD700; font-family:'Orbitron';">WELCOME GAUCHOS!</h2>
-            <p>Filter by Department, Course, or specific <b>RateMyProfessor Tags</b>.</p>
+            <p>Search results now filter out 0.0/4.0 GPAs and small classes (<5 students).</p>
         </div>""", unsafe_allow_html=True)
 
     with tab2:
@@ -136,6 +140,7 @@ def main():
         all_depts = sorted(full_df['dept'].unique().tolist())
         sel_dept = st.sidebar.selectbox("Department", [" "] + all_depts, key="dept_query")
         
+        # Tag Filter
         all_tags = set()
         if 'rmp_tags' in full_df.columns:
             for t_str in full_df['rmp_tags'].dropna():
@@ -161,7 +166,18 @@ def main():
                     if st.button(f"👤 {row['instructor']}", key=f"btn_{idx}"):
                         st.session_state.selected_prof = row['instructor']
                         st.rerun()
-                    st.write(f"**GPA:** {row[gpa_col]:.2f}")
+                    
+                    # SHOW RMP DATA IN SEARCH RESULTS
+                    if 'rmp_rating' in row and pd.notna(row['rmp_rating']):
+                        st.markdown(f"⭐ **RMP:** {row['rmp_rating']}/5.0 | **GPA:** {row[gpa_col]:.2f}")
+                        if pd.notna(row['rmp_tags']):
+                            # Show first 3 tags
+                            preview_tags = str(row['rmp_tags']).replace('"', '').split(',')[:3]
+                            tag_line = " ".join([f"`{t.strip()}`" for t in preview_tags])
+                            st.markdown(tag_line)
+                    else:
+                        st.write(f"**GPA:** {row[gpa_col]:.2f} (No RMP data)")
+                        
                 with cB:
                     fig = px.bar(x=['A','B','C','D','F'], 
                                  y=[row.get('a',0), row.get('b',0), row.get('c',0), row.get('d',0), row.get('f',0)], 
