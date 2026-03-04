@@ -1,42 +1,96 @@
 /* style.css */
+
+/* 1. Main Background and Global Text */
 .stApp {
     background-color: #000000 !important;
     color: #FFFFFF !important;
 }
 
-/* Make professor buttons look like blue links */
+/* 2. Fold/Unfold (Expander) Cards */
+div[data-testid="stExpander"], .stContainer {
+    background-color: #111111 !important; 
+    border: 1px solid #333333 !important;
+    border-radius: 12px;
+    margin-bottom: 15px;
+    box-shadow: 0 4px 10px rgba(255, 255, 255, 0.05);
+}
+
+/* 3. Expander Labels (The clickable text) */
+div[data-testid="stExpander"] p {
+    color: #FFFFFF !important;
+    font-weight: 600;
+}
+
+/* 4. Metrics Styling */
+[data-testid="stMetricValue"] {
+    color: #00CCFF !important; /* Electric Blue */
+    font-family: 'Inter', sans-serif;
+}
+
+[data-testid="stMetricLabel"] p {
+    color: #FFFFFF !important;
+}
+
+.stMetric {
+    background-color: #1a1a1a;
+    padding: 15px;
+    border-radius: 10px;
+    border-left: 4px solid #00CCFF; 
+}
+
+/* 5. Headers */
+h1, h2, h3 {
+    color: #FFD700 !important; /* Bright Yellow */
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* 6. Fix for Sidebar Visibility */
+section[data-testid="stSidebar"] {
+    background-color: #0a0a0a !important;
+}
+
+section[data-testid="stSidebar"] .stMarkdown p {
+    color: #FFFFFF !important;
+}
+
+/* 7. Yellow highlight for specific labels */
+.highlight-yellow {
+    color: #FFD700 !important;
+}
+
+/* 8. NEW: Professor Button Link Styling */
+/* This makes the st.button in your results look like a clickable gold link */
 div.stButton > button {
     background-color: transparent !important;
-    color: #00CCFF !important;
+    color: #FFD700 !important;
     border: none !important;
     padding: 0 !important;
     font-size: 1.1em !important;
     text-decoration: underline !important;
     font-weight: bold !important;
+    text-align: left !important;
     transition: 0.3s;
 }
 
 div.stButton > button:hover {
-    color: #FFD700 !important;
+    color: #00CCFF !important; /* Changes to blue on hover */
     background-color: transparent !important;
 }
 
-/* Headers & Metrics */
-h1, h2, h3 { color: #FFD700 !important; font-weight: 800; text-transform: uppercase; }
-[data-testid="stMetricValue"] { color: #00CCFF !important; }
-.stMetric { 
-    background-color: #1a1a1a; 
-    padding: 15px; 
-    border-radius: 10px; 
-    border-left: 4px solid #00CCFF; 
+/* 9. Tabs Styling */
+.stTabs [data-baseweb="tab-list"] {
+    gap: 30px;
+    background-color: transparent;
 }
 
-/* Welcome Box Frame */
-.welcome-3d-frame { margin-top: 10px; margin-bottom: 20px; overflow: visible !important; }
+.stTabs [data-baseweb="tab"] {
+    color: #888 !important;
+    font-weight: 700 !important;
+}
 
-/* Containers */
-div[data-testid="stExpander"], .stContainer {
-    background-color: #111111 !important;
-    border: 1px solid #333333 !important;
-    border-radius: 12px;
+.stTabs [aria-selected="true"] {
+    color: #FFD700 !important;
+    border-bottom-color: #FFD700 !important;
 }
