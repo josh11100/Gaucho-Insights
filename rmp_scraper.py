@@ -1,64 +1,129 @@
 import asyncio
 import pandas as pd
-from playwright.async_api import async_playwright
+import requests
+import time
 import os
+import base64
+from playwright.async_api import async_playwright
 
-BASE_URL = "https://www.ratemyprofessors.com/search/professors/1077?q=*"
+# --- CONFIG ---
+UCSB_ID = "U2Nob29sLTEwNzc=" 
+CSV_FILE = "rmp_final_data.csv"
+CONCURRENT_PAGES = 5 
+API_URL = "https://www.ratemyprofessors.com/graphql"
+HEADERS = {
+    "Authorization": "Basic dGVzdDp0ZXN0",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+}
 
-async def scrape_ucsb_profs():
-    if not os.path.exists("data"): os.makedirs("data")
-    csv_path = "data/rmp_search_results.csv"
+# --- STAGE 1: GRAPHQL (Now with correct URL IDs) ---
+def get_graphql_query(cursor):
+    return {
+        "query": """
+        query TeacherSearchPaginationQuery($count: Int!, $cursor: String, $query: TeacherSearchQuery!) {
+          newSearch {
+            teachers(query: $query, first: $count, after: $cursor) {
+              pageInfo { hasNextPage, endCursor }
+              edges {
+                node {
+                  firstName, lastName, avgRating, avgDifficulty, numRatings, 
+                  wouldTakeAgainPercent, department, id
+                }
+              }
+            }
+          }
+        }
+        """,
+        "variables": { 
+            "count": 1000, 
+            "cursor": cursor, 
+            "query": {"text": "", "schoolID": UCSB_ID, "fallback": True} 
+        }
+    }
+
+def fetch_base_data():
+    all_profs = []
+    has_next_page, cursor = True, ""
+    print("🚀 Stage 1: Fetching all professors (Fixing URLs and Limits)...")
     
-    async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=False)
-        context = await browser.new_context(
-            user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-        )
-        page = await context.new_page()
+    while has_next_page:
+        resp = requests.post(API_URL, json=get_graphql_query(cursor), headers=HEADERS)
+        data = resp.json()['data']['newSearch']['teachers']
         
-        print("🚀 Navigating to RMP...")
-        await page.goto(BASE_URL)
-        await asyncio.sleep(3) # Initial load buffer
-
-        limit = 100 
-        for i in range(1, limit + 1):
+        for edge in data['edges']:
+            n = edge['node']
+            
+            # FIX: Convert the Base64 ID (e.g., VGVhY2hlci0yMjc=) to the numeric ID for the URL
+            # This prevents the "Professor Not Found" 404 error
             try:
-                # 1. SCRAPE EVERYTHING CURRENTLY ON SCREEN
-                cards = await page.locator('a[href*="/professor/"]').all()
-                profs = []
-                for card in cards:
-                    try:
-                        name = await card.locator('[class*="CardName__StyledCardName"]').inner_text(timeout=500)
-                        rating = await card.locator('[class*="CardNumRating__CardNumRatingNumber"]').inner_text(timeout=500)
-                        rel_url = await card.get_attribute("href")
-                        profs.append({
-                            "instructor": name.strip().upper(),
-                            "rmp_rating": rating.strip(),
-                            "rmp_url": f"https://www.ratemyprofessors.com{rel_url}"
-                        })
-                    except: continue
+                raw_id = base64.b64decode(n['id']).decode('utf-8').split('-')[1]
+                prof_url = f"https://www.ratemyprofessors.com/professor/{raw_id}"
+            except:
+                prof_url = "N/A"
 
-                # 2. AUTO-SAVE TO CSV IMMEDIATELY
-                if profs:
-                    df = pd.DataFrame(profs).drop_duplicates(subset=['rmp_url'])
-                    df.to_csv(csv_path, index=False)
-                    print(f"💾 Autosaved {len(df)} professors (Loop {i})")
+            all_profs.append({
+                'instructor': f"{n['lastName']}, {n['firstName']}".upper(),
+                'rmp_rating': n['avgRating'],
+                'rmp_difficulty': n['avgDifficulty'],
+                'rmp_num_ratings': n['numRatings'],
+                'rmp_take_again': f"{int(n['wouldTakeAgainPercent'])}%" if n['wouldTakeAgainPercent'] > 0 else "N/A",
+                'rmp_url': prof_url,
+                'rmp_dept': n['department'],
+                'rmp_tags': "" 
+            })
+        
+        has_next_page = data['pageInfo']['hasNextPage']
+        cursor = data['pageInfo']['endCursor']
+        print(f"✅ Collected {len(all_profs)} professors...")
+        time.sleep(1)
+        
+    return pd.DataFrame(all_profs).drop_duplicates(subset=['rmp_url'])
 
-                # 3. CLICK SHOW MORE
-                show_more = page.locator('button:has-text("Show More")')
-                if await show_more.is_visible():
-                    await show_more.scroll_into_view_if_needed()
-                    await show_more.click()
-                    await asyncio.sleep(2.5) # Wait for cards to populate
-                else:
-                    print("🏁 Reached the end of the list.")
-                    break
-            except Exception as e:
-                print(f"⚠️ Loop interrupted: {e}")
-                break
+# --- STAGE 2: PLAYWRIGHT (Deduplicated Tags) ---
+async def get_tags_for_row(browser, row_data, semaphore):
+    async with semaphore:
+        url = row_data['rmp_url']
+        if url == "N/A" or (isinstance(row_data.get('rmp_tags'), str) and len(row_data['rmp_tags']) > 2):
+            return row_data
 
+        page = await browser.new_page()
+        await page.route("**/*", lambda r: r.abort() if r.request.resource_type in ["image", "font"] else r.continue_())
+        
+        try:
+            await page.goto(url, timeout=30000)
+            unique_tags = await page.evaluate("""() => {
+                const tagEls = document.querySelectorAll('[class*="Tag-"]');
+                const tagsSet = new Set(Array.from(tagEls).map(t => t.innerText.trim()));
+                return Array.from(tagsSet).join(", ");
+            }""")
+            row_data['rmp_tags'] = unique_tags if unique_tags else "None"
+        except:
+            row_data['rmp_tags'] = "None"
+        finally:
+            await page.close()
+            return row_data
+
+async def main():
+    # Force refresh the base list to fix the 2,600 cutoff
+    df = fetch_base_data()
+    
+    print(f"\n🚀 Stage 2: Scraping Tags for {len(df)} professors...")
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(headless=True)
+        semaphore = asyncio.Semaphore(CONCURRENT_PAGES)
+        
+        rows = df.to_dict('records')
+        for i in range(0, len(rows), 50):
+            chunk = rows[i : i + 50]
+            tasks = [get_tags_for_row(browser, r, semaphore) for r in chunk]
+            rows[i : i + 50] = await asyncio.gather(*tasks)
+            
+            # Save progress immediately so you don't lose data
+            pd.DataFrame(rows).to_csv(CSV_FILE, index=False)
+            print(f"💾 Saved chunk {i + len(chunk)}/{len(rows)}")
+            
         await browser.close()
-        print(f"🎉 Done! Final file: {csv_path}")
+    print(f"🎉 Success! Total Professors saved: {len(rows)}")
 
 if __name__ == "__main__":
-    asyncio.run(scrape_ucsb_profs())
+    asyncio.run(main())
