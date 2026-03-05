@@ -6,7 +6,7 @@ import os
 import base64
 from playwright.async_api import async_playwright
 
-# --- CONFIG ---
+#cinfigs
 UCSB_ID = "U2Nob29sLTEwNzc=" 
 CSV_FILE = "rmp_final_data.csv"
 CONCURRENT_PAGES = 5 
@@ -16,7 +16,7 @@ HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
 }
 
-# --- STAGE 1: GRAPHQL (Now with correct URL IDs) ---
+# UID
 def get_graphql_query(cursor):
     return {
         "query": """
@@ -53,8 +53,7 @@ def fetch_base_data():
         for edge in data['edges']:
             n = edge['node']
             
-            # FIX: Convert the Base64 ID (e.g., VGVhY2hlci0yMjc=) to the numeric ID for the URL
-            # This prevents the "Professor Not Found" 404 error
+#fixed professors found
             try:
                 raw_id = base64.b64decode(n['id']).decode('utf-8').split('-')[1]
                 prof_url = f"https://www.ratemyprofessors.com/professor/{raw_id}"
@@ -79,7 +78,7 @@ def fetch_base_data():
         
     return pd.DataFrame(all_profs).drop_duplicates(subset=['rmp_url'])
 
-# --- STAGE 2: PLAYWRIGHT (Deduplicated Tags) ---
+#playwrite
 async def get_tags_for_row(browser, row_data, semaphore):
     async with semaphore:
         url = row_data['rmp_url']
@@ -104,7 +103,7 @@ async def get_tags_for_row(browser, row_data, semaphore):
             return row_data
 
 async def main():
-    # Force refresh the base list to fix the 2,600 cutoff
+    # --force refresh if site crashes
     df = fetch_base_data()
     
     print(f"\n🚀 Stage 2: Scraping Tags for {len(df)} professors...")
@@ -118,7 +117,7 @@ async def main():
             tasks = [get_tags_for_row(browser, r, semaphore) for r in chunk]
             rows[i : i + 50] = await asyncio.gather(*tasks)
             
-            # Save progress immediately so you don't lose data
+            # save progress
             pd.DataFrame(rows).to_csv(CSV_FILE, index=False)
             print(f"💾 Saved chunk {i + len(chunk)}/{len(rows)}")
             
