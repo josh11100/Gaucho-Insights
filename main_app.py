@@ -87,40 +87,59 @@ html, body { background: #000 !important; }
 # ─────────────────────────────────────────────
 #  JOIN KEY HELPERS
 # ─────────────────────────────────────────────
-def make_join_key(name: str) -> str:
+def parse_name(name: str) -> tuple[str, str]:
     """
-    Robust join key from instructor name.
-    Handles formats like:
-      "RAVAT U V"  → "RAVATU"   (last=RAVAT, first initial=U)
-      "SYLVESTER, BRYANNA" → "SYLVESTERB"
-      "SMITH JOHN" → "SMITHJ"
-    Strategy: last name (first token before comma or the first token) + first letter of next token.
+    Parse an instructor name into (last, first_tokens) regardless of format.
+
+    Handles:
+      "RAVAT, UMA"       → ("RAVAT",  "UMA")
+      "RAVAT U V"        → ("RAVAT",  "U V")   ← last name is first token
+      "SYLVESTER BRYANNA"→ ("SYLVESTER", "BRYANNA")
+      "SMITH"            → ("SMITH",  "")
     """
     if not name or pd.isna(name):
-        return "UNKNOWN"
+        return ("UNKNOWN", "")
     s = str(name).upper().strip()
-    # Handle "LAST, FIRST" format
     if "," in s:
-        parts = [p.strip() for p in s.split(",")]
-        last = parts[0]
-        first_initial = parts[1][0] if len(parts) > 1 and parts[1] else ""
-        return f"{last}{first_initial}"
-    # Handle "LAST FIRST [MIDDLE...]" format
+        parts = [p.strip() for p in s.split(",", 1)]
+        return (parts[0], parts[1] if len(parts) > 1 else "")
     parts = s.split()
-    if len(parts) == 1:
-        return parts[0]
-    return f"{parts[0]}{parts[1][0]}"
+    return (parts[0], " ".join(parts[1:]) if len(parts) > 1 else "")
 
 
-def make_join_keys_set(name: str) -> set:
+def name_similarity(first_a: str, first_b: str) -> float:
     """
-    Returns multiple candidate keys for fuzzy matching:
-    primary key + last-name-only fallback.
+    Compare two 'first name' strings and return a 0-1 similarity score.
+    Works even when one side is initials ("U V") and the other is a full name ("UMA VANDANA").
     """
-    primary = make_join_key(name)
-    parts = str(name).upper().strip().replace(",", "").split()
-    last_only = parts[0] if parts else "UNKNOWN"
-    return {primary, last_only}
+    if not first_a or not first_b:
+        return 0.5  # neutral when one side is missing
+    toks_a = first_a.upper().split()
+    toks_b = first_b.upper().split()
+    if not toks_a or not toks_b:
+        return 0.5
+    # Compare token by token up to the shorter side
+    matches = 0
+    for ta, tb in zip(toks_a, toks_b):
+        # Both are initials (single char) → must match exactly
+        # One is initial, other is full token → match if initial == first char of full
+        # Both are full words → must match exactly
+        if ta == tb:
+            matches += 1
+        elif len(ta) == 1 and tb.startswith(ta):
+            matches += 0.9
+        elif len(tb) == 1 and ta.startswith(tb):
+            matches += 0.9
+        else:
+            matches += 0  # mismatch
+    total = max(len(toks_a), len(toks_b))
+    return matches / total if total else 0.5
+
+
+def make_join_key(name: str) -> str:
+    """Stable per-row key = LAST||first_tokens (used only inside grades df)."""
+    last, first = parse_name(name)
+    return f"{last}||{first}"
 
 
 # ─────────────────────────────────────────────
@@ -157,28 +176,26 @@ def load_data():
 
     df["join_key"] = df["instructor"].apply(make_join_key)
 
-    # ── Build RMP lookup ──────────────────────
-    rmp_lookup = {}   # join_key → dict
-    rmp_key_map = {}  # join_key → canonical join_key (for fuzzy)
+    # ── Build RMP lookup via similarity matching ─────────────────────────
+    rmp_lookup = {}   # grades join_key → rmp entry dict
 
     if rmp_path:
         rmp = pd.read_csv(rmp_path)
         rmp.columns = [c.strip().lower() for c in rmp.columns]
 
-        # Normalise column names (handle both "rating" and "rmp_rating" etc.)
-        col_map = {}
+        # Normalise column names: strip "rmp_" prefix so we handle both variants
+        col_alias = {}
         for c in rmp.columns:
-            bare = c.replace("rmp_", "")
-            col_map[bare] = c
-        # col_map now maps e.g. "rating" → "rmp_rating" OR "rating"
+            col_alias[c.replace("rmp_", "")] = c
 
         def get_rmp(row, field):
-            return row.get(col_map.get(field, field))
+            return row.get(col_alias.get(field, field))
 
+        # Build list of (last, first, entry) from RMP for matching
+        rmp_entries = []
         for _, r in rmp.iterrows():
             raw_name = str(r.get("instructor", ""))
-            primary_key = make_join_key(raw_name)
-            all_keys = make_join_keys_set(raw_name)
+            last, first = parse_name(raw_name)
             entry = {
                 "rating":      get_rmp(r, "rating"),
                 "difficulty":  get_rmp(r, "difficulty"),
@@ -188,25 +205,56 @@ def load_data():
                 "url":         get_rmp(r, "url"),
                 "dept":        get_rmp(r, "dept"),
                 "full_name":   raw_name,
+                "_last":       last,
+                "_first":      first,
             }
-            rmp_lookup[primary_key] = entry
-            for k in all_keys:
-                rmp_key_map[k] = primary_key
+            rmp_entries.append(entry)
 
-        # Merge RMP into grades df via join_key
-        rmp_df = pd.DataFrame([
-            {"join_key": k, **v} for k, v in rmp_lookup.items()
-        ]).rename(columns={
-            "rating":      "rmp_rating",
-            "difficulty":  "rmp_difficulty",
-            "take_again":  "rmp_take_again",
-            "num_ratings": "rmp_num_ratings",
-            "tags":        "rmp_tags",
-            "url":         "rmp_url",
-            "dept":        "rmp_dept",
-            "full_name":   "rmp_full_name",
-        })
-        df = pd.merge(df, rmp_df, on="join_key", how="left")
+        # Last-name bucket for fast lookup
+        rmp_by_last: dict = {}
+        for e in rmp_entries:
+            rmp_by_last.setdefault(e["_last"], []).append(e)
+
+        # For each unique grades instructor find the best-matching RMP entry
+        unique_instructors = df[["instructor", "join_key"]].drop_duplicates()
+        for _, urow in unique_instructors.iterrows():
+            inst = urow["instructor"]
+            jk   = urow["join_key"]
+            g_last, g_first = parse_name(inst)
+
+            candidates = rmp_by_last.get(g_last, [])
+            if not candidates:
+                continue
+
+            if len(candidates) == 1:
+                best = candidates[0]
+            else:
+                scored = sorted(
+                    candidates,
+                    key=lambda e: name_similarity(g_first, e["_first"]),
+                    reverse=True,
+                )
+                best_score = name_similarity(g_first, scored[0]["_first"])
+                if best_score < 0.4:
+                    continue  # ambiguous match — skip
+                best = scored[0]
+
+            rmp_lookup[jk] = {k: v for k, v in best.items() if not k.startswith("_")}
+
+        # Merge matched data back into grades df
+        rmp_rows = [{"join_key": jk, **v} for jk, v in rmp_lookup.items()]
+        if rmp_rows:
+            rmp_df = pd.DataFrame(rmp_rows).rename(columns={
+                "rating":      "rmp_rating",
+                "difficulty":  "rmp_difficulty",
+                "take_again":  "rmp_take_again",
+                "num_ratings": "rmp_num_ratings",
+                "tags":        "rmp_tags",
+                "url":         "rmp_url",
+                "dept":        "rmp_dept",
+                "full_name":   "rmp_full_name",
+            })
+            df = pd.merge(df, rmp_df, on="join_key", how="left")
 
     gpa_col  = next((c for c in ["avggpa", "avg_gpa", "avg gpa"] if c in df.columns), "avggpa")
     grp_cols = ["instructor", "quarter", "year", "course", "dept", "join_key"]
@@ -217,9 +265,7 @@ def load_data():
             agg[ec] = "first"
 
     df = df.groupby(grp_cols).agg(agg).reset_index()
-
-    # Attach rmp_key_map fallback so we can resolve keys at display time
-    return df, gpa_col, rmp_lookup, rmp_key_map
+    return df, gpa_col, rmp_lookup
 
 
 # ─────────────────────────────────────────────
@@ -609,7 +655,7 @@ def render_prof_card(info: dict, prof_name: str, prof_history_df: pd.DataFrame, 
 #  MAIN
 # ─────────────────────────────────────────────
 def main():
-    full_df, gpa_col, rmp_lookup, rmp_key_map = load_data()
+    full_df, gpa_col, rmp_lookup = load_data()
 
     render_hero()
 
@@ -678,10 +724,8 @@ def main():
 
         # ── Prof card (shown at top when selected) ────────────
         if st.session_state.sel_prof_key:
-            # Resolve the lookup key (handle fuzzy fallback)
             lk = st.session_state.sel_prof_key
-            resolved_key = rmp_key_map.get(lk, lk)
-            info = rmp_lookup.get(resolved_key, rmp_lookup.get(lk, {}))
+            info = rmp_lookup.get(lk, {})
 
             # Pull all historical rows for this professor from the FULL dataset
             prof_hist = full_df[full_df["join_key"] == lk].copy()
@@ -728,7 +772,7 @@ def main():
             jk               = row.get("join_key", "")
 
             # ── Resolve RMP membership with fuzzy fallback ──
-            has_rmp = (jk in rmp_lookup) or (jk in rmp_key_map)
+            has_rmp = jk in rmp_lookup
 
             with st.container(border=True):
                 col_info, col_chart = st.columns([3, 2])
