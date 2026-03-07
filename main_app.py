@@ -280,9 +280,17 @@ for key in ["dept_q", "course_q", "prof_q"]:
 
 
 def clear_filters():
-    st.session_state.dept_q   = ""
-    st.session_state.course_q = ""
-    st.session_state.prof_q   = ""
+    st.session_state.dept_q        = ""
+    st.session_state.course_q      = ""
+    st.session_state.prof_q        = ""
+    st.session_state.sel_prof_key  = None
+    st.session_state.sel_prof_name = None
+
+
+def dismiss_prof():
+    """Called whenever a filter changes — closes the open professor card."""
+    st.session_state.sel_prof_key  = None
+    st.session_state.sel_prof_name = None
 
 
 def gpa_badge(gpa):
@@ -585,9 +593,9 @@ def render_prof_card(info: dict, prof_name: str, prof_history_df: pd.DataFrame, 
         course_idx = {c: i for i, c in enumerate(courses)}
 
         palette = [
-            "#FFD700", "#5bb8ff", "#2ECC40", "#FF851B",
-            "#FF4136", "#00CCFF", "#B10DC9", "#FF69B4",
-            "#7FDBFF", "#01FF70", "#F012BE", "#FFDC00",
+            "#FF4136", "#0074D9", "#FFD700", "#2ECC40",
+            "#FF851B", "#B10DC9", "#00CCFF", "#FF69B4",
+            "#AAAAAA", "#01FF70", "#F012BE", "#7FDBFF",
         ]
 
         fig = go.Figure()
@@ -600,25 +608,20 @@ def render_prof_card(info: dict, prof_name: str, prof_history_df: pd.DataFrame, 
             ys = [course_idx[c] for c in sub["course"]]
             zs = sub[gpa_col].tolist()
 
-            # Main glowing dots + connecting line
+            # Main dots + connecting line — solid course color, no GPA colorscale
             fig.add_trace(go.Scatter3d(
                 x=xs, y=ys, z=zs,
                 mode="markers+lines",
                 name=course,
                 legendgroup=course,
+                showlegend=False,          # legend handled externally below chart
                 line=dict(color=color, width=2, dash="dot"),
                 marker=dict(
-                    size=10,
-                    color=zs,
-                    colorscale=[
-                        [0.0, "#FF4136"],
-                        [0.5, color],
-                        [1.0, "#2ECC40"],
-                    ],
-                    cmin=2.0, cmax=4.0,
+                    size=6,
+                    color=color,
                     opacity=0.95,
                     symbol="circle",
-                    line=dict(color=color, width=1.5),
+                    line=dict(color="rgba(255,255,255,0.4)", width=1),
                 ),
                 hovertemplate=(
                     f"<b>{course}</b><br>"
@@ -727,6 +730,7 @@ def render_prof_card(info: dict, prof_name: str, prof_history_df: pd.DataFrame, 
                 itemsizing="constant",
                 bordercolor="rgba(255,215,0,0.15)",
                 borderwidth=1,
+                visible=False,
             ),
         )
 
@@ -736,6 +740,28 @@ def render_prof_card(info: dict, prof_name: str, prof_history_df: pd.DataFrame, 
             key=f"prof_hist_{st.session_state.sel_prof_key}",
             config={"displayModeBar": True, "displaylogo": False,
                     "modeBarButtonsToRemove": ["toImage"]},
+        )
+
+        # ── External legend below the chart ──────────────────────────
+        legend_items = "".join([
+            f'<div style="display:flex;align-items:center;gap:8px;padding:6px 14px;'
+            f'background:rgba(255,255,255,0.04);border-radius:10px;'
+            f'border:1px solid rgba(255,255,255,0.07);">'
+            f'<span style="display:inline-block;width:12px;height:12px;border-radius:50%;'
+            f'background:{palette[ci % len(palette)]};'
+            f'box-shadow:0 0 6px {palette[ci % len(palette)]};flex-shrink:0;"></span>'
+            f'<span style="font-family:Rajdhani,sans-serif;font-size:.88em;'
+            f'color:#ccc;white-space:nowrap;">{course}</span>'
+            f'</div>'
+            for ci, course in enumerate(courses)
+        ])
+        st.markdown(
+            f'<div style="margin:10px 0 20px;">'
+            f'<div style="font-family:Orbitron,sans-serif;font-size:.68em;color:#FFD700;'
+            f'letter-spacing:2px;margin-bottom:10px;">COURSES</div>'
+            f'<div style="display:flex;flex-wrap:wrap;gap:8px;">{legend_items}</div>'
+            f'</div>',
+            unsafe_allow_html=True,
         )
 
         # Summary table below chart
@@ -818,10 +844,11 @@ def main():
             selected_dept = st.selectbox(
                 "Department", options=all_depts, index=0,
                 key="dept_q",
+                on_change=dismiss_prof,
                 format_func=lambda x: "All Departments" if x == "" else x
             )
-            course_q = st.text_input("Course Number (e.g. 120A, 5A, 10)", key="course_q").strip().upper()
-            prof_q   = st.text_input("Professor Name", key="prof_q").strip().upper()
+            course_q = st.text_input("Course Number (e.g. 120A, 5A, 10)", key="course_q", on_change=dismiss_prof).strip().upper()
+            prof_q   = st.text_input("Professor Name", key="prof_q", on_change=dismiss_prof).strip().upper()
             st.button("✖  Clear Filters", on_click=clear_filters, use_container_width=True)
             st.markdown("---")
             st.markdown("""
