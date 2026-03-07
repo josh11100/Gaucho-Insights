@@ -286,9 +286,9 @@ def clear_filters():
 
 
 def gpa_badge(gpa):
-    if gpa < 2.5:
+    if gpa < 3.0:
         return "STRESSFUL", "#FF4136", "rgba(255,65,54,0.35)"
-    elif gpa > 3.3:
+    elif gpa > 3.5:
         return "EASY", "#2ECC40", "rgba(46,204,64,0.35)"
     else:
         return "CHILL", "#0074D9", "rgba(0,116,217,0.35)"
@@ -371,11 +371,11 @@ p{font-family:'Rajdhani',sans-serif;font-size:1.15em;line-height:1.75;color:#c8d
           <div class="bb">Filter classes and click any professor name to see their full RMP profile + GPA history.</div>
         </div>
         <div class="box" style="border-left:4px solid #2ECC40;padding-left:18px">
-          <div class="bt" style="color:#2ECC40">✅ EASY  › 3.3 avg GPA</div>
+          <div class="bt" style="color:#2ECC40">✅ EASY  › 3.5 avg GPA</div>
           <div class="bb">Class is known to be manageable. High average grades historically.</div>
         </div>
         <div class="box" style="border-left:4px solid #FF4136;padding-left:18px">
-          <div class="bt" style="color:#FF4136">💀 STRESSFUL  ‹ 2.5 avg GPA</div>
+          <div class="bt" style="color:#FF4136">💀 STRESSFUL  ‹ 3.0 avg GPA</div>
           <div class="bb">Historically tough. Prepare carefully or choose a different section.</div>
         </div>
       </div>
@@ -592,14 +592,14 @@ def render_prof_card(info: dict, prof_name: str, prof_history_df: pd.DataFrame, 
                 ),
             ))
 
-        fig.add_hrect(y0=3.3, y1=4.3, fillcolor="rgba(46,204,64,0.06)",
+        fig.add_hrect(y0=3.5, y1=4.3, fillcolor="rgba(46,204,64,0.06)",
                       line_width=0, annotation_text="EASY zone",
                       annotation_font=dict(color="rgba(46,204,64,0.5)", size=10))
-        fig.add_hrect(y0=0, y1=2.5, fillcolor="rgba(255,65,54,0.06)",
+        fig.add_hrect(y0=0, y1=3.0, fillcolor="rgba(255,65,54,0.06)",
                       line_width=0, annotation_text="STRESSFUL zone",
                       annotation_font=dict(color="rgba(255,65,54,0.5)", size=10))
-        fig.add_hline(y=3.3, line_dash="dot", line_color="rgba(46,204,64,0.3)", line_width=1)
-        fig.add_hline(y=2.5, line_dash="dot", line_color="rgba(255,65,54,0.3)", line_width=1)
+        fig.add_hline(y=3.5, line_dash="dot", line_color="rgba(46,204,64,0.3)", line_width=1)
+        fig.add_hline(y=3.0, line_dash="dot", line_color="rgba(255,65,54,0.3)", line_width=1)
 
         fig.update_layout(
             template="plotly_dark",
@@ -679,17 +679,17 @@ def main():
   <div style="margin-bottom:10px">
     <span style="background:#2ECC40;color:#000;padding:3px 12px;border-radius:20px;
                  font-weight:700;font-size:.85em;">EASY</span>
-    <span style="color:#8ab;font-size:.9em;margin-left:8px">Avg GPA &gt; 3.3</span>
+    <span style="color:#8ab;font-size:.9em;margin-left:8px">Avg GPA &gt; 3.5</span>
   </div>
   <div style="margin-bottom:10px">
     <span style="background:#0074D9;color:#fff;padding:3px 12px;border-radius:20px;
                  font-weight:700;font-size:.85em;">CHILL</span>
-    <span style="color:#8ab;font-size:.9em;margin-left:8px">Avg GPA 2.5 – 3.3</span>
+    <span style="color:#8ab;font-size:.9em;margin-left:8px">Avg GPA 3.1 – 3.5</span>
   </div>
   <div>
     <span style="background:#FF4136;color:#fff;padding:3px 12px;border-radius:20px;
                  font-weight:700;font-size:.85em;">STRESSFUL</span>
-    <span style="color:#8ab;font-size:.9em;margin-left:8px">Avg GPA &lt; 2.5</span>
+    <span style="color:#8ab;font-size:.9em;margin-left:8px">Avg GPA &lt; 3.0</span>
   </div>
 </div>
 """, unsafe_allow_html=True)
