@@ -3,6 +3,7 @@ import pandas as pd
 import os
 import re
 import plotly.express as px
+import plotly.graph_objects as go
 import streamlit.components.v1 as components
 
 st.set_page_config(page_title="Gaucho Insights", layout="wide", page_icon="🎓")
@@ -84,12 +85,51 @@ html, body { background: #000 !important; }
 
 
 # ─────────────────────────────────────────────
+#  JOIN KEY HELPERS
+# ─────────────────────────────────────────────
+def make_join_key(name: str) -> str:
+    """
+    Robust join key from instructor name.
+    Handles formats like:
+      "RAVAT U V"  → "RAVATU"   (last=RAVAT, first initial=U)
+      "SYLVESTER, BRYANNA" → "SYLVESTERB"
+      "SMITH JOHN" → "SMITHJ"
+    Strategy: last name (first token before comma or the first token) + first letter of next token.
+    """
+    if not name or pd.isna(name):
+        return "UNKNOWN"
+    s = str(name).upper().strip()
+    # Handle "LAST, FIRST" format
+    if "," in s:
+        parts = [p.strip() for p in s.split(",")]
+        last = parts[0]
+        first_initial = parts[1][0] if len(parts) > 1 and parts[1] else ""
+        return f"{last}{first_initial}"
+    # Handle "LAST FIRST [MIDDLE...]" format
+    parts = s.split()
+    if len(parts) == 1:
+        return parts[0]
+    return f"{parts[0]}{parts[1][0]}"
+
+
+def make_join_keys_set(name: str) -> set:
+    """
+    Returns multiple candidate keys for fuzzy matching:
+    primary key + last-name-only fallback.
+    """
+    primary = make_join_key(name)
+    parts = str(name).upper().strip().replace(",", "").split()
+    last_only = parts[0] if parts else "UNKNOWN"
+    return {primary, last_only}
+
+
+# ─────────────────────────────────────────────
 #  DATA LOADING
 # ─────────────────────────────────────────────
 @st.cache_data
 def load_data():
-    def find(name):
-        for p in [name, os.path.join("data", name)]:
+    def find(fname):
+        for p in [fname, os.path.join("data", fname)]:
             if os.path.exists(p):
                 return p
         return None
@@ -115,51 +155,71 @@ def load_data():
         if col in df.columns:
             df[col] = df[col].astype(str).str.upper().str.strip()
 
-    def jkey(name):
-        if pd.isna(name): return "UNKNOWN"
-        p = str(name).upper().split()
-        return f"{p[0]}{p[1][0] if len(p) > 1 else ''}"
+    df["join_key"] = df["instructor"].apply(make_join_key)
 
-    df["join_key"] = df["instructor"].apply(jkey)
+    # ── Build RMP lookup ──────────────────────
+    rmp_lookup = {}   # join_key → dict
+    rmp_key_map = {}  # join_key → canonical join_key (for fuzzy)
 
-    rmp_lookup = {}
     if rmp_path:
         rmp = pd.read_csv(rmp_path)
         rmp.columns = [c.strip().lower() for c in rmp.columns]
-        for _, r in rmp.iterrows():
-            name = str(r.get("instructor", ""))
-            p    = name.upper().split()
-            k    = f"{p[0]}{p[1][0] if len(p) > 1 else ''}" if p else "UNKNOWN"
-            rmp_lookup[k] = {
-                "rating":      r.get("rating"),
-                "difficulty":  r.get("difficulty"),
-                "take_again":  r.get("take_again"),
-                "num_ratings": r.get("rmp_num_ratings"),
-                "tags":        r.get("tags"),
-                "url":         r.get("url"),
-                "dept":        r.get("rmp_dept"),
-                "full_name":   name,
-            }
 
-        rmp_renamed = rmp.rename(columns={
-            "instructor":  "instructor_rmp",
+        # Normalise column names (handle both "rating" and "rmp_rating" etc.)
+        col_map = {}
+        for c in rmp.columns:
+            bare = c.replace("rmp_", "")
+            col_map[bare] = c
+        # col_map now maps e.g. "rating" → "rmp_rating" OR "rating"
+
+        def get_rmp(row, field):
+            return row.get(col_map.get(field, field))
+
+        for _, r in rmp.iterrows():
+            raw_name = str(r.get("instructor", ""))
+            primary_key = make_join_key(raw_name)
+            all_keys = make_join_keys_set(raw_name)
+            entry = {
+                "rating":      get_rmp(r, "rating"),
+                "difficulty":  get_rmp(r, "difficulty"),
+                "take_again":  get_rmp(r, "take_again"),
+                "num_ratings": get_rmp(r, "num_ratings"),
+                "tags":        get_rmp(r, "tags"),
+                "url":         get_rmp(r, "url"),
+                "dept":        get_rmp(r, "dept"),
+                "full_name":   raw_name,
+            }
+            rmp_lookup[primary_key] = entry
+            for k in all_keys:
+                rmp_key_map[k] = primary_key
+
+        # Merge RMP into grades df via join_key
+        rmp_df = pd.DataFrame([
+            {"join_key": k, **v} for k, v in rmp_lookup.items()
+        ]).rename(columns={
             "rating":      "rmp_rating",
             "difficulty":  "rmp_difficulty",
             "take_again":  "rmp_take_again",
+            "num_ratings": "rmp_num_ratings",
             "tags":        "rmp_tags",
             "url":         "rmp_url",
+            "dept":        "rmp_dept",
+            "full_name":   "rmp_full_name",
         })
-        df = pd.merge(df, rmp_renamed, left_on="join_key", right_on="instructor_rmp", how="left")
+        df = pd.merge(df, rmp_df, on="join_key", how="left")
 
-    gpa_col   = next((c for c in ["avggpa", "avg_gpa", "avg gpa"] if c in df.columns), "avggpa")
-    grp_cols  = ["instructor", "quarter", "year", "course", "dept", "join_key"]
-    agg       = {gpa_col: "mean", "a": "sum", "b": "sum", "c": "sum", "d": "sum", "f": "sum"}
-    for ec in ["rmp_url", "rmp_rating", "rmp_difficulty", "rmp_take_again", "rmp_tags", "rmp_num_ratings"]:
+    gpa_col  = next((c for c in ["avggpa", "avg_gpa", "avg gpa"] if c in df.columns), "avggpa")
+    grp_cols = ["instructor", "quarter", "year", "course", "dept", "join_key"]
+    agg = {gpa_col: "mean", "a": "sum", "b": "sum", "c": "sum", "d": "sum", "f": "sum"}
+    for ec in ["rmp_url", "rmp_rating", "rmp_difficulty", "rmp_take_again",
+               "rmp_tags", "rmp_num_ratings", "rmp_full_name"]:
         if ec in df.columns:
             agg[ec] = "first"
 
     df = df.groupby(grp_cols).agg(agg).reset_index()
-    return df, gpa_col, rmp_lookup
+
+    # Attach rmp_key_map fallback so we can resolve keys at display time
+    return df, gpa_col, rmp_lookup, rmp_key_map
 
 
 # ─────────────────────────────────────────────
@@ -262,7 +322,7 @@ p{font-family:'Rajdhani',sans-serif;font-size:1.15em;line-height:1.75;color:#c8d
         </div>
         <div class="box" style="border-left:4px solid #5bb8ff;padding-left:18px">
           <div class="bt" style="color:#5bb8ff">🔍 SEARCH TOOL</div>
-          <div class="bb">Filter classes and click any professor name to see their full RMP profile.</div>
+          <div class="bb">Filter classes and click any professor name to see their full RMP profile + GPA history.</div>
         </div>
         <div class="box" style="border-left:4px solid #2ECC40;padding-left:18px">
           <div class="bt" style="color:#2ECC40">✅ EASY  › 3.3 avg GPA</div>
@@ -371,9 +431,9 @@ sc.addEventListener('mouseleave',()=>{li.style.transform='';});
 
 
 # ─────────────────────────────────────────────
-#  PROFESSOR PROFILE CARD
+#  PROFESSOR PROFILE CARD  (with GPA history)
 # ─────────────────────────────────────────────
-def render_prof_card(info, prof_name):
+def render_prof_card(info: dict, prof_name: str, prof_history_df: pd.DataFrame, gpa_col: str):
     rating     = info.get("rating")
     difficulty = info.get("difficulty")
     take_again = info.get("take_again")
@@ -449,12 +509,107 @@ def render_prof_card(info, prof_name):
 </div>
 """, height=360)
 
+    # ── GPA History Chart ──────────────────────────────────────────
+    if not prof_history_df.empty and gpa_col in prof_history_df.columns:
+        st.markdown(
+            '<div style="font-family:Orbitron,sans-serif;font-size:.78em;'
+            'color:#FFD700;letter-spacing:2px;margin:18px 0 10px;">📈 GPA HISTORY BY CLASS</div>',
+            unsafe_allow_html=True,
+        )
+
+        hist = prof_history_df.copy()
+        hist["term"] = hist["quarter"].astype(str) + " " + hist["year"].astype(str)
+        hist = hist.sort_values("year")
+
+        # One line per course
+        fig = go.Figure()
+        courses = hist["course"].unique()
+        palette = [
+            "#FFD700", "#5bb8ff", "#2ECC40", "#FF851B",
+            "#FF4136", "#00CCFF", "#B10DC9", "#FFDC00",
+        ]
+        for i, course in enumerate(courses):
+            sub = hist[hist["course"] == course].sort_values("year")
+            color = palette[i % len(palette)]
+            fig.add_trace(go.Scatter(
+                x=sub["term"],
+                y=sub[gpa_col],
+                mode="lines+markers",
+                name=course,
+                line=dict(color=color, width=2.5),
+                marker=dict(size=8, color=color,
+                            line=dict(color="#000", width=1.5)),
+                hovertemplate=(
+                    "<b>%{x}</b><br>"
+                    f"Course: {course}<br>"
+                    "Avg GPA: %{y:.2f}<extra></extra>"
+                ),
+            ))
+
+        fig.add_hrect(y0=3.3, y1=4.3, fillcolor="rgba(46,204,64,0.06)",
+                      line_width=0, annotation_text="EASY zone",
+                      annotation_font=dict(color="rgba(46,204,64,0.5)", size=10))
+        fig.add_hrect(y0=0, y1=2.5, fillcolor="rgba(255,65,54,0.06)",
+                      line_width=0, annotation_text="STRESSFUL zone",
+                      annotation_font=dict(color="rgba(255,65,54,0.5)", size=10))
+        fig.add_hline(y=3.3, line_dash="dot", line_color="rgba(46,204,64,0.3)", line_width=1)
+        fig.add_hline(y=2.5, line_dash="dot", line_color="rgba(255,65,54,0.3)", line_width=1)
+
+        fig.update_layout(
+            template="plotly_dark",
+            height=320,
+            margin=dict(l=0, r=0, t=10, b=0),
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,12,30,0.6)",
+            legend=dict(
+                orientation="h", yanchor="bottom", y=1.02,
+                xanchor="left", x=0,
+                font=dict(family="Rajdhani", size=11, color="#aaa"),
+                bgcolor="rgba(0,0,0,0)",
+            ),
+            xaxis=dict(
+                tickfont=dict(size=10, color="#667"),
+                showgrid=False, zeroline=False,
+                tickangle=-35,
+            ),
+            yaxis=dict(
+                tickfont=dict(size=10, color="#667"),
+                gridcolor="rgba(255,255,255,0.05)",
+                range=[max(0, hist[gpa_col].min() - 0.3), 4.15],
+                title="Avg GPA",
+                title_font=dict(size=10, color="#556"),
+            ),
+        )
+        st.plotly_chart(fig, use_container_width=True,
+                        key=f"prof_hist_{st.session_state.sel_prof_key}",
+                        config={"displayModeBar": False})
+
+        # Summary table below chart
+        summary = (
+            hist.groupby("course")[gpa_col]
+            .agg(["mean", "count"])
+            .reset_index()
+            .rename(columns={"mean": "Avg GPA", "count": "Sections"})
+            .sort_values("Avg GPA", ascending=False)
+        )
+        summary["Avg GPA"] = summary["Avg GPA"].map("{:.2f}".format)
+        st.markdown(
+            '<div style="font-family:Orbitron,sans-serif;font-size:.72em;'
+            'color:#FFD700;letter-spacing:2px;margin:14px 0 8px;">📋 COURSE SUMMARY</div>',
+            unsafe_allow_html=True,
+        )
+        st.dataframe(
+            summary,
+            hide_index=True,
+            use_container_width=True,
+        )
+
 
 # ─────────────────────────────────────────────
 #  MAIN
 # ─────────────────────────────────────────────
 def main():
-    full_df, gpa_col, rmp_lookup = load_data()
+    full_df, gpa_col, rmp_lookup, rmp_key_map = load_data()
 
     render_hero()
 
@@ -517,24 +672,34 @@ def main():
             st.markdown("---")
             st.markdown("""
 <div style="font-family:'Rajdhani',sans-serif;font-size:.88em;color:#556;line-height:1.7;">
-<b style="color:#FFD700;">⭐ RMP</b> badge = click professor name to view RateMyProfessors data.
+<b style="color:#FFD700;">⭐ RMP</b> badge = click professor name to view RateMyProfessors data + GPA history.
 </div>
 """, unsafe_allow_html=True)
 
-        # Prof card
+        # ── Prof card (shown at top when selected) ────────────
         if st.session_state.sel_prof_key:
-            info = rmp_lookup.get(st.session_state.sel_prof_key, {})
+            # Resolve the lookup key (handle fuzzy fallback)
+            lk = st.session_state.sel_prof_key
+            resolved_key = rmp_key_map.get(lk, lk)
+            info = rmp_lookup.get(resolved_key, rmp_lookup.get(lk, {}))
+
+            # Pull all historical rows for this professor from the FULL dataset
+            prof_hist = full_df[full_df["join_key"] == lk].copy()
+
             if info:
-                render_prof_card(info, st.session_state.sel_prof_name)
+                render_prof_card(info, st.session_state.sel_prof_name, prof_hist, gpa_col)
             else:
                 st.info(f"No RMP data found for {st.session_state.sel_prof_name}.")
+                if not prof_hist.empty:
+                    render_prof_card({}, st.session_state.sel_prof_name, prof_hist, gpa_col)
+
             if st.button("✖  Close Professor Card", key="close_prof"):
                 st.session_state.sel_prof_key  = None
                 st.session_state.sel_prof_name = None
                 st.rerun()
             st.markdown("---")
 
-        # Filter
+        # ── Filter ────────────────────────────────────────────
         df = full_df.copy()
         if selected_dept:
             df = df[df["dept"] == selected_dept]
@@ -561,7 +726,9 @@ def main():
             status, clr, shd = gpa_badge(gpa_val)
             prof_name        = row["instructor"]
             jk               = row.get("join_key", "")
-            has_rmp          = jk in rmp_lookup
+
+            # ── Resolve RMP membership with fuzzy fallback ──
+            has_rmp = (jk in rmp_lookup) or (jk in rmp_key_map)
 
             with st.container(border=True):
                 col_info, col_chart = st.columns([3, 2])
@@ -580,9 +747,9 @@ def main():
                         pb_col, _ = st.columns([2, 3])
                         with pb_col:
                             if st.button(
-                                f"👤  {prof_name}",
+                                f"⭐  {prof_name}",
                                 key=f"pb_{idx}",
-                                help="Click to view RMP profile",
+                                help="Click to view RMP profile + GPA history",
                             ):
                                 st.session_state.sel_prof_key  = jk
                                 st.session_state.sel_prof_name = prof_name
