@@ -555,80 +555,197 @@ def render_prof_card(info: dict, prof_name: str, prof_history_df: pd.DataFrame, 
 </div>
 """, height=360)
 
-    # ── GPA History Chart ──────────────────────────────────────────
+    # ── GPA History 3D Chart ───────────────────────────────────────
     if not prof_history_df.empty and gpa_col in prof_history_df.columns:
         st.markdown(
             '<div style="font-family:Orbitron,sans-serif;font-size:.78em;'
-            'color:#FFD700;letter-spacing:2px;margin:18px 0 10px;">📈 GPA HISTORY BY CLASS</div>',
+            'color:#FFD700;letter-spacing:2px;margin:24px 0 10px;">📈 GPA HISTORY — INTERACTIVE 3D</div>',
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            '<div style="font-family:Rajdhani,sans-serif;font-size:.82em;color:#445;'
+            'margin:-6px 0 14px;">🖱️ Drag to rotate · Scroll to zoom · Hover bars for details</div>',
             unsafe_allow_html=True,
         )
 
         hist = prof_history_df.copy()
         hist["term"] = hist["quarter"].astype(str) + " " + hist["year"].astype(str)
-        hist = hist.sort_values("year")
 
-        # One line per course
-        fig = go.Figure()
-        courses = hist["course"].unique()
+        # Sort terms chronologically: sort by year then quarter order
+        quarter_order = {"WINTER": 0, "SPRING": 1, "SUMMER": 2, "FALL": 3}
+        hist["_qord"] = hist["quarter"].map(quarter_order).fillna(9)
+        hist = hist.sort_values(["year", "_qord"]).reset_index(drop=True)
+
+        courses = sorted(hist["course"].unique())
+        terms   = list(dict.fromkeys(hist["term"].tolist()))  # ordered unique
+
         palette = [
             "#FFD700", "#5bb8ff", "#2ECC40", "#FF851B",
-            "#FF4136", "#00CCFF", "#B10DC9", "#FFDC00",
+            "#FF4136", "#00CCFF", "#B10DC9", "#FF69B4",
+            "#7FDBFF", "#01FF70", "#F012BE", "#FFDC00",
         ]
-        for i, course in enumerate(courses):
-            sub = hist[hist["course"] == course].sort_values("year")
-            color = palette[i % len(palette)]
-            fig.add_trace(go.Scatter(
-                x=sub["term"],
-                y=sub[gpa_col],
-                mode="lines+markers",
-                name=course,
-                line=dict(color=color, width=2.5),
-                marker=dict(size=8, color=color,
-                            line=dict(color="#000", width=1.5)),
-                hovertemplate=(
-                    "<b>%{x}</b><br>"
-                    f"Course: {course}<br>"
-                    "Avg GPA: %{y:.2f}<extra></extra>"
-                ),
-            ))
 
-        fig.add_hrect(y0=3.5, y1=4.3, fillcolor="rgba(46,204,64,0.06)",
-                      line_width=0, annotation_text="EASY zone",
-                      annotation_font=dict(color="rgba(46,204,64,0.5)", size=10))
-        fig.add_hrect(y0=0, y1=3.0, fillcolor="rgba(255,65,54,0.06)",
-                      line_width=0, annotation_text="STRESSFUL zone",
-                      annotation_font=dict(color="rgba(255,65,54,0.5)", size=10))
-        fig.add_hline(y=3.5, line_dash="dot", line_color="rgba(46,204,64,0.3)", line_width=1)
-        fig.add_hline(y=3.0, line_dash="dot", line_color="rgba(255,65,54,0.3)", line_width=1)
+        fig = go.Figure()
+
+        bar_width  = 0.35
+        bar_depth  = 0.35
+        n_courses  = len(courses)
+
+        for ci, course in enumerate(courses):
+            sub     = hist[hist["course"] == course]
+            color   = palette[ci % len(palette)]
+
+            # Convert hex color to rgba for faces/sides
+            r = int(color[1:3], 16)
+            g = int(color[3:5], 16)
+            b = int(color[5:7], 16)
+            face_color = f"rgba({r},{g},{b},0.85)"
+            side_color = f"rgba({r//2},{g//2},{b//2},0.9)"
+
+            for ti, term in enumerate(terms):
+                row = sub[sub["term"] == term]
+                if row.empty:
+                    continue
+                gpa = float(row[gpa_col].values[0])
+
+                # Offset each course slightly along X so bars don't overlap
+                x_center = ti + (ci - n_courses / 2) * (bar_width + 0.05)
+                y_center = ci
+                z_top    = gpa
+
+                # Build a 3D bar as a Mesh3d rectangular prism
+                xw, yw = bar_width / 2, bar_depth / 2
+                x0, x1 = x_center - xw, x_center + xw
+                y0, y1 = y_center - yw, y_center + yw
+                z0, z1 = 0, z_top
+
+                vx = [x0,x1,x1,x0, x0,x1,x1,x0]
+                vy = [y0,y0,y1,y1, y0,y0,y1,y1]
+                vz = [z0,z0,z0,z0, z1,z1,z1,z1]
+
+                # Faces: bottom(0-3), top(4-7), front,back,left,right
+                i_idx = [0,0,4,4, 0,0, 1,1, 0,0, 3,3]
+                j_idx = [1,2,5,6, 1,3, 2,5, 4,2, 7,4]
+                k_idx = [2,3,6,7, 4,7, 6,4, 5,3, 4,0]
+
+                # Color top face brighter
+                face_colors = [side_color]*8 + [face_color]*4
+                intensity   = [0.4,0.4,0.4,0.4, 1,1,1,1]
+
+                fig.add_trace(go.Mesh3d(
+                    x=vx, y=vy, z=vz,
+                    i=i_idx, j=j_idx, k=k_idx,
+                    color=face_color,
+                    intensity=intensity,
+                    colorscale=[[0, side_color], [1, face_color]],
+                    showscale=False,
+                    name=course,
+                    legendgroup=course,
+                    showlegend=(ti == 0),  # only first bar per course in legend
+                    hovertemplate=(
+                        f"<b>{course}</b><br>"
+                        f"Term: {term}<br>"
+                        f"Avg GPA: <b>{gpa:.2f}</b>"
+                        "<extra></extra>"
+                    ),
+                    opacity=0.92,
+                ))
+
+                # Add a glowing cap line on top
+                fig.add_trace(go.Scatter3d(
+                    x=[x0, x1, x1, x0, x0],
+                    y=[y0, y0, y1, y1, y0],
+                    z=[z1, z1, z1, z1, z1],
+                    mode="lines",
+                    line=dict(color=color, width=3),
+                    showlegend=False,
+                    hoverinfo="skip",
+                ))
+
+                # GPA label floating above bar
+                fig.add_trace(go.Scatter3d(
+                    x=[x_center], y=[y_center], z=[z1 + 0.06],
+                    mode="text",
+                    text=[f"{gpa:.2f}"],
+                    textfont=dict(size=9, color=color, family="Orbitron"),
+                    showlegend=False,
+                    hoverinfo="skip",
+                ))
+
+        # Reference planes at GPA 3.0 (red) and 3.5 (green)
+        x_range = [-0.8, len(terms) - 0.2]
+        y_range = [-0.6, n_courses - 0.4]
+        for ref_z, ref_color, ref_label in [
+            (3.5, "rgba(46,204,64,0.18)",  "EASY ≥ 3.5"),
+            (3.0, "rgba(255,65,54,0.18)",  "STRESSFUL < 3.0"),
+        ]:
+            fig.add_trace(go.Surface(
+                x=[[x_range[0], x_range[1]], [x_range[0], x_range[1]]],
+                y=[[y_range[0], y_range[0]], [y_range[1], y_range[1]]],
+                z=[[ref_z, ref_z], [ref_z, ref_z]],
+                colorscale=[[0, ref_color], [1, ref_color]],
+                showscale=False,
+                opacity=0.5,
+                name=ref_label,
+                showlegend=True,
+                hoverinfo="skip",
+            ))
 
         fig.update_layout(
             template="plotly_dark",
-            height=320,
+            height=520,
             margin=dict(l=0, r=0, t=10, b=0),
             paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(0,12,30,0.6)",
+            scene=dict(
+                bgcolor="rgba(0,8,22,1)",
+                xaxis=dict(
+                    tickvals=list(range(len(terms))),
+                    ticktext=terms,
+                    tickfont=dict(size=9, color="#667"),
+                    gridcolor="rgba(255,255,255,0.05)",
+                    showbackground=False,
+                    title="",
+                ),
+                yaxis=dict(
+                    tickvals=list(range(len(courses))),
+                    ticktext=courses,
+                    tickfont=dict(size=9, color="#aaa"),
+                    gridcolor="rgba(255,255,255,0.05)",
+                    showbackground=False,
+                    title="",
+                ),
+                zaxis=dict(
+                    range=[0, 4.3],
+                    tickfont=dict(size=9, color="#556"),
+                    gridcolor="rgba(255,255,255,0.08)",
+                    showbackground=True,
+                    backgroundcolor="rgba(0,10,28,0.6)",
+                    title=dict(text="Avg GPA", font=dict(size=10, color="#556")),
+                ),
+                camera=dict(
+                    eye=dict(x=1.6, y=-1.6, z=1.1),
+                    up=dict(x=0, y=0, z=1),
+                ),
+                aspectmode="manual",
+                aspectratio=dict(x=max(1.2, len(terms) * 0.35),
+                                 y=max(0.6, n_courses * 0.25),
+                                 z=1.0),
+            ),
             legend=dict(
-                orientation="h", yanchor="bottom", y=1.02,
-                xanchor="left", x=0,
+                x=0, y=1,
                 font=dict(family="Rajdhani", size=11, color="#aaa"),
                 bgcolor="rgba(0,0,0,0)",
-            ),
-            xaxis=dict(
-                tickfont=dict(size=10, color="#667"),
-                showgrid=False, zeroline=False,
-                tickangle=-35,
-            ),
-            yaxis=dict(
-                tickfont=dict(size=10, color="#667"),
-                gridcolor="rgba(255,255,255,0.05)",
-                range=[max(0, hist[gpa_col].min() - 0.3), 4.15],
-                title="Avg GPA",
-                title_font=dict(size=10, color="#556"),
+                itemsizing="constant",
             ),
         )
-        st.plotly_chart(fig, use_container_width=True,
-                        key=f"prof_hist_{st.session_state.sel_prof_key}",
-                        config={"displayModeBar": False})
+
+        st.plotly_chart(
+            fig,
+            use_container_width=True,
+            key=f"prof_hist_{st.session_state.sel_prof_key}",
+            config={"displayModeBar": True, "displaylogo": False,
+                    "modeBarButtonsToRemove": ["toImage"]},
+        )
 
         # Summary table below chart
         summary = (
