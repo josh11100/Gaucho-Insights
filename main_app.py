@@ -7,595 +7,641 @@ import streamlit.components.v1 as components
 
 st.set_page_config(page_title="Gaucho Insights", layout="wide", page_icon="🎓")
 
-# --- CSS INJECTION ---
+# ─────────────────────────────────────────────
+#  GLOBAL CSS
+# ─────────────────────────────────────────────
 st.markdown("""
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&display=swap');
 
-        .stApp { background-color: #000000 !important; color: #FFFFFF !important; }
+.stApp { background: #000 !important; color: #fff !important; }
+html, body { background: #000 !important; }
 
-        .stTabs [data-baseweb="tab-list"] {
-            gap: 50px; justify-content: center;
-            background-color: rgba(0,0,0,0.2); padding: 10px;
-            border-radius: 15px; margin-bottom: 20px;
-        }
-        .stTabs [data-baseweb="tab"] {
-            height: 60px; background-color: transparent; border-radius: 10px;
-            color: #888; font-size: 22px !important; font-weight: 700;
-            font-family: 'Orbitron', sans-serif; transition: all 0.3s ease;
-        }
-        .stTabs [data-baseweb="tab"]:hover { color: #FFD700; background-color: rgba(255,215,0,0.1); }
-        .stTabs [aria-selected="true"] {
-            color: #FFD700 !important; border-bottom: 3px solid #FFD700 !important;
-            text-shadow: 0 0 10px rgba(255,215,0,0.5);
-        }
+.stTabs [data-baseweb="tab-list"] {
+    gap: 40px; justify-content: center;
+    background: rgba(255,255,255,0.03);
+    padding: 10px 20px; border-radius: 16px; margin-bottom: 24px;
+    border: 1px solid rgba(255,215,0,0.15);
+}
+.stTabs [data-baseweb="tab"] {
+    height: 54px; background: transparent; border-radius: 10px;
+    color: #666; font-size: 18px !important; font-weight: 700;
+    font-family: 'Orbitron', sans-serif; transition: all 0.25s;
+    padding: 0 20px;
+}
+.stTabs [data-baseweb="tab"]:hover { color: #FFD700; background: rgba(255,215,0,0.07); }
+.stTabs [aria-selected="true"] {
+    color: #FFD700 !important;
+    border-bottom: 3px solid #FFD700 !important;
+    text-shadow: 0 0 12px rgba(255,215,0,0.5);
+}
 
-        /* Professor modal overlay */
-        .prof-modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.7); z-index: 9998; backdrop-filter: blur(4px);
-        }
-        .prof-modal {
-            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 420px; background: linear-gradient(135deg, #001a3a 0%, #001f3f 60%, #002a50 100%);
-            border: 2px solid rgba(255,215,0,0.6); border-radius: 25px;
-            padding: 35px; z-index: 9999; box-shadow: 0 0 60px rgba(255,215,0,0.2), 0 30px 60px rgba(0,0,0,0.8);
-            font-family: sans-serif;
-        }
-        .prof-modal h2 { color: #FFD700; font-family: 'Orbitron', sans-serif; font-size: 1.3em; margin-bottom: 5px; }
-        .prof-modal .dept-badge {
-            background: rgba(0,116,217,0.3); color: #0074D9; border: 1px solid #0074D9;
-            padding: 3px 12px; border-radius: 20px; font-size: 0.8em; display: inline-block; margin-bottom: 20px;
-        }
-        .stat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin: 18px 0; }
-        .stat-box {
-            background: rgba(255,255,255,0.06); border-radius: 14px; padding: 15px 10px;
-            text-align: center; border: 1px solid rgba(255,255,255,0.1);
-        }
-        .stat-box .val { font-size: 1.8em; font-weight: 900; }
-        .stat-box .lbl { font-size: 0.7em; color: #aaa; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
-        .tags-section { margin: 16px 0; }
-        .tag-pill {
-            background: rgba(0,204,255,0.12); color: #00CCFF;
-            border: 1px solid rgba(0,204,255,0.4); padding: 5px 12px;
-            border-radius: 20px; display: inline-block; margin: 4px 3px; font-size: 0.78em; font-weight: 600;
-        }
-        .rmp-btn {
-            display: block; width: 100%; padding: 14px; margin-top: 20px;
-            background: linear-gradient(135deg, #0077b5, #00a0dc);
-            color: white; text-align: center; text-decoration: none;
-            border-radius: 14px; font-weight: 800; font-size: 1em;
-            border: 2px solid rgba(255,255,255,0.2);
-            box-shadow: 0 8px 20px rgba(0,119,181,0.4);
-            transition: all 0.2s ease;
-        }
-        .close-btn {
-            position: absolute; top: 15px; right: 20px; background: rgba(255,255,255,0.1);
-            border: none; color: #aaa; font-size: 1.4em; cursor: pointer; border-radius: 50%;
-            width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
-        }
+[data-testid="stSidebar"] { background: #050a14 !important; border-right: 1px solid rgba(255,215,0,0.2) !important; }
+[data-testid="stSidebar"] * { color: #ccc !important; font-family: 'Rajdhani', sans-serif !important; }
+[data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 { color: #FFD700 !important; font-family: 'Orbitron', sans-serif !important; font-size: 0.9em !important; }
 
-        /* Clickable professor name */
-        .prof-link {
-            color: #FFD700 !important; text-decoration: none; cursor: pointer;
-            border-bottom: 1px dashed rgba(255,215,0,0.5); transition: all 0.2s;
-            font-weight: 600;
-        }
-        .prof-link:hover { color: #fff !important; border-bottom-color: #fff; text-shadow: 0 0 8px rgba(255,215,0,0.6); }
-    </style>
+[data-testid="stVerticalBlockBorderWrapper"] {
+    background: rgba(0,20,45,0.8) !important;
+    border: 1px solid rgba(0,116,217,0.3) !important;
+    border-radius: 18px !important;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    margin-bottom: 12px !important;
+}
+[data-testid="stVerticalBlockBorderWrapper"]:hover {
+    border-color: rgba(255,215,0,0.45) !important;
+    box-shadow: 0 0 24px rgba(255,215,0,0.08) !important;
+}
+
+.stButton > button {
+    background: rgba(0,116,217,0.15) !important;
+    border: 1px solid rgba(0,116,217,0.5) !important;
+    color: #5bb8ff !important;
+    border-radius: 10px !important;
+    font-family: 'Rajdhani', sans-serif !important;
+    font-weight: 700 !important;
+    font-size: 0.95em !important;
+    transition: all 0.2s !important;
+}
+.stButton > button:hover {
+    background: rgba(255,215,0,0.12) !important;
+    border-color: rgba(255,215,0,0.6) !important;
+    color: #FFD700 !important;
+}
+
+.stTextInput > div > div > input, .stSelectbox > div > div {
+    background: rgba(0,20,50,0.8) !important;
+    border: 1px solid rgba(0,116,217,0.3) !important;
+    color: #ddd !important;
+    border-radius: 10px !important;
+    font-family: 'Rajdhani', sans-serif !important;
+}
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #000; }
+::-webkit-scrollbar-thumb { background: rgba(255,215,0,0.3); border-radius: 3px; }
+</style>
 """, unsafe_allow_html=True)
 
 
-# --- DATA LOADING & CLEANING ---
+# ─────────────────────────────────────────────
+#  DATA LOADING
+# ─────────────────────────────────────────────
 @st.cache_data
-def load_and_clean_data():
-    def find_file(name):
-        paths_to_check = [name, os.path.join('data', name)]
-        for p in paths_to_check:
-            if os.path.exists(p): return p
+def load_data():
+    def find(name):
+        for p in [name, os.path.join("data", name)]:
+            if os.path.exists(p):
+                return p
         return None
 
-    csv_path = find_file('courseGrades.csv')
-    rmp_path = find_file('rmp_final_data.csv')
-    if not csv_path:
-        st.error("Missing 'courseGrades.csv'.")
+    grades_path = find("courseGrades.csv")
+    rmp_path    = find("rmp_final_data.csv")
+
+    if not grades_path:
+        st.error("Cannot find courseGrades.csv — put it in the same folder or a 'data/' subfolder.")
         st.stop()
 
-    df = pd.read_csv(csv_path)
-    df.columns = [str(c).strip().lower() for c in df.columns]
+    df = pd.read_csv(grades_path)
+    df.columns = [c.strip().lower() for c in df.columns]
 
-    def get_course_num(course_str):
-        match = re.search(r'(\d+)', str(course_str))
-        return int(match.group(1)) if match else None
+    def extract_num(s):
+        m = re.search(r"(\d+)", str(s))
+        return int(m.group(1)) if m else None
 
-    df['course_num_val'] = df['course'].apply(get_course_num)
-    df = df[df['course_num_val'].notna()]
-    df = df[(df['course_num_val'] <= 198) & (df['course_num_val'] != 99)]
+    df["_num"] = df["course"].apply(extract_num)
+    df = df[df["_num"].notna() & (df["_num"] <= 198) & (df["_num"] != 99)]
 
-    def get_registrar_key(name):
+    for col in ["instructor", "quarter", "course", "dept"]:
+        if col in df.columns:
+            df[col] = df[col].astype(str).str.upper().str.strip()
+
+    def jkey(name):
         if pd.isna(name): return "UNKNOWN"
-        parts = str(name).upper().split()
-        return f"{parts[0]}{parts[1][0] if len(parts) > 1 else ''}"
+        p = str(name).upper().split()
+        return f"{p[0]}{p[1][0] if len(p) > 1 else ''}"
 
-    df['join_key'] = df['instructor'].apply(get_registrar_key)
+    df["join_key"] = df["instructor"].apply(jkey)
 
     rmp_lookup = {}
     if rmp_path:
-        rmp_df = pd.read_csv(rmp_path)
-        rmp_df.columns = [c.strip().lower() for c in rmp_df.columns]
-
-        # Build a lookup dict keyed by registrar key -> rmp row
-        for _, row in rmp_df.iterrows():
-            name = str(row.get('instructor', ''))
-            parts = name.upper().split()
-            key = f"{parts[0]}{parts[1][0] if len(parts) > 1 else ''}" if parts else "UNKNOWN"
-            rmp_lookup[key] = {
-                'rmp_rating': row.get('rating', None),
-                'rmp_difficulty': row.get('difficulty', None),
-                'rmp_take_again': row.get('take_again', None),
-                'rmp_num_ratings': row.get('rmp_num_ratings', None),
-                'rmp_tags': row.get('tags', None),
-                'rmp_url': row.get('url', None),
-                'rmp_dept': row.get('rmp_dept', None),
-                'instructor_full': name,
+        rmp = pd.read_csv(rmp_path)
+        rmp.columns = [c.strip().lower() for c in rmp.columns]
+        for _, r in rmp.iterrows():
+            name = str(r.get("instructor", ""))
+            p    = name.upper().split()
+            k    = f"{p[0]}{p[1][0] if len(p) > 1 else ''}" if p else "UNKNOWN"
+            rmp_lookup[k] = {
+                "rating":      r.get("rating"),
+                "difficulty":  r.get("difficulty"),
+                "take_again":  r.get("take_again"),
+                "num_ratings": r.get("rmp_num_ratings"),
+                "tags":        r.get("tags"),
+                "url":         r.get("url"),
+                "dept":        r.get("rmp_dept"),
+                "full_name":   name,
             }
 
-        rmp_df_renamed = rmp_df.rename(columns={
-            'instructor': 'instructor_rmp', 'rating': 'rmp_rating',
-            'difficulty': 'rmp_difficulty', 'take_again': 'rmp_take_again',
-            'tags': 'rmp_tags', 'url': 'rmp_url'
+        rmp_renamed = rmp.rename(columns={
+            "instructor":  "instructor_rmp",
+            "rating":      "rmp_rating",
+            "difficulty":  "rmp_difficulty",
+            "take_again":  "rmp_take_again",
+            "tags":        "rmp_tags",
+            "url":         "rmp_url",
         })
-        df = pd.merge(df, rmp_df_renamed, left_on='join_key', right_on='instructor_rmp', how='left')
+        df = pd.merge(df, rmp_renamed, left_on="join_key", right_on="instructor_rmp", how="left")
 
-    for col in ['instructor', 'quarter', 'course', 'dept']:
-        if col in df.columns: df[col] = df[col].astype(str).str.upper().str.strip()
+    gpa_col   = next((c for c in ["avggpa", "avg_gpa", "avg gpa"] if c in df.columns), "avggpa")
+    grp_cols  = ["instructor", "quarter", "year", "course", "dept", "join_key"]
+    agg       = {gpa_col: "mean", "a": "sum", "b": "sum", "c": "sum", "d": "sum", "f": "sum"}
+    for ec in ["rmp_url", "rmp_rating", "rmp_difficulty", "rmp_take_again", "rmp_tags", "rmp_num_ratings"]:
+        if ec in df.columns:
+            agg[ec] = "first"
 
-    gpa_col = next((c for c in ['avggpa', 'avg_gpa', 'avg gpa'] if c in df.columns), 'avggpa')
-    group_cols = ['instructor', 'quarter', 'year', 'course', 'dept', 'join_key']
-    agg_dict = {gpa_col: 'mean', 'a': 'sum', 'b': 'sum', 'c': 'sum', 'd': 'sum', 'f': 'sum'}
-    for extra_col in ['rmp_url', 'rmp_rating', 'rmp_difficulty', 'rmp_take_again', 'rmp_tags', 'rmp_num_ratings']:
-        if extra_col in df.columns:
-            agg_dict[extra_col] = 'first'
-
-    df = df.groupby(group_cols).agg(agg_dict).reset_index()
+    df = df.groupby(grp_cols).agg(agg).reset_index()
     return df, gpa_col, rmp_lookup
 
 
-def reset_filters():
-    st.session_state.dept_query = " "
-    st.session_state.course_query = ""
-    st.session_state.prof_query = ""
+# ─────────────────────────────────────────────
+#  SESSION STATE HELPERS
+# ─────────────────────────────────────────────
+for key in ["sel_prof_key", "sel_prof_name"]:
+    if key not in st.session_state:
+        st.session_state[key] = None
+for key in ["dept_q", "course_q", "prof_q"]:
+    if key not in st.session_state:
+        st.session_state[key] = ""
 
 
-def render_prof_modal(prof_key, rmp_lookup, prof_display_name):
-    """Render the professor detail modal using session state."""
-    info = rmp_lookup.get(prof_key, {})
-    if not info:
-        st.warning(f"No RMP data found for {prof_display_name}")
-        if st.button("✖ Close"):
-            st.session_state.selected_prof = None
-            st.rerun()
-        return
+def clear_filters():
+    st.session_state.dept_q   = ""
+    st.session_state.course_q = ""
+    st.session_state.prof_q   = ""
 
-    rating = info.get('rmp_rating')
-    difficulty = info.get('rmp_difficulty')
-    take_again = info.get('rmp_take_again')
-    num_ratings = info.get('rmp_num_ratings')
-    tags_raw = info.get('rmp_tags', '')
-    url = info.get('rmp_url', '')
-    dept = info.get('rmp_dept', '')
 
-    # Color-code rating
-    if rating and float(rating) >= 4.0:
-        rating_color = "#2ECC40"
-    elif rating and float(rating) >= 3.0:
-        rating_color = "#0074D9"
+def gpa_badge(gpa):
+    if gpa < 2.5:
+        return "STRESSFUL", "#FF4136", "rgba(255,65,54,0.35)"
+    elif gpa > 3.3:
+        return "EASY", "#2ECC40", "rgba(46,204,64,0.35)"
     else:
-        rating_color = "#FF4136"
+        return "CHILL", "#0074D9", "rgba(0,116,217,0.35)"
 
-    # Parse tags
+
+# ─────────────────────────────────────────────
+#  HERO BANNER
+# ─────────────────────────────────────────────
+def render_hero():
+    components.html("""
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}body{background:transparent;overflow:hidden}
+.hero{perspective:1200px;height:150px;display:flex;justify-content:center;align-items:center;cursor:default}
+.wrap{text-align:center}
+.title{font-family:'Orbitron',sans-serif;font-size:clamp(1.6rem,4vw,3rem);font-weight:900;
+       color:#FFD700;transform-style:preserve-3d;transition:transform .08s ease;white-space:nowrap;
+       text-shadow:0 0 20px rgba(255,215,0,.6),0 0 40px rgba(255,215,0,.3),0 4px 16px rgba(0,0,0,.8);
+       letter-spacing:2px}
+.sub{font-family:'Orbitron',sans-serif;font-size:.62rem;color:rgba(255,215,0,.4);
+     text-align:center;letter-spacing:6px;margin-top:10px;text-transform:uppercase}
+</style>
+<div class="hero" id="hero">
+  <div class="wrap">
+    <div class="title" id="title">⬡ GAUCHO INSIGHTS ⬡</div>
+    <div class="sub">UCSB GRADE ANALYTICS DASHBOARD</div>
+  </div>
+</div>
+<script>
+const hero=document.getElementById('hero'),title=document.getElementById('title');
+hero.addEventListener('mousemove',e=>{
+  const r=hero.getBoundingClientRect();
+  title.style.transform=`rotateY(${(e.clientX-r.left-r.width/2)/22}deg) rotateX(${-(e.clientY-r.top-r.height/2)/12}deg) translateZ(40px)`;
+});
+hero.addEventListener('mouseleave',()=>{title.style.transform='rotateY(0) rotateX(0) translateZ(0)';});
+</script>
+""", height=170)
+
+
+# ─────────────────────────────────────────────
+#  WELCOME PARTICLE CARD
+# ─────────────────────────────────────────────
+def render_welcome_card():
+    components.html("""
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@400;600&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}body{background:transparent;overflow:hidden}
+.scene{perspective:1400px;width:100%;height:620px;display:flex;justify-content:center;align-items:center}
+.card{width:97%;height:580px;background:rgba(0,18,40,.85);border-radius:26px;
+      border:1.5px solid rgba(255,215,0,.35);
+      box-shadow:0 30px 70px rgba(0,0,0,.7),0 0 60px rgba(0,116,217,.08);
+      transform-style:preserve-3d;transition:transform .1s ease;
+      position:relative;overflow:hidden;padding:50px 48px;color:white}
+canvas{position:absolute;top:0;left:0;width:100%;height:100%;z-index:0}
+.content{position:relative;z-index:1;height:100%;display:flex;flex-direction:column;justify-content:center}
+h1{font-family:'Orbitron',sans-serif;font-size:2.1em;font-weight:900;color:#FFD700;
+   text-shadow:0 0 20px rgba(255,215,0,.4);margin-bottom:18px}
+p{font-family:'Rajdhani',sans-serif;font-size:1.15em;line-height:1.75;color:#c8d8ef;margin-bottom:32px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.box{background:rgba(255,255,255,.05);border-radius:16px;padding:20px 22px;backdrop-filter:blur(10px);transition:background .2s}
+.box:hover{background:rgba(255,255,255,.09)}
+.bt{font-family:'Orbitron',sans-serif;font-size:.82em;font-weight:700;margin-bottom:8px}
+.bb{font-family:'Rajdhani',sans-serif;font-size:.98em;color:#9ab;line-height:1.6}
+</style>
+<div class="scene" id="sc">
+  <div class="card" id="cd">
+    <canvas id="cv"></canvas>
+    <div class="content">
+      <h1>WELCOME GAUCHOS! ٩(◕‿◕)۶</h1>
+      <p>Gaucho Insights lets you see how stressful or easy any UCSB class is before you register —
+         based on real historical grade distributions and RateMyProfessors data.
+         <strong style="color:#FFD700">Search by department, course number, or professor name.</strong></p>
+      <div class="grid">
+        <div class="box" style="border-left:4px solid #FFD700;padding-left:18px">
+          <div class="bt" style="color:#FFD700">📍 MISSION</div>
+          <div class="bb">Help UCSB students make smarter scheduling decisions with real data.</div>
+        </div>
+        <div class="box" style="border-left:4px solid #5bb8ff;padding-left:18px">
+          <div class="bt" style="color:#5bb8ff">🔍 SEARCH TOOL</div>
+          <div class="bb">Filter classes and click any professor name to see their full RMP profile.</div>
+        </div>
+        <div class="box" style="border-left:4px solid #2ECC40;padding-left:18px">
+          <div class="bt" style="color:#2ECC40">✅ EASY  › 3.3 avg GPA</div>
+          <div class="bb">Class is known to be manageable. High average grades historically.</div>
+        </div>
+        <div class="box" style="border-left:4px solid #FF4136;padding-left:18px">
+          <div class="bt" style="color:#FF4136">💀 STRESSFUL  ‹ 2.5 avg GPA</div>
+          <div class="bb">Historically tough. Prepare carefully or choose a different section.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+const sc=document.getElementById('sc'),cd=document.getElementById('cd');
+sc.addEventListener('mousemove',e=>{
+  const r=sc.getBoundingClientRect();
+  cd.style.transform=`rotateY(${(e.clientX-r.left-r.width/2)/48}deg) rotateX(${-(e.clientY-r.top-r.height/2)/36}deg)`;
+});
+sc.addEventListener('mouseleave',()=>{cd.style.transform='';});
+
+const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+function resize(){cv.width=cd.clientWidth;cv.height=cd.clientHeight;}
+window.addEventListener('resize',resize);resize();setTimeout(resize,80);
+const N=75,pts=Array.from({length:N},()=>({
+  x:Math.random()*cv.width,y:Math.random()*cv.height,
+  vx:(Math.random()-.5)*1.2,vy:(Math.random()-.5)*1.2
+}));
+(function loop(){
+  ctx.clearRect(0,0,cv.width,cv.height);
+  pts.forEach(p=>{
+    p.x+=p.vx;p.y+=p.vy;
+    if(p.x<0||p.x>cv.width)p.vx*=-1;
+    if(p.y<0||p.y>cv.height)p.vy*=-1;
+    ctx.beginPath();ctx.arc(p.x,p.y,1.8,0,Math.PI*2);
+    ctx.fillStyle='rgba(255,215,0,.45)';ctx.fill();
+  });
+  for(let i=0;i<N;i++)for(let j=i+1;j<N;j++){
+    const d=Math.hypot(pts[i].x-pts[j].x,pts[i].y-pts[j].y);
+    if(d<120){ctx.beginPath();ctx.moveTo(pts[i].x,pts[i].y);ctx.lineTo(pts[j].x,pts[j].y);
+      ctx.strokeStyle=`rgba(0,116,217,${(1-d/120)*.55})`;ctx.lineWidth=.7;ctx.stroke();}
+  }
+  requestAnimationFrame(loop);
+})();
+</script>
+""", height=640)
+
+
+def render_info_card():
+    components.html("""
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Rajdhani:wght@500;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}body{background:transparent;overflow:hidden}
+.sc{perspective:900px;width:100%;height:250px;display:flex;justify-content:center;align-items:center}
+.cd{width:90%;height:215px;
+    background:linear-gradient(140deg,#001428 0%,#002255 60%,#001e4a 100%);
+    border-radius:22px;border:1.5px solid rgba(255,215,0,.5);
+    box-shadow:0 20px 50px rgba(0,0,0,.6),inset 0 0 40px rgba(0,116,217,.07);
+    transform-style:preserve-3d;transition:transform .1s ease;
+    display:flex;flex-direction:column;justify-content:space-between;
+    padding:24px 26px;color:white}
+.t{font-family:'Orbitron',sans-serif;font-size:.95em;font-weight:700;color:#FFD700;margin-bottom:4px}
+.b{font-family:'Rajdhani',sans-serif;font-size:1.02em;line-height:1.7;color:#8ab}
+.h{font-family:'Rajdhani',sans-serif;font-size:.8em;color:rgba(255,255,255,.2);
+   background:rgba(255,255,255,.04);border-radius:8px;padding:6px 10px;text-align:center}
+</style>
+<div class="sc" id="sc">
+  <div class="cd" id="cd">
+    <div><div class="t">📊 DATA INFO</div>
+    <div class="b"><b>Coverage:</b> Through Summer 2025<br><b>Source:</b> UCSB Registrar + RMP<br><b>Built by:</b> Joshua Chung</div></div>
+    <div class="h">Hover to tilt ↗</div>
+  </div>
+</div>
+<script>
+const sc=document.getElementById('sc'),cd=document.getElementById('cd');
+sc.addEventListener('mousemove',e=>{const r=sc.getBoundingClientRect();
+  cd.style.transform=`rotateY(${(e.clientX-r.left-r.width/2)/10}deg) rotateX(${-(e.clientY-r.top-r.height/2)/8}deg)`;});
+sc.addEventListener('mouseleave',()=>{cd.style.transform='';});
+</script>
+""", height=270)
+
+
+def render_linkedin_card():
+    components.html("""
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}body{background:transparent;overflow:hidden}
+.sc{perspective:800px;width:100%;height:80px;display:flex;justify-content:center;align-items:center}
+a{width:90%;height:58px;display:flex;align-items:center;justify-content:center;
+  background:#0077b5;border-radius:14px;border:1.5px solid rgba(255,215,0,.4);
+  font-family:'Rajdhani',sans-serif;font-weight:700;font-size:1.05em;color:white;
+  text-decoration:none;transform-style:preserve-3d;transition:transform .1s,background .2s;
+  box-shadow:0 8px 24px rgba(0,0,0,.4)}
+a:hover{background:#0087cc}
+</style>
+<div class="sc" id="sc">
+  <a href="https://www.linkedin.com/in/joshua-chung858/" target="_blank" id="li">🔗 Follow on LinkedIn</a>
+</div>
+<script>
+const sc=document.getElementById('sc'),li=document.getElementById('li');
+sc.addEventListener('mousemove',e=>{const r=sc.getBoundingClientRect();
+  li.style.transform=`rotateY(${(e.clientX-r.left-r.width/2)/8}deg) rotateX(${-(e.clientY-r.top-r.height/2)/5}deg)`;});
+sc.addEventListener('mouseleave',()=>{li.style.transform='';});
+</script>
+""", height=100)
+
+
+# ─────────────────────────────────────────────
+#  PROFESSOR PROFILE CARD
+# ─────────────────────────────────────────────
+def render_prof_card(info, prof_name):
+    rating     = info.get("rating")
+    difficulty = info.get("difficulty")
+    take_again = info.get("take_again")
+    num_ratings= info.get("num_ratings")
+    tags_raw   = info.get("tags", "")
+    url        = info.get("url", "")
+    dept       = info.get("dept", "")
+
+    try:
+        rv = float(rating)
+        r_color = "#2ECC40" if rv >= 4.0 else ("#FFDC00" if rv >= 3.0 else "#FF4136")
+    except Exception:
+        r_color = "#888"
+
+    ta_str  = str(take_again) if take_again and str(take_again) != "nan" else "N/A"
+    if ta_str != "N/A" and "%" not in ta_str:
+        ta_str += "%"
+    num_str = f"{int(float(num_ratings))}" if num_ratings and str(num_ratings) != "nan" else "N/A"
+    r_str   = str(rating) if rating and str(rating) != "nan" else "N/A"
+    d_str   = str(difficulty) if difficulty and str(difficulty) != "nan" else "N/A"
+
     tags_html = ""
-    if tags_raw and str(tags_raw) != 'nan':
-        raw = str(tags_raw).strip('"\'[]')
-        tags = [t.strip().strip('"\'') for t in raw.split(',') if t.strip()]
-        tags_html = "".join([f'<span class="tag-pill">{t}</span>' for t in tags[:8]])
+    if tags_raw and str(tags_raw) != "nan":
+        raw   = str(tags_raw).strip("\"'[]")
+        tags  = [t.strip().strip("\"'") for t in raw.split(",") if t.strip()]
+        tags_html = "".join(f'<span class="tag">{t}</span>' for t in tags[:8])
 
-    rmp_btn = f'<a href="{url}" target="_blank" class="rmp-btn">🔗 View Full RMP Profile</a>' if url and str(url) != 'nan' else ''
+    dept_badge = f'<span class="dept">{dept}</span>' if dept and str(dept) != "nan" else ""
+    rmp_btn    = (
+        f'<a href="{url}" target="_blank" class="rmp-btn">🔗 View Full RMP Profile</a>'
+        if url and str(url) != "nan" else ""
+    )
 
-    take_again_display = f"{take_again}" if take_again and str(take_again) != 'nan' else "N/A"
-    if '%' not in str(take_again_display) and take_again_display != 'N/A':
-        take_again_display += '%'
-
-    num_display = f"{int(float(num_ratings))}" if num_ratings and str(num_ratings) != 'nan' else "N/A"
-
-    modal_html = f"""
-    <div class="prof-modal-overlay" id="modalOverlay" onclick="if(event.target===this)closeModal()"></div>
-    <div class="prof-modal" id="profModal">
-        <button class="close-btn" onclick="closeModal()">✕</button>
-        <h2>👤 {prof_display_name}</h2>
-        {"<span class='dept-badge'>" + dept + "</span>" if dept and str(dept) != 'nan' else ""}
-        
-        <div class="stat-grid">
-            <div class="stat-box">
-                <div class="val" style="color:{rating_color}">{rating if rating and str(rating) != 'nan' else 'N/A'}</div>
-                <div class="lbl">Rating</div>
-            </div>
-            <div class="stat-box">
-                <div class="val" style="color:#FF851B">{difficulty if difficulty and str(difficulty) != 'nan' else 'N/A'}</div>
-                <div class="lbl">Difficulty</div>
-            </div>
-            <div class="stat-box">
-                <div class="val" style="color:#2ECC40;font-size:1.2em">{take_again_display}</div>
-                <div class="lbl">Would Retake</div>
-            </div>
-        </div>
-        
-        <div style="text-align:center;color:#666;font-size:0.8em;margin-top:-6px;margin-bottom:14px;">
-            Based on {num_display} ratings
-        </div>
-
-        {"<div class='tags-section'><div style='color:#aaa;font-size:0.78em;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;'>Student Tags</div>" + tags_html + "</div>" if tags_html else ""}
-        
-        {rmp_btn}
-    </div>
-    <script>
-        function closeModal() {{
-            // Trigger Streamlit to close modal via query param change
-            const url = new URL(window.parent.location.href);
-            url.searchParams.set('close_modal', Date.now());
-            window.parent.history.replaceState(null, '', url);
-            // Also try direct parent rerun via streamlit
-            window.parent.postMessage({{type: 'streamlit:closeModal'}}, '*');
-        }}
-    </script>
-    """
-
-    components.html(modal_html, height=0)
-
-    # Actual close button in Streamlit
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        if st.button("✖ Close Professor Card", use_container_width=True):
-            st.session_state.selected_prof = None
-            st.session_state.selected_prof_name = None
-            st.rerun()
+    components.html(f"""
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Rajdhani:wght@400;600;700&display=swap');
+*{{margin:0;padding:0;box-sizing:border-box}}body{{background:transparent}}
+.pcard{{background:linear-gradient(140deg,#001428 0%,#00184a 60%,#002255 100%);
+        border:2px solid rgba(255,215,0,.55);border-radius:22px;
+        padding:30px 34px;margin:6px 0 16px;
+        box-shadow:0 0 50px rgba(255,215,0,.08),0 24px 50px rgba(0,0,0,.55);
+        font-family:'Rajdhani',sans-serif;color:white}}
+.pname{{font-family:'Orbitron',sans-serif;font-size:1.3em;font-weight:700;color:#FFD700;margin-bottom:6px}}
+.dept{{background:rgba(0,116,217,.22);color:#5bb8ff;border:1px solid #0074D9;
+       padding:3px 14px;border-radius:20px;font-size:.82em;display:inline-block;margin-bottom:18px}}
+.stats{{display:flex;gap:14px;margin-bottom:16px}}
+.stat{{flex:1;background:rgba(255,255,255,.05);border-radius:14px;padding:16px 10px;
+       text-align:center;border:1px solid rgba(255,255,255,.08)}}
+.stat .v{{font-size:2em;font-weight:900;line-height:1;font-family:'Orbitron',sans-serif}}
+.stat .l{{font-size:.67em;color:#667;margin-top:6px;text-transform:uppercase;letter-spacing:.6px}}
+.num{{text-align:center;color:#445;font-size:.8em;margin:-8px 0 14px}}
+.tag-lbl{{font-size:.7em;color:#445;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}}
+.tag{{background:rgba(0,204,255,.1);color:#00CCFF;border:1px solid rgba(0,204,255,.35);
+      padding:5px 13px;border-radius:20px;display:inline-block;margin:3px;font-size:.78em;font-weight:600}}
+.rmp-btn{{display:inline-block;margin-top:16px;padding:12px 28px;
+          background:linear-gradient(135deg,#0077b5,#00a0dc);color:white;text-decoration:none;
+          border-radius:14px;font-weight:800;font-size:.93em;
+          box-shadow:0 6px 20px rgba(0,119,181,.4);border:2px solid rgba(255,255,255,.15);
+          font-family:'Rajdhani',sans-serif;transition:background .2s}}
+.rmp-btn:hover{{background:linear-gradient(135deg,#0087cc,#00bbf5)}}
+</style>
+<div class="pcard">
+  <div class="pname">👤 {prof_name}</div>
+  {dept_badge}
+  <div class="stats">
+    <div class="stat"><div class="v" style="color:{r_color}">{r_str}</div><div class="l">Rating</div></div>
+    <div class="stat"><div class="v" style="color:#FF851B">{d_str}</div><div class="l">Difficulty</div></div>
+    <div class="stat"><div class="v" style="color:#2ECC40;font-size:1.45em">{ta_str}</div><div class="l">Would Retake</div></div>
+  </div>
+  <div class="num">Based on {num_str} student ratings</div>
+  {"<div class='tag-lbl'>Student Tags</div><div>" + tags_html + "</div>" if tags_html else ""}
+  {rmp_btn}
+</div>
+""", height=360)
 
 
+# ─────────────────────────────────────────────
+#  MAIN
+# ─────────────────────────────────────────────
 def main():
-    full_df, gpa_col, rmp_lookup = load_and_clean_data()
+    full_df, gpa_col, rmp_lookup = load_data()
 
-    # Initialize session state
-    if 'selected_prof' not in st.session_state:
-        st.session_state.selected_prof = None
-    if 'selected_prof_name' not in st.session_state:
-        st.session_state.selected_prof_name = None
+    render_hero()
 
-    # --- 3D HERO HEADER ---
-    hero_html = """
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap');
-        .hero-container { perspective: 1000px; display: flex; justify-content: center; align-items: center; height: 160px; margin-bottom: 20px; }
-        .hero-title { font-family: 'Orbitron', sans-serif; font-size: 3.5rem; font-weight: 900; color: #FFD700; text-shadow: 0 10px 20px rgba(0,0,0,0.4); transform-style: preserve-3d; transition: transform 0.1s ease; cursor: default; white-space: nowrap; }
-    </style>
-    <div class="hero-container" id="heroBox">
-        <div class="hero-title" id="heroText">(つ▀¯▀ )つ GAUCHO INSIGHTS ⊂(▀¯▀⊂ )</div>
-    </div>
-    <script>
-        const heroBox = document.getElementById('heroBox');
-        const heroText = document.getElementById('heroText');
-        heroBox.addEventListener('mousemove', (e) => {
-            let rect = heroBox.getBoundingClientRect();
-            let x = (e.clientX - rect.left - rect.width / 2) / 20;
-            let y = (e.clientY - rect.top - rect.height / 2) / 10;
-            heroText.style.transform = `rotateY(${x}deg) rotateX(${-y}deg) translateZ(50px)`;
-        });
-        heroBox.addEventListener('mouseleave', () => { heroText.style.transform = `rotateY(0deg) rotateX(0deg) translateZ(0px)`; });
-    </script>
-    """
-    components.html(hero_html, height=200)
+    tab_home, tab_search = st.tabs(["🏠  HOME", "🔍  SEARCH TOOL"])
 
-    tab1, tab2 = st.tabs(["🏠 HOME", "🔍 SEARCH TOOL"])
+    # ── HOME ────────────────────────────────
+    with tab_home:
+        col_main, col_side = st.columns([5, 2])
+        with col_main:
+            render_welcome_card()
+        with col_side:
+            st.markdown("<br>", unsafe_allow_html=True)
+            render_info_card()
+            render_linkedin_card()
+            st.markdown("""
+<div style="background:rgba(0,18,40,.7);border:1px solid rgba(255,215,0,.2);
+            border-radius:18px;padding:22px 24px;margin-top:16px;
+            font-family:'Rajdhani',sans-serif;">
+  <div style="font-family:'Orbitron',sans-serif;font-size:.78em;color:#FFD700;
+              margin-bottom:14px;letter-spacing:1px;">📈 GRADING LEGEND</div>
+  <div style="margin-bottom:10px">
+    <span style="background:#2ECC40;color:#000;padding:3px 12px;border-radius:20px;
+                 font-weight:700;font-size:.85em;">EASY</span>
+    <span style="color:#8ab;font-size:.9em;margin-left:8px">Avg GPA &gt; 3.3</span>
+  </div>
+  <div style="margin-bottom:10px">
+    <span style="background:#0074D9;color:#fff;padding:3px 12px;border-radius:20px;
+                 font-weight:700;font-size:.85em;">CHILL</span>
+    <span style="color:#8ab;font-size:.9em;margin-left:8px">Avg GPA 2.5 – 3.3</span>
+  </div>
+  <div>
+    <span style="background:#FF4136;color:#fff;padding:3px 12px;border-radius:20px;
+                 font-weight:700;font-size:.85em;">STRESSFUL</span>
+    <span style="color:#8ab;font-size:.9em;margin-left:8px">Avg GPA &lt; 2.5</span>
+  </div>
+</div>
+""", unsafe_allow_html=True)
 
-    with tab1:
-        col_left, col_right = st.columns([2, 1])
-        with col_left:
-            stats_3d_html = """
-            <style>
-                @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
-                .welcome-perspective { perspective: 1500px; width: 100%; height: 700px; display: flex; justify-content: center; align-items: center; }
-                .welcome-card {
-                    width: 98%; height: 640px;
-                    background: rgba(0, 31, 63, 0.7);
-                    border-radius: 25px;
-                    border: 2px solid rgba(255, 215, 0, 0.4);
-                    position: relative; overflow: hidden;
-                    box-shadow: 0 20px 50px rgba(0,0,0,0.6);
-                    transform-style: preserve-3d;
-                    transition: transform 0.1s ease-out;
-                    padding: 50px 40px;
-                }
-                .content-layer { position: relative; z-index: 2; color: white; font-family: 'sans-serif'; pointer-events: none; }
-                #statsCanvas { position: absolute; top: 0; left: 0; z-index: 1; width: 100% !important; height: 100% !important; }
-            </style>
-            <div class="welcome-perspective" id="welcomeCont">
-                <div class="welcome-card" id="welcomeCard">
-                    <canvas id="statsCanvas"></canvas>
-                    <div class="content-layer">
-                        <h2 style="color: #FFD700; font-family: 'Orbitron', sans-serif; font-size: 2.5em; margin-bottom: 30px; text-shadow: 0 0 15px rgba(255,215,0,0.4);">WELCOME GAUCHOS! ٩(◕‿◕)۶</h2>
-                        <p style="font-size: 1.25em; line-height: 1.8; margin-bottom: 40px; max-width: 95%;">
-                            <b>WHAT IS THIS?</b><br>
-                            Gaucho Insights helps you survive your schedule. See how stressful classes are with specific professors — and now click any professor name to see their full RMP profile! <b>Numbers don't lie!</b>
-                        </p>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; pointer-events: auto;">
-                            <div style="background: rgba(255,255,255,0.08); padding: 30px; border-radius: 15px; border-left: 5px solid #FFD700; backdrop-filter: blur(8px);">
-                                <b style="color: #FFD700; font-size: 1.2em;">( 📍 ) MISSION</b><br>
-                                Empowering students to make informed decisions about their quarterly schedules and academic path.
-                            </div>
-                            <div style="background: rgba(255,255,255,0.08); padding: 30px; border-radius: 15px; border-left: 5px solid #0074D9; backdrop-filter: blur(8px);">
-                                <b style="color: #0074D9; font-size: 1.2em;">( 🔍 ) THE TECH</b><br>
-                                Utilizing Python, Streamlit, and D3-inspired mesh networks to visualize grade distributions.
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <script>
-                const card = document.getElementById('welcomeCard');
-                const cont = document.getElementById('welcomeCont');
-                cont.addEventListener('mousemove', (e) => {
-                    let rect = cont.getBoundingClientRect();
-                    let x = (e.clientX - rect.left - rect.width / 2) / 45;
-                    let y = (e.clientY - rect.top - rect.height / 2) / 35;
-                    card.style.transform = `rotateY(${x}deg) rotateX(${-y}deg)`;
-                });
-                cont.addEventListener('mouseleave', () => card.style.transform = `rotateY(0deg) rotateX(0deg)`);
-                const canvas = document.getElementById('statsCanvas');
-                const ctx = canvas.getContext('2d');
-                let particles = [];
-                function resize() { canvas.width = card.clientWidth; canvas.height = card.clientHeight; }
-                window.addEventListener('resize', resize);
-                resize();
-                class Particle {
-                    constructor() {
-                        this.x = Math.random() * canvas.width; this.y = Math.random() * canvas.height;
-                        this.vx = (Math.random() - 0.5) * 1.4; this.vy = (Math.random() - 0.5) * 1.4;
-                        this.radius = 2;
-                    }
-                    update() {
-                        this.x += this.vx; this.y += this.vy;
-                        if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
-                        if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
-                    }
-                    draw() {
-                        ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                        ctx.fillStyle = "rgba(255, 215, 0, 0.4)"; ctx.fill();
-                    }
-                }
-                for (let i = 0; i < 70; i++) particles.push(new Particle());
-                function animate() {
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    particles.forEach((p, idx) => {
-                        p.update(); p.draw();
-                        for (let j = idx + 1; j < particles.length; j++) {
-                            const p2 = particles[j];
-                            const d = Math.hypot(p.x - p2.x, p.y - p2.y);
-                            if (d < 130) {
-                                ctx.beginPath();
-                                ctx.strokeStyle = `rgba(0, 116, 217, ${1 - d/130})`;
-                                ctx.lineWidth = 0.8;
-                                ctx.moveTo(p.x, p.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
-                            }
-                        }
-                    });
-                    requestAnimationFrame(animate);
-                }
-                animate();
-                setTimeout(resize, 100);
-            </script>
-            """
-            components.html(stats_3d_html, height=720)
+    # ── SEARCH TOOL ─────────────────────────
+    with tab_search:
 
-        with col_right:
-            gaucho_info_3d = """
-            <style>
-                .container { perspective: 1000px; display: flex; justify-content: center; align-items: center; height: 350px; margin-bottom: 20px; }
-                .card { width: 280px; height: 310px; background: linear-gradient(135deg, #001f3f 0%, #0074D9 100%); border-radius: 20px; border: 2px solid #FFD700; box-shadow: 0 15px 30px rgba(0,0,0,0.5); transform-style: preserve-3d; transition: transform 0.1s ease; display: flex; flex-direction: column; justify-content: space-between; padding: 25px; color: white; text-align: center; }
-            </style>
-            <div class="container"><div class="card" id="card">
-                <div style="font-size: 1.4em; font-weight: bold; color: #FFD700;">📊 Gaucho Info</div>
-                <div style="font-size: 1em; line-height: 1.5;"><b>Data:</b> Thru Summer 2025<br><b>Source:</b> Registrar & RMP<br><b>By:</b> Joshua Chung</div>
-                <div style="font-size: 0.85em; background: rgba(255,255,255,0.1); padding: 8px; border-radius: 10px;">Move cursor to tilt!</div>
-            </div></div>
-            <script>
-                const card = document.getElementById('card'); const container = card.parentElement;
-                container.addEventListener('mousemove', (e) => {
-                    let rect = container.getBoundingClientRect();
-                    card.style.transform = `rotateY(${(e.clientX-rect.left-rect.width/2)/10}deg) rotateX(${-(e.clientY-rect.top-rect.height/2)/10}deg)`;
-                });
-                container.addEventListener('mouseleave', () => card.style.transform = `rotateY(0deg) rotateX(0deg)`);
-            </script>
-            """
-            components.html(gaucho_info_3d, height=380)
-
-            linkedin_3d = """
-            <style>
-                .li-container { perspective: 1000px; display: flex; justify-content: center; align-items: center; height: 110px; padding-top: 10px; }
-                .li-card { width: 280px; background: #0077b5; border-radius: 15px; border: 2px solid #FFD700; padding: 15px; color: white; text-align: center; text-decoration: none; font-weight: bold; transform-style: preserve-3d; transition: transform 0.1s ease; box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
-                .li-card:hover { background: #008fdb; border-color: white; }
-            </style>
-            <div class="li-container">
-                <a href="https://www.linkedin.com/in/joshua-chung858/" target="_blank" class="li-card" id="liCard">Follow on LinkedIn</a>
-            </div>
-            <script>
-                const liCard = document.getElementById('liCard'); const liCont = liCard.parentElement;
-                liCont.addEventListener('mousemove', (e) => {
-                    let rect = liCont.getBoundingClientRect();
-                    liCard.style.transform = `rotateY(${(e.clientX-rect.left-rect.width/2)/10}deg) rotateX(${-(e.clientY-rect.top-rect.height/2)/5}deg)`;
-                });
-                liCont.addEventListener('mouseleave', () => liCard.style.transform = `rotateY(0deg) rotateX(0deg)`);
-            </script>
-            """
-            components.html(linkedin_3d, height=160)
-
-    with tab2:
-        # --- PROFESSOR MODAL (shown when a prof is selected) ---
-        if st.session_state.selected_prof:
+        # sidebar
+        with st.sidebar:
+            st.markdown("""
+<div style="font-family:'Orbitron',sans-serif;color:#FFD700;font-size:.82em;
+            letter-spacing:2px;padding:10px 0 6px;
+            border-bottom:1px solid rgba(255,215,0,.2);margin-bottom:16px;">
+  🔍 FILTERS
+</div>
+""", unsafe_allow_html=True)
+            all_depts     = [""] + sorted(full_df["dept"].unique().tolist())
+            selected_dept = st.selectbox(
+                "Department", options=all_depts, index=0,
+                key="dept_q",
+                format_func=lambda x: "All Departments" if x == "" else x
+            )
+            course_q = st.text_input("Course Number (e.g. 120A, 5A, 10)", key="course_q").strip().upper()
+            prof_q   = st.text_input("Professor Name", key="prof_q").strip().upper()
+            st.button("✖  Clear Filters", on_click=clear_filters, use_container_width=True)
             st.markdown("---")
-            st.markdown(f"### 👤 Professor Profile: {st.session_state.selected_prof_name}")
+            st.markdown("""
+<div style="font-family:'Rajdhani',sans-serif;font-size:.88em;color:#556;line-height:1.7;">
+<b style="color:#FFD700;">⭐ RMP</b> badge = click professor name to view RateMyProfessors data.
+</div>
+""", unsafe_allow_html=True)
 
-            prof_key = st.session_state.selected_prof
-            info = rmp_lookup.get(prof_key, {})
-
+        # Prof card
+        if st.session_state.sel_prof_key:
+            info = rmp_lookup.get(st.session_state.sel_prof_key, {})
             if info:
-                rating = info.get('rmp_rating')
-                difficulty = info.get('rmp_difficulty')
-                take_again = info.get('rmp_take_again', 'N/A')
-                num_ratings = info.get('rmp_num_ratings')
-                tags_raw = info.get('rmp_tags', '')
-                url = info.get('rmp_url', '')
-                dept = info.get('rmp_dept', '')
-
-                # Color for rating
-                try:
-                    r_val = float(rating)
-                    r_color = "#2ECC40" if r_val >= 4.0 else ("#FFDC00" if r_val >= 3.0 else "#FF4136")
-                except:
-                    r_color = "#aaa"
-
-                # Parse take_again
-                ta_display = str(take_again) if take_again and str(take_again) != 'nan' else 'N/A'
-                if '%' not in ta_display and ta_display != 'N/A':
-                    ta_display += '%'
-
-                num_display = f"{int(float(num_ratings))}" if num_ratings and str(num_ratings) != 'nan' else 'N/A'
-
-                # Parse tags
-                tags_html = ""
-                if tags_raw and str(tags_raw) != 'nan':
-                    raw = str(tags_raw).strip('"\'[]')
-                    tags = [t.strip().strip('"\'') for t in raw.split(',') if t.strip()]
-                    tags_html = "".join([f'<span class="tag-pill">{t}</span>' for t in tags[:8]])
-
-                card_html = f"""
-                <style>
-                    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
-                    .pcard {{
-                        background: linear-gradient(135deg, #001a3a 0%, #001f3f 60%, #002a50 100%);
-                        border: 2px solid rgba(255,215,0,0.5); border-radius: 22px;
-                        padding: 30px 35px; margin: 10px 0 25px 0;
-                        box-shadow: 0 0 40px rgba(255,215,0,0.1), 0 20px 40px rgba(0,0,0,0.5);
-                        font-family: sans-serif; color: white;
-                    }}
-                    .pcard-name {{ color: #FFD700; font-family: 'Orbitron', sans-serif; font-size: 1.5em; font-weight: 700; margin-bottom: 6px; }}
-                    .pcard-dept {{ background: rgba(0,116,217,0.25); color: #0074D9; border: 1px solid #0074D9; padding: 3px 14px; border-radius: 20px; font-size: 0.82em; display: inline-block; margin-bottom: 22px; }}
-                    .pcard-stats {{ display: flex; gap: 16px; margin-bottom: 22px; }}
-                    .pcard-stat {{ flex: 1; background: rgba(255,255,255,0.06); border-radius: 16px; padding: 18px 10px; text-align: center; border: 1px solid rgba(255,255,255,0.08); }}
-                    .pcard-stat .v {{ font-size: 2.2em; font-weight: 900; line-height: 1; }}
-                    .pcard-stat .l {{ font-size: 0.7em; color: #888; margin-top: 6px; text-transform: uppercase; letter-spacing: 0.5px; }}
-                    .pcard-num {{ text-align: center; color: #555; font-size: 0.82em; margin: -14px 0 18px 0; }}
-                    .tag-pill {{ background: rgba(0,204,255,0.1); color: #00CCFF; border: 1px solid rgba(0,204,255,0.35); padding: 5px 13px; border-radius: 20px; display: inline-block; margin: 4px 3px; font-size: 0.78em; font-weight: 600; }}
-                    .pcard-tags-lbl {{ color: #555; font-size: 0.75em; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }}
-                    .rmp-link {{ display: inline-block; margin-top: 18px; padding: 13px 28px; background: linear-gradient(135deg, #0077b5, #00a0dc); color: white; text-decoration: none; border-radius: 14px; font-weight: 800; font-size: 0.95em; box-shadow: 0 6px 20px rgba(0,119,181,0.4); border: 2px solid rgba(255,255,255,0.15); }}
-                </style>
-                <div class="pcard">
-                    <div class="pcard-name">👤 {st.session_state.selected_prof_name}</div>
-                    {"<div class='pcard-dept'>" + str(dept) + "</div>" if dept and str(dept) != 'nan' else ""}
-                    <div class="pcard-stats">
-                        <div class="pcard-stat"><div class="v" style="color:{r_color}">{rating if rating and str(rating) != 'nan' else 'N/A'}</div><div class="l">Rating</div></div>
-                        <div class="pcard-stat"><div class="v" style="color:#FF851B">{difficulty if difficulty and str(difficulty) != 'nan' else 'N/A'}</div><div class="l">Difficulty</div></div>
-                        <div class="pcard-stat"><div class="v" style="color:#2ECC40;font-size:1.4em">{ta_display}</div><div class="l">Would Retake</div></div>
-                    </div>
-                    <div class="pcard-num">Based on {num_display} student ratings</div>
-                    {"<div class='pcard-tags-lbl'>Student Tags</div><div>" + tags_html + "</div>" if tags_html else ""}
-                    {"<br><a href='" + str(url) + "' target='_blank' class='rmp-link'>🔗 View Full RMP Profile</a>" if url and str(url) != 'nan' else ""}
-                </div>
-                """
-                components.html(card_html, height=420)
+                render_prof_card(info, st.session_state.sel_prof_name)
             else:
-                st.info(f"No RMP data found for {st.session_state.selected_prof_name}.")
-
-            if st.button("✖ Close Professor Card"):
-                st.session_state.selected_prof = None
-                st.session_state.selected_prof_name = None
+                st.info(f"No RMP data found for {st.session_state.sel_prof_name}.")
+            if st.button("✖  Close Professor Card", key="close_prof"):
+                st.session_state.sel_prof_key  = None
+                st.session_state.sel_prof_name = None
                 st.rerun()
-
             st.markdown("---")
 
-        # --- FILTERS ---
-        st.sidebar.header("( 🔍 ) FILTERS")
-        all_depts = sorted(full_df['dept'].unique().tolist())
-        selected_dept = st.sidebar.selectbox("Select Department", options=[" "] + all_depts, key="dept_query")
-        course_q = st.sidebar.text_input("COURSE #", key="course_query").strip().upper()
-        prof_q = st.sidebar.text_input("PROFESSOR NAME", key="prof_query").strip().upper()
-        if st.sidebar.button("( ✖ ) Clear All", on_click=reset_filters): st.rerun()
+        # Filter
+        df = full_df.copy()
+        if selected_dept:
+            df = df[df["dept"] == selected_dept]
+        if course_q:
+            df = df[df["course"].str.contains(course_q, na=False)]
+        if prof_q:
+            df = df[df["instructor"].str.contains(prof_q, na=False)]
 
-        st.sidebar.markdown("---")
-        st.sidebar.subheader("( 📝 ) GRADING SYSTEM")
-        st.sidebar.markdown("* **STRESSFUL:** GPA < 2.5\n* **CHILL:** GPA 2.5 - 3.3\n* **EASY:** GPA > 3.3")
+        if df.empty:
+            st.warning("No results found. Try adjusting the filters.")
+            return
 
-        # --- FILTER DATA ---
-        data = full_df.copy()
-        if selected_dept != " ": data = data[data['dept'] == selected_dept]
-        if course_q: data = data[data['course'].str.contains(course_q, na=False)]
-        if prof_q: data = data[data['instructor'].str.contains(prof_q, na=False)]
+        df   = df.sort_values(["course", "year"], ascending=[True, False])
+        shown = df.head(25)
 
-        if not data.empty:
-            for idx, row in data.head(20).iterrows():
-                gpa_val = row[gpa_col]
-                if gpa_val < 2.5:
-                    status, color, shadow = "STRESSFUL", "#FF4136", "rgba(255,65,54,0.4)"
-                elif gpa_val > 3.3:
-                    status, color, shadow = "EASY", "#2ECC40", "rgba(46,204,64,0.4)"
-                else:
-                    status, color, shadow = "CHILL", "#0074D9", "rgba(0,116,217,0.4)"
+        st.markdown(f"""
+<div style="font-family:'Orbitron',sans-serif;font-size:.75em;
+            color:rgba(255,215,0,.45);letter-spacing:2px;margin-bottom:18px;">
+  SHOWING {len(shown)} OF {len(df)} RESULTS
+</div>""", unsafe_allow_html=True)
 
-                prof_display = row['instructor']
-                prof_key = row.get('join_key', '')
-                has_rmp = prof_key in rmp_lookup
+        for idx, row in shown.iterrows():
+            gpa_val          = row[gpa_col]
+            status, clr, shd = gpa_badge(gpa_val)
+            prof_name        = row["instructor"]
+            jk               = row.get("join_key", "")
+            has_rmp          = jk in rmp_lookup
 
-                with st.container(border=True):
-                    colA, colB = st.columns([2, 1])
-                    with colA:
-                        st.markdown(f"### {row['course']} | {row['quarter']} {row['year']}")
+            with st.container(border=True):
+                col_info, col_chart = st.columns([3, 2])
 
-                        # Professor name as clickable button if RMP data exists
-                        if has_rmp:
-                            btn_col, spacer = st.columns([3, 5])
-                            with btn_col:
-                                if st.button(
-                                    f"👤 {prof_display}",
-                                    key=f"prof_btn_{idx}",
-                                    help="Click to view RMP profile",
-                                    type="secondary"
-                                ):
-                                    st.session_state.selected_prof = prof_key
-                                    st.session_state.selected_prof_name = prof_display
-                                    st.rerun()
-                        else:
-                            st.markdown(f"**Instructor:** {prof_display}")
+                with col_info:
+                    st.markdown(
+                        f'<div style="font-family:Orbitron,sans-serif;font-size:1.05em;'
+                        f'font-weight:700;color:#e8f4ff;margin-bottom:4px;">'
+                        f'{row["course"]}'
+                        f'<span style="color:#445;font-size:.78em;margin-left:10px;">'
+                        f'{row["quarter"]} {row["year"]}</span></div>',
+                        unsafe_allow_html=True
+                    )
 
+                    if has_rmp:
+                        pb_col, _ = st.columns([2, 3])
+                        with pb_col:
+                            if st.button(
+                                f"👤  {prof_name}",
+                                key=f"pb_{idx}",
+                                help="Click to view RMP profile",
+                            ):
+                                st.session_state.sel_prof_key  = jk
+                                st.session_state.sel_prof_name = prof_name
+                                st.rerun()
+                    else:
                         st.markdown(
-                            f"""<div style="display:flex;align-items:center;gap:10px;margin-top:10px;">
-                            <span style="font-weight:bold;color:white;">GPA: {gpa_val:.2f}</span>
-                            <span style="background:{color};color:white;padding:4px 12px;border-radius:20px;font-size:0.8em;font-weight:900;box-shadow:0 0 10px {shadow};text-transform:uppercase;">{status}</span>
-                            {"<span style='font-size:0.75em;color:#FFD700;'>⭐ RMP Available</span>" if has_rmp else ""}
-                            </div>""",
+                            f'<div style="font-family:Rajdhani,sans-serif;font-size:1em;'
+                            f'color:#667;margin:4px 0 6px;">👤 {prof_name}</div>',
                             unsafe_allow_html=True
                         )
-                    with colB:
-                        grades = pd.DataFrame({
-                            'Grade': ['A', 'B', 'C', 'D', 'F'],
-                            'Count': [row['a'], row['b'], row['c'], row['d'], row['f']]
-                        })
-                        fig = px.bar(
-                            grades, x='Grade', y='Count', color='Grade',
-                            color_discrete_map={'A': '#2ECC40', 'B': '#0074D9', 'C': '#FFDC00', 'D': '#FF851B', 'F': '#FF4136'},
-                            template="plotly_dark", height=130
-                        )
-                        fig.update_layout(margin=dict(l=0, r=0, t=10, b=0), showlegend=False, xaxis_title=None, yaxis_title=None)
-                        st.plotly_chart(fig, use_container_width=True, key=f"fig_{idx}", config={'displayModeBar': False})
-        else:
-            st.warning("No matches found.")
+
+                    rmp_pill = (
+                        '<span style="font-size:.7em;color:#FFD700;'
+                        'background:rgba(255,215,0,.08);border:1px solid rgba(255,215,0,.22);'
+                        'padding:2px 10px;border-radius:12px;margin-left:8px;">⭐ RMP</span>'
+                        if has_rmp else ""
+                    )
+                    txt_col = "#000" if status == "EASY" else "#fff"
+                    st.markdown(
+                        f'<div style="display:flex;align-items:center;gap:8px;margin-top:6px;">'
+                        f'<span style="font-family:Orbitron,sans-serif;font-size:.88em;'
+                        f'font-weight:700;color:#cde;">GPA {gpa_val:.2f}</span>'
+                        f'<span style="background:{clr};color:{txt_col};'
+                        f'padding:4px 14px;border-radius:20px;font-size:.76em;font-weight:900;'
+                        f'box-shadow:0 0 14px {shd};letter-spacing:1px;">{status}</span>'
+                        f'{rmp_pill}</div>',
+                        unsafe_allow_html=True
+                    )
+
+                with col_chart:
+                    grades = pd.DataFrame({
+                        "Grade": ["A", "B", "C", "D", "F"],
+                        "Count": [
+                            row.get("a", 0), row.get("b", 0),
+                            row.get("c", 0), row.get("d", 0), row.get("f", 0)
+                        ],
+                    })
+                    fig = px.bar(
+                        grades, x="Grade", y="Count", color="Grade",
+                        color_discrete_map={
+                            "A": "#2ECC40", "B": "#0074D9",
+                            "C": "#FFDC00", "D": "#FF851B", "F": "#FF4136"
+                        },
+                        template="plotly_dark", height=120,
+                    )
+                    fig.update_layout(
+                        margin=dict(l=0, r=0, t=4, b=0),
+                        showlegend=False,
+                        xaxis_title=None, yaxis_title=None,
+                        paper_bgcolor="rgba(0,0,0,0)",
+                        plot_bgcolor="rgba(0,0,0,0)",
+                        xaxis=dict(tickfont=dict(size=11, color="#aaa")),
+                        yaxis=dict(tickfont=dict(size=10, color="#555")),
+                    )
+                    st.plotly_chart(
+                        fig, use_container_width=True,
+                        key=f"fig_{idx}",
+                        config={"displayModeBar": False},
+                    )
 
 
 if __name__ == "__main__":
