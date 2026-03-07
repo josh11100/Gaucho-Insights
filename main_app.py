@@ -322,7 +322,7 @@ def render_hero():
 <div class="hero" id="hero">
   <div class="wrap">
     <div class="title" id="title">⬡ GAUCHO INSIGHTS ⬡</div>
-    <div class="sub">UCSB GRADE ANALYTICS DASHBOARD</div>
+    <div class="sub">( ˇ෴ˇ ) UCSB GRADE ANALYTICS DASHBOARD</div>
   </div>
 </div>
 <script>
@@ -365,25 +365,25 @@ p{font-family:'Rajdhani',sans-serif;font-size:1.15em;line-height:1.75;color:#c8d
   <div class="card" id="cd">
     <canvas id="cv"></canvas>
     <div class="content">
-      <h1>WELCOME GAUCHOS! ٩(◕‿◕)۶</h1>
+      <h1>WELCOME GAUCHOS! ٩(＾◡＾)۶</h1>
       <p>Gaucho Insights lets you see how stressful or easy any UCSB class is before you register —
          based on real historical grade distributions and RateMyProfessors data.
          <strong style="color:#FFD700">Search by department, course number, or professor name.</strong></p>
       <div class="grid">
         <div class="box" style="border-left:4px solid #FFD700;padding-left:18px">
-          <div class="bt" style="color:#FFD700">📍 MISSION</div>
+          <div class="bt" style="color:#FFD700">໒(⊙ᴗ⊙)७ MISSION</div>
           <div class="bb">Help UCSB students make smarter scheduling decisions with real data.</div>
         </div>
         <div class="box" style="border-left:4px solid #5bb8ff;padding-left:18px">
-          <div class="bt" style="color:#5bb8ff">🔍 SEARCH TOOL</div>
+          <div class="bt" style="color:#5bb8ff">(✌ﾟ∀ﾟ)☞ SEARCH TOOL</div>
           <div class="bb">Filter classes and click any professor name to see their full RMP profile + GPA history.</div>
         </div>
         <div class="box" style="border-left:4px solid #2ECC40;padding-left:18px">
-          <div class="bt" style="color:#2ECC40">✅ EASY  › 3.5 avg GPA</div>
+          <div class="bt" style="color:#2ECC40">ƪ( ` ▿▿▿▿ ´ ƪ) EASY  › 3.5 avg GPA</div>
           <div class="bb">Class is known to be manageable. High average grades historically.</div>
         </div>
         <div class="box" style="border-left:4px solid #FF4136;padding-left:18px">
-          <div class="bt" style="color:#FF4136">💀 STRESSFUL  ‹ 3.0 avg GPA</div>
+          <div class="bt" style="color:#FF4136">(ノಠ益ಠ)ノ彡 STRESSFUL ‹ 3.0 avg GPA</div>
           <div class="bb">Historically tough. Prepare carefully or choose a different section.</div>
         </div>
       </div>
@@ -445,7 +445,7 @@ def render_info_card():
 </style>
 <div class="sc" id="sc">
   <div class="cd" id="cd">
-    <div><div class="t">📊 DATA INFO</div>
+    <div><div class="t">◝(๑꒪່౪̮꒪່๑)◜ DATA INFO</div>
     <div class="b"><b>Coverage:</b> Through Summer 2025<br><b>Source:</b> UCSB Registrar + RMP<br><b>Built by:</b> Joshua Chung</div></div>
     <div class="h">Hover to tilt ↗</div>
   </div>
@@ -517,7 +517,7 @@ def render_prof_card(info: dict, prof_name: str, prof_history_df: pd.DataFrame, 
 
     dept_badge = f'<span class="dept">{dept}</span>' if dept and str(dept) != "nan" else ""
     rmp_btn    = (
-        f'<a href="{url}" target="_blank" class="rmp-btn">🔗 View Full RMP Profile</a>'
+        f'<a href="{url}" target="_blank" class="rmp-btn">(づ ◕‿◕ )づ View Full RMP Profile</a>'
         if url and str(url) != "nan" else ""
     )
 
@@ -574,7 +574,7 @@ body{{background:transparent;overflow:hidden}}
 </style>
 <div class="scene" id="sc">
   <div class="pcard" id="cd">
-    <div class="pname">👤 {prof_name}</div>
+    <div class="pname">( ˘▽˘) {prof_name}</div>
     {dept_badge}
     <div class="stats">
       <div class="stat"><div class="v" style="color:{r_color}">{r_str}</div><div class="l">Rating</div></div>
@@ -600,12 +600,12 @@ sc.addEventListener('mouseleave',()=>{{cd.style.transform='rotateY(0) rotateX(0)
     if not prof_history_df.empty and gpa_col in prof_history_df.columns:
         st.markdown(
             '<div style="font-family:Orbitron,sans-serif;font-size:.78em;'
-            'color:#FFD700;letter-spacing:2px;margin:24px 0 4px;">📈 GPA HISTORY — INTERACTIVE 3D</div>',
+            'color:#FFD700;letter-spacing:2px;margin:24px 0 4px;">ᕙ(⇀‸↼‶)ᕗ GPA HISTORY — INTERACTIVE 3D</div>',
             unsafe_allow_html=True,
         )
         st.markdown(
             '<div style="font-family:Rajdhani,sans-serif;font-size:.82em;color:#556;'
-            'margin:0 0 14px;">🖱️ Drag to rotate · Scroll to zoom · Hover dots for details'
+            'margin:0 0 14px;">( ≚ᄌ≚ )>⌐■-■ Drag to rotate · Scroll to zoom · Hover dots for details'
             ' &nbsp;|&nbsp; <b style="color:#aaa">X</b> = Term &nbsp;'
             '<b style="color:#aaa">Y</b> = Course &nbsp;'
             '<b style="color:#aaa">Z</b> = Avg GPA</div>',
@@ -791,7 +791,7 @@ sc.addEventListener('mouseleave',()=>{{cd.style.transform='rotateY(0) rotateX(0)
         st.markdown(
             f'<div style="margin:10px 0 20px;">'
             f'<div style="font-family:Orbitron,sans-serif;font-size:.68em;color:#FFD700;'
-            f'letter-spacing:2px;margin-bottom:10px;">COURSES</div>'
+            f'letter-spacing:2px;margin-bottom:10px;">( ◐ω◑ ) COURSES</div>'
             f'<div style="display:flex;flex-wrap:wrap;gap:8px;">{legend_items}</div>'
             f'</div>',
             unsafe_allow_html=True,
@@ -808,7 +808,7 @@ sc.addEventListener('mouseleave',()=>{{cd.style.transform='rotateY(0) rotateX(0)
         summary["Avg GPA"] = summary["Avg GPA"].map("{:.2f}".format)
         st.markdown(
             '<div style="font-family:Orbitron,sans-serif;font-size:.72em;'
-            'color:#FFD700;letter-spacing:2px;margin:14px 0 8px;">📋 COURSE SUMMARY</div>',
+            'color:#FFD700;letter-spacing:2px;margin:14px 0 8px;">໒(⊙ᴗ⊙)७✎▤ COURSE SUMMARY</div>',
             unsafe_allow_html=True,
         )
         st.dataframe(
@@ -826,7 +826,7 @@ def main():
 
     render_hero()
 
-    tab_home, tab_search = st.tabs(["🏠  HOME", "🔍  SEARCH TOOL"])
+    tab_home, tab_search = st.tabs(["( ˘▽˘)っ♨  HOME", "(✌ﾟ∀ﾟ)☞  SEARCH TOOL"])
 
     # ── HOME ────────────────────────────────
     with tab_home:
@@ -842,7 +842,7 @@ def main():
             border-radius:18px;padding:22px 24px;margin-top:16px;
             font-family:'Rajdhani',sans-serif;">
   <div style="font-family:'Orbitron',sans-serif;font-size:.78em;color:#FFD700;
-              margin-bottom:14px;letter-spacing:1px;">📈 GRADING LEGEND</div>
+              margin-bottom:14px;letter-spacing:1px;">ƪ(=ｘωｘ=ƪ) GRADING LEGEND</div>
   <div style="margin-bottom:10px">
     <span style="background:#2ECC40;color:#000;padding:3px 12px;border-radius:20px;
                  font-weight:700;font-size:.85em;">EASY</span>
@@ -870,7 +870,7 @@ def main():
 <div style="font-family:'Orbitron',sans-serif;color:#FFD700;font-size:.82em;
             letter-spacing:2px;padding:10px 0 6px;
             border-bottom:1px solid rgba(255,215,0,.2);margin-bottom:16px;">
-  🔍 FILTERS
+  ( ͡° ͜ʖ ͡°) FILTERS
 </div>
 """, unsafe_allow_html=True)
             all_depts     = [""] + sorted(full_df["dept"].unique().tolist())
@@ -882,11 +882,11 @@ def main():
             )
             course_q = st.text_input("Course Number (e.g. 120A, 5A, 10)", key="course_q", on_change=dismiss_prof).strip().upper()
             prof_q   = st.text_input("Professor Name", key="prof_q", on_change=dismiss_prof).strip().upper()
-            st.button("✖  Clear Filters", on_click=clear_filters, use_container_width=True)
+            st.button("(シ_ _)シ  Clear Filters", on_click=clear_filters, use_container_width=True)
             st.markdown("---")
             st.markdown("""
 <div style="font-family:'Rajdhani',sans-serif;font-size:.88em;color:#556;line-height:1.7;">
-<b style="color:#FFD700;">⭐ RMP</b> badge = click professor name to view RateMyProfessors data + GPA history.
+<b style="color:#FFD700;">(✦ ‿ ✦) RMP</b> badge = click professor name to view RateMyProfessors data + GPA history.
 </div>
 """, unsafe_allow_html=True)
 
@@ -905,7 +905,7 @@ def main():
                 if not prof_hist.empty:
                     render_prof_card({}, st.session_state.sel_prof_name, prof_hist, gpa_col)
 
-            if st.button("✖  Close Professor Card", key="close_prof"):
+            if st.button("(シ_ _)シ  Close Professor Card", key="close_prof"):
                 st.session_state.sel_prof_key  = None
                 st.session_state.sel_prof_name = None
                 st.rerun()
@@ -959,7 +959,7 @@ def main():
                         pb_col, _ = st.columns([2, 3])
                         with pb_col:
                             if st.button(
-                                f"⭐  {prof_name}",
+                                f"(✦ ‿ ✦)  {prof_name}",
                                 key=f"pb_{idx}",
                                 help="Click to view RMP profile + GPA history",
                             ):
@@ -969,14 +969,14 @@ def main():
                     else:
                         st.markdown(
                             f'<div style="font-family:Rajdhani,sans-serif;font-size:1em;'
-                            f'color:#667;margin:4px 0 6px;">👤 {prof_name}</div>',
+                            f'color:#667;margin:4px 0 6px;">( ˘▽˘) {prof_name}</div>',
                             unsafe_allow_html=True
                         )
 
                     rmp_pill = (
                         '<span style="font-size:.7em;color:#FFD700;'
                         'background:rgba(255,215,0,.08);border:1px solid rgba(255,215,0,.22);'
-                        'padding:2px 10px;border-radius:12px;margin-left:8px;">⭐ RMP</span>'
+                        'padding:2px 10px;border-radius:12px;margin-left:8px;">(✦ ‿ ✦) RMP</span>'
                         if has_rmp else ""
                     )
                     txt_col = "#000" if status == "EASY" else "#fff"
