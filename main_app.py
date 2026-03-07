@@ -521,47 +521,80 @@ def render_prof_card(info: dict, prof_name: str, prof_history_df: pd.DataFrame, 
         if url and str(url) != "nan" else ""
     )
 
+    # Dynamic height: base + extra for tags row
+    has_tags   = bool(tags_html)
+    card_h     = 420 + (70 if has_tags else 0)
+    scene_h    = card_h + 40
+
     components.html(f"""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Rajdhani:wght@400;600;700&display=swap');
-*{{margin:0;padding:0;box-sizing:border-box}}body{{background:transparent}}
-.pcard{{background:linear-gradient(140deg,#001428 0%,#00184a 60%,#002255 100%);
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@400;600;700&display=swap');
+*{{margin:0;padding:0;box-sizing:border-box}}
+body{{background:transparent;overflow:hidden}}
+.scene{{perspective:1100px;width:100%;height:{scene_h}px;
+        display:flex;justify-content:center;align-items:center}}
+.pcard{{width:98%;
+        background:linear-gradient(140deg,#001428 0%,#001e4a 55%,#002255 100%);
         border:2px solid rgba(255,215,0,.55);border-radius:22px;
-        padding:30px 34px;margin:6px 0 16px;
-        box-shadow:0 0 50px rgba(255,215,0,.08),0 24px 50px rgba(0,0,0,.55);
-        font-family:'Rajdhani',sans-serif;color:white}}
-.pname{{font-family:'Orbitron',sans-serif;font-size:1.3em;font-weight:700;color:#FFD700;margin-bottom:6px}}
-.dept{{background:rgba(0,116,217,.22);color:#5bb8ff;border:1px solid #0074D9;
-       padding:3px 14px;border-radius:20px;font-size:.82em;display:inline-block;margin-bottom:18px}}
-.stats{{display:flex;gap:14px;margin-bottom:16px}}
-.stat{{flex:1;background:rgba(255,255,255,.05);border-radius:14px;padding:16px 10px;
-       text-align:center;border:1px solid rgba(255,255,255,.08)}}
+        padding:28px 32px 24px;
+        box-shadow:0 0 60px rgba(255,215,0,.07),0 30px 60px rgba(0,0,0,.65),
+                   inset 0 0 40px rgba(0,116,217,.05);
+        font-family:'Rajdhani',sans-serif;color:white;
+        transform-style:preserve-3d;transition:transform .1s ease;
+        position:relative;overflow:hidden}}
+/* animated shimmer line */
+.pcard::before{{content:'';position:absolute;top:0;left:-60%;width:40%;height:100%;
+  background:linear-gradient(105deg,transparent 40%,rgba(255,215,0,.06) 50%,transparent 60%);
+  animation:shimmer 4s infinite;pointer-events:none}}
+@keyframes shimmer{{0%{{left:-60%}}100%{{left:130%}}}}
+.pname{{font-family:'Orbitron',sans-serif;font-size:1.25em;font-weight:900;
+        color:#FFD700;margin-bottom:8px;
+        text-shadow:0 0 14px rgba(255,215,0,.35)}}
+.dept{{background:rgba(0,116,217,.22);color:#5bb8ff;border:1px solid rgba(0,116,217,.5);
+       padding:3px 14px;border-radius:20px;font-size:.8em;display:inline-block;margin-bottom:20px}}
+.stats{{display:flex;gap:12px;margin-bottom:14px}}
+.stat{{flex:1;background:rgba(255,255,255,.05);border-radius:14px;padding:18px 10px;
+       text-align:center;border:1px solid rgba(255,255,255,.07);
+       transition:background .2s,border-color .2s}}
+.stat:hover{{background:rgba(255,255,255,.09);border-color:rgba(255,215,0,.25)}}
 .stat .v{{font-size:2em;font-weight:900;line-height:1;font-family:'Orbitron',sans-serif}}
-.stat .l{{font-size:.67em;color:#667;margin-top:6px;text-transform:uppercase;letter-spacing:.6px}}
-.num{{text-align:center;color:#445;font-size:.8em;margin:-8px 0 14px}}
-.tag-lbl{{font-size:.7em;color:#445;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}}
-.tag{{background:rgba(0,204,255,.1);color:#00CCFF;border:1px solid rgba(0,204,255,.35);
-      padding:5px 13px;border-radius:20px;display:inline-block;margin:3px;font-size:.78em;font-weight:600}}
-.rmp-btn{{display:inline-block;margin-top:16px;padding:12px 28px;
-          background:linear-gradient(135deg,#0077b5,#00a0dc);color:white;text-decoration:none;
-          border-radius:14px;font-weight:800;font-size:.93em;
-          box-shadow:0 6px 20px rgba(0,119,181,.4);border:2px solid rgba(255,255,255,.15);
-          font-family:'Rajdhani',sans-serif;transition:background .2s}}
-.rmp-btn:hover{{background:linear-gradient(135deg,#0087cc,#00bbf5)}}
+.stat .l{{font-size:.65em;color:#556;margin-top:7px;text-transform:uppercase;letter-spacing:.8px}}
+.num{{text-align:center;color:#445;font-size:.78em;margin:-4px 0 16px}}
+.tag-lbl{{font-size:.68em;color:#445;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}}
+.tag{{background:rgba(0,204,255,.1);color:#00CCFF;border:1px solid rgba(0,204,255,.3);
+      padding:4px 12px;border-radius:20px;display:inline-block;margin:3px;
+      font-size:.76em;font-weight:600}}
+.rmp-btn{{display:inline-block;margin-top:18px;padding:11px 26px;
+          background:linear-gradient(135deg,#0077b5,#00a0dc);color:white;
+          text-decoration:none;border-radius:14px;font-weight:800;font-size:.9em;
+          box-shadow:0 6px 22px rgba(0,119,181,.45);
+          border:1.5px solid rgba(255,255,255,.15);
+          font-family:'Rajdhani',sans-serif;transition:background .2s,transform .15s}}
+.rmp-btn:hover{{background:linear-gradient(135deg,#0087cc,#00bbf5);transform:translateY(-2px)}}
 </style>
-<div class="pcard">
-  <div class="pname">👤 {prof_name}</div>
-  {dept_badge}
-  <div class="stats">
-    <div class="stat"><div class="v" style="color:{r_color}">{r_str}</div><div class="l">Rating</div></div>
-    <div class="stat"><div class="v" style="color:#FF851B">{d_str}</div><div class="l">Difficulty</div></div>
-    <div class="stat"><div class="v" style="color:#2ECC40;font-size:1.45em">{ta_str}</div><div class="l">Would Retake</div></div>
+<div class="scene" id="sc">
+  <div class="pcard" id="cd">
+    <div class="pname">👤 {prof_name}</div>
+    {dept_badge}
+    <div class="stats">
+      <div class="stat"><div class="v" style="color:{r_color}">{r_str}</div><div class="l">Rating</div></div>
+      <div class="stat"><div class="v" style="color:#FF851B">{d_str}</div><div class="l">Difficulty</div></div>
+      <div class="stat"><div class="v" style="color:#2ECC40;font-size:1.4em">{ta_str}</div><div class="l">Would Retake</div></div>
+    </div>
+    <div class="num">Based on {num_str} student ratings</div>
+    {"<div class='tag-lbl'>Student Tags</div><div>" + tags_html + "</div>" if tags_html else ""}
+    {rmp_btn}
   </div>
-  <div class="num">Based on {num_str} student ratings</div>
-  {"<div class='tag-lbl'>Student Tags</div><div>" + tags_html + "</div>" if tags_html else ""}
-  {rmp_btn}
 </div>
-""", height=360)
+<script>
+const sc=document.getElementById('sc'),cd=document.getElementById('cd');
+sc.addEventListener('mousemove',e=>{{
+  const r=sc.getBoundingClientRect();
+  cd.style.transform=`rotateY(${{(e.clientX-r.left-r.width/2)/36}}deg) rotateX(${{-(e.clientY-r.top-r.height/2)/24}}deg) translateZ(18px)`;
+}});
+sc.addEventListener('mouseleave',()=>{{cd.style.transform='rotateY(0) rotateX(0) translateZ(0)';}});
+</script>
+""", height=scene_h)
 
     # ── GPA History 3D Scatter Chart ───────────────────────────────
     if not prof_history_df.empty and gpa_col in prof_history_df.columns:
