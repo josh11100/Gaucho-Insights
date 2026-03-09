@@ -247,6 +247,8 @@ for key in ["dept_q", "course_q", "prof_q"]:
         st.session_state[key] = ""
 if "parsed_schedule" not in st.session_state:
     st.session_state.parsed_schedule = []
+if "gpa3d_active_courses" not in st.session_state:
+    st.session_state.gpa3d_active_courses = set()
 
 
 def clear_filters():
@@ -525,8 +527,8 @@ def render_prof_card(info: dict, prof_name: str, prof_history_df: pd.DataFrame, 
 <div class="scene" id="sc"><div class="pcard" id="cd">
   <div class="pname">{prof_name}</div>{dept_badge}
   <div class="stats">
-    <div class="stat"><div class="v" style="color:{r_color}">{r_str}</div><div class="l">Rating</div></div>
-    <div class="stat"><div class="v" style="color:#FF851B">{d_str}</div><div class="l">Difficulty</div></div>
+    <div class="stat"><div class="v" style="color:{r_color}">{r_str}<span style="font-size:0.45em;color:#556;font-weight:400">/5</span></div><div class="l">Rating</div></div>
+    <div class="stat"><div class="v" style="color:#FF851B">{d_str}<span style="font-size:0.45em;color:#556;font-weight:400">/5</span></div><div class="l">Difficulty</div></div>
     <div class="stat"><div class="v" style="color:#2ECC40;font-size:1.4em">{ta_str}</div><div class="l">Would Retake</div></div>
   </div>
   <div class="num">Based on {num_str} student ratings</div>
@@ -627,22 +629,142 @@ sc.addEventListener('mouseleave',()=>{{cd.style.transform='rotateY(0) rotateX(0)
                         bgcolor="rgba(0,0,0,0)", itemsizing="constant",
                         bordercolor="rgba(255,215,0,0.15)", borderwidth=1, visible=False))
 
-        st.plotly_chart(fig, use_container_width=True,
-                        key=f"prof_hist_{st.session_state.sel_prof_key}",
+        # ── Course filter state ──────────────────────────────────────────────
+        prof_key = st.session_state.sel_prof_key
+        state_key = f"gpa3d_active_{prof_key}"
+        if state_key not in st.session_state or st.session_state[state_key] is None:
+            st.session_state[state_key] = set(courses)
+
+        active_courses = st.session_state[state_key]
+
+        # ── Re-build fig with only active courses visible ────────────────────
+        fig2 = go.Figure()
+        filtered_courses = [c for c in courses if c in active_courses]
+
+        if not filtered_courses:
+            filtered_courses = courses  # fallback: show all if all deselected
+
+        for ci, course in enumerate(courses):
+            if course not in active_courses:
+                continue
+            sub   = hist[hist["course"] == course].copy()
+            color = palette[ci % len(palette)]
+            xs = [term_idx[t] for t in sub["term"]]
+            ys = [course_idx[c] for c in sub["course"]]
+            zs = sub[gpa_col].tolist()
+
+            fig2.add_trace(go.Scatter3d(x=xs, y=ys, z=zs, mode="markers+lines", name=course,
+                legendgroup=course, showlegend=False,
+                line=dict(color=color, width=2, dash="dot"),
+                marker=dict(size=6, color=color, opacity=0.95, symbol="circle",
+                            line=dict(color="rgba(255,255,255,0.4)", width=1)),
+                hovertemplate=(f"<b>{course}</b><br>Term: <b>%{{customdata}}</b><br>"
+                               "Avg GPA: <b>%{z:.2f}</b><extra></extra>"),
+                customdata=sub["term"].tolist()))
+
+            dx, dy, dz = [], [], []
+            for x, y, z in zip(xs, ys, zs):
+                dx += [x,x,None]; dy += [y,y,None]; dz += [2.0,z,None]
+            fig2.add_trace(go.Scatter3d(x=dx, y=dy, z=dz, mode="lines",
+                line=dict(color=color,width=1,dash="dot"), opacity=0.25,
+                showlegend=False, hoverinfo="skip", legendgroup=course))
+            fig2.add_trace(go.Scatter3d(x=xs, y=ys, z=[z+0.13 for z in zs], mode="text",
+                text=[f"{z:.2f}" for z in zs],
+                textfont=dict(size=13,color="white",family="Orbitron"),
+                showlegend=False, hoverinfo="skip", legendgroup=course))
+
+        xr=[-0.5, len(terms)-0.5]; yr=[-0.5, len(courses)-0.5]
+        for ref_z, ref_color, ref_name in [
+            (3.5,"rgba(46,204,64,0.15)","── EASY ≥ 3.5"),
+            (3.0,"rgba(255,65,54,0.15)","── STRESSFUL < 3.0")]:
+            fig2.add_trace(go.Surface(
+                x=[[xr[0],xr[1]],[xr[0],xr[1]]], y=[[yr[0],yr[0]],[yr[1],yr[1]]],
+                z=[[ref_z,ref_z],[ref_z,ref_z]], colorscale=[[0,ref_color],[1,ref_color]],
+                showscale=False, opacity=0.55, name=ref_name, showlegend=True, hoverinfo="skip"))
+
+        fig2.update_layout(
+            template="plotly_dark", height=540, margin=dict(l=0,r=0,t=10,b=0),
+            paper_bgcolor="rgba(0,0,0,0)",
+            scene=dict(
+                bgcolor="rgba(0,6,18,1)",
+                xaxis=dict(tickvals=list(range(len(terms))), ticktext=terms,
+                           tickfont=dict(size=11,color="#bbc"), gridcolor="rgba(255,255,255,0.03)",
+                           showbackground=True, backgroundcolor="rgba(0,8,24,0.5)",
+                           title=dict(text="Term",font=dict(size=13,color="#ccd"))),
+                yaxis=dict(tickvals=list(range(len(courses))), ticktext=courses,
+                           tickfont=dict(size=11,color="#ddd"), gridcolor="rgba(255,255,255,0.03)",
+                           showbackground=True, backgroundcolor="rgba(0,8,24,0.5)",
+                           title=dict(text="Course",font=dict(size=13,color="#ccd"))),
+                zaxis=dict(range=[2.0,4.3], tickfont=dict(size=11,color="#bbc"),
+                           gridcolor="rgba(255,255,255,0.03)", showbackground=True,
+                           backgroundcolor="rgba(0,10,28,0.7)",
+                           title=dict(text="Avg GPA",font=dict(size=13,color="#ccd"))),
+                camera=dict(eye=dict(x=1.8,y=-1.8,z=1.0), up=dict(x=0,y=0,z=1)),
+                aspectmode="manual",
+                aspectratio=dict(x=max(1.4,len(terms)*0.28), y=max(0.7,len(courses)*0.22), z=0.9)),
+            legend=dict(x=0.01,y=0.99, font=dict(family="Rajdhani",size=11,color="#aaa"),
+                        bgcolor="rgba(0,0,0,0)", itemsizing="constant",
+                        bordercolor="rgba(255,215,0,0.15)", borderwidth=1, visible=False))
+
+        st.plotly_chart(fig2, use_container_width=True,
+                        key=f"prof_hist_{prof_key}_{len(active_courses)}",
                         config={"displayModeBar":True,"displaylogo":False,
                                 "modeBarButtonsToRemove":["toImage"]})
 
-        legend_items = "".join([
-            f'<div style="display:flex;align-items:center;gap:8px;padding:6px 14px;'
-            f'background:rgba(255,255,255,0.04);border-radius:10px;border:1px solid rgba(255,255,255,0.07);">'
-            f'<span style="display:inline-block;width:12px;height:12px;border-radius:50%;'
-            f'background:{palette[ci%len(palette)]};box-shadow:0 0 6px {palette[ci%len(palette)]};flex-shrink:0;"></span>'
-            f'<span style="font-family:Rajdhani,sans-serif;font-size:.88em;color:#ccc;white-space:nowrap;">{course}</span></div>'
-            for ci, course in enumerate(courses)])
-        st.markdown(f'<div style="margin:10px 0 20px;"><div style="font-family:Orbitron,sans-serif;'
-                    f'font-size:.68em;color:#FFD700;letter-spacing:2px;margin-bottom:10px;">COURSES</div>'
-                    f'<div style="display:flex;flex-wrap:wrap;gap:8px;">{legend_items}</div></div>',
-                    unsafe_allow_html=True)
+        # ── Clickable course filter legend ───────────────────────────────────
+        st.markdown(f'<div style="font-family:Orbitron,sans-serif;font-size:.68em;color:#FFD700;'
+                    f'letter-spacing:2px;margin:10px 0 8px;">COURSES '
+                    f'<span style="font-family:Rajdhani,sans-serif;font-size:.85em;color:#556;'
+                    f'letter-spacing:0;font-weight:400;">'
+                    f'— click to show/hide</span></div>', unsafe_allow_html=True)
+
+        btn_cols = st.columns(min(len(courses), 4))
+        for ci, course in enumerate(courses):
+            color = palette[ci % len(palette)]
+            is_active = course in active_courses
+            col = btn_cols[ci % min(len(courses), 4)]
+            with col:
+                # Build styled button label with color dot
+                dot = "●" if is_active else "○"
+                btn_label = f"{dot} {course}"
+                border_style = f"2px solid {color}" if is_active else "2px solid rgba(255,255,255,0.1)"
+                bg_style = f"rgba({int(color[1:3],16)},{int(color[3:5],16)},{int(color[5:7],16)},0.18)" if is_active else "rgba(255,255,255,0.03)"
+
+                st.markdown(f"""
+<style>
+div[data-testid="stButton"] button[kind="secondary"].course-btn-{ci} {{
+    background: {bg_style} !important;
+    border: {border_style} !important;
+    color: {color if is_active else '#555'} !important;
+}}
+</style>""", unsafe_allow_html=True)
+
+                clicked = st.button(
+                    btn_label,
+                    key=f"course_btn_{prof_key}_{ci}",
+                    use_container_width=True,
+                    help=f"{'Hide' if is_active else 'Show'} {course} on the 3D chart"
+                )
+                if clicked:
+                    new_active = set(st.session_state[state_key])
+                    if course in new_active:
+                        if len(new_active) > 1:  # keep at least one visible
+                            new_active.discard(course)
+                    else:
+                        new_active.add(course)
+                    st.session_state[state_key] = new_active
+                    st.rerun()
+
+        # Show/hide all controls
+        ctrl_col1, ctrl_col2, _ = st.columns([1, 1, 4])
+        with ctrl_col1:
+            if st.button("◉ Show All", key=f"show_all_{prof_key}", use_container_width=True):
+                st.session_state[state_key] = set(courses)
+                st.rerun()
+        with ctrl_col2:
+            if st.button("○ Hide All", key=f"hide_all_{prof_key}", use_container_width=True):
+                st.session_state[state_key] = {courses[0]}  # keep first visible
+                st.rerun()
 
         summary = (hist.groupby("course")[gpa_col].agg(["mean","count"]).reset_index()
                    .rename(columns={"mean":"Avg GPA","count":"Sections"})
@@ -1171,11 +1293,11 @@ sc.addEventListener('mouseleave',()=>{cd.style.transform='';});
                             st.markdown(f'''
 <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px;">
   <div style="background:rgba(255,255,255,.05);border-radius:14px;padding:16px;text-align:center;border:1px solid rgba(255,255,255,.08);">
-    <div style="font-family:Orbitron,sans-serif;font-size:2em;font-weight:900;color:{r_clr}">{rmp_rating}</div>
+    <div style="font-family:Orbitron,sans-serif;font-size:2em;font-weight:900;color:{r_clr}">{rmp_rating}<span style="font-size:0.4em;color:#556;font-weight:400">/5</span></div>
     <div style="font-size:.7em;color:#445;margin-top:5px;letter-spacing:.8px;">OVERALL RATING</div></div>
   <div style="display:flex;gap:8px;">
     <div style="flex:1;background:rgba(255,255,255,.05);border-radius:12px;padding:12px;text-align:center;border:1px solid rgba(255,255,255,.07);">
-      <div style="font-family:Orbitron,sans-serif;font-size:1.3em;font-weight:900;color:#FF851B">{rmp_diff}</div>
+      <div style="font-family:Orbitron,sans-serif;font-size:1.3em;font-weight:900;color:#FF851B">{rmp_diff}<span style="font-size:0.45em;color:#556;font-weight:400">/5</span></div>
       <div style="font-size:.6em;color:#445;margin-top:4px;">DIFFICULTY</div></div>
     <div style="flex:1;background:rgba(255,255,255,.05);border-radius:12px;padding:12px;text-align:center;border:1px solid rgba(255,255,255,.07);">
       <div style="font-family:Orbitron,sans-serif;font-size:1.3em;font-weight:900;color:#2ECC40">{ta_str}</div>
