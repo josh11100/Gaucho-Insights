@@ -249,6 +249,8 @@ if "parsed_schedule" not in st.session_state:
     st.session_state.parsed_schedule = []
 if "gpa3d_active_courses" not in st.session_state:
     st.session_state.gpa3d_active_courses = set()
+if "active_tab" not in st.session_state:
+    st.session_state.active_tab = 0  # 0=Home, 1=Search, 2=My Quarter
 
 
 def clear_filters():
@@ -262,6 +264,13 @@ def clear_filters():
 def dismiss_prof():
     st.session_state.sel_prof_key = None
     st.session_state.sel_prof_name = None
+    st.session_state.active_tab = 1  # switch to Search Tool tab
+
+
+def filter_changed():
+    """Called when any sidebar filter changes — jump to Search Tool."""
+    st.session_state.active_tab = 1
+    dismiss_prof()
 
 
 def gpa_badge(gpa):
@@ -868,6 +877,25 @@ def main():
 
     tab_home, tab_search, tab_quarter = st.tabs(["HOME", "SEARCH TOOL", "MY QUARTER"])
 
+    # Auto-switch to the correct tab via JS if filter was changed
+    if st.session_state.active_tab == 1:
+        components.html("""
+<script>
+(function() {
+    function clickTab() {
+        const tabs = window.parent.document.querySelectorAll('[data-baseweb="tab"]');
+        if (tabs.length >= 2) {
+            tabs[1].click();
+        }
+    }
+    // Try immediately and after a short delay for reliability
+    setTimeout(clickTab, 80);
+    setTimeout(clickTab, 250);
+})();
+</script>
+""", height=0)
+        st.session_state.active_tab = 0  # reset so it doesn't re-fire
+
     # ── HOME ────────────────────────────────────────────────────────────────
     with tab_home:
         col_main, col_side = st.columns([5, 2])
@@ -905,12 +933,12 @@ def main():
   FILTERS</div>""", unsafe_allow_html=True)
             all_depts     = [""] + sorted(full_df["dept"].unique().tolist())
             selected_dept = st.selectbox("Department", options=all_depts, index=0,
-                                         key="dept_q", on_change=dismiss_prof,
+                                         key="dept_q", on_change=filter_changed,
                                          format_func=lambda x: "All Departments" if x == "" else x)
             course_q = st.text_input("Course Number (e.g. 120A, 5A, 10)",
-                                     key="course_q", on_change=dismiss_prof).strip().upper()
+                                     key="course_q", on_change=filter_changed).strip().upper()
             prof_q   = st.text_input("Professor Name",
-                                     key="prof_q", on_change=dismiss_prof).strip().upper()
+                                     key="prof_q", on_change=filter_changed).strip().upper()
             st.button("(シ_ _)シ  Clear Filters", on_click=clear_filters, use_container_width=True)
             st.markdown("---")
             st.markdown('<div style="font-family:Rajdhani,sans-serif;font-size:.88em;color:#556;line-height:1.7;">'
