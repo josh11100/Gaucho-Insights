@@ -19,17 +19,19 @@ st.markdown("""
 .stApp { background: #000 !important; color: #fff !important; }
 html, body { background: #000 !important; }
 
+/* ── Tabs ── */
 .stTabs [data-baseweb="tab-list"] {
-    gap: 40px; justify-content: center;
+    gap: 20px; justify-content: center;
     background: rgba(255,255,255,0.03);
-    padding: 10px 20px; border-radius: 16px; margin-bottom: 24px;
+    padding: 8px 12px; border-radius: 16px; margin-bottom: 24px;
     border: 1px solid rgba(255,215,0,0.15);
+    flex-wrap: wrap;
 }
 .stTabs [data-baseweb="tab"] {
-    height: 54px; background: transparent; border-radius: 10px;
-    color: #666; font-size: 18px !important; font-weight: 700;
+    height: 48px; background: transparent; border-radius: 10px;
+    color: #666; font-size: clamp(12px, 2.5vw, 18px) !important; font-weight: 700;
     font-family: 'Orbitron', sans-serif; transition: all 0.25s;
-    padding: 0 20px;
+    padding: 0 12px; white-space: nowrap;
 }
 .stTabs [data-baseweb="tab"]:hover { color: #FFD700; background: rgba(255,215,0,0.07); }
 .stTabs [aria-selected="true"] {
@@ -38,10 +40,12 @@ html, body { background: #000 !important; }
     text-shadow: 0 0 12px rgba(255,215,0,0.5);
 }
 
+/* ── Sidebar ── */
 [data-testid="stSidebar"] { background: #050a14 !important; border-right: 1px solid rgba(255,215,0,0.2) !important; }
 [data-testid="stSidebar"] * { color: #ccc !important; font-family: 'Rajdhani', sans-serif !important; }
 [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 { color: #FFD700 !important; font-family: 'Orbitron', sans-serif !important; font-size: 0.9em !important; }
 
+/* ── Cards ── */
 [data-testid="stVerticalBlockBorderWrapper"] {
     background: rgba(0,20,45,0.8) !important;
     border: 1px solid rgba(0,116,217,0.3) !important;
@@ -54,6 +58,7 @@ html, body { background: #000 !important; }
     box-shadow: 0 0 24px rgba(255,215,0,0.08) !important;
 }
 
+/* ── Buttons ── */
 .stButton > button {
     background: rgba(0,116,217,0.15) !important;
     border: 1px solid rgba(0,116,217,0.5) !important;
@@ -70,6 +75,7 @@ html, body { background: #000 !important; }
     color: #FFD700 !important;
 }
 
+/* ── Inputs ── */
 .stTextInput > div > div > input, .stSelectbox > div > div {
     background: rgba(0,20,50,0.8) !important;
     border: 1px solid rgba(0,116,217,0.3) !important;
@@ -78,9 +84,85 @@ html, body { background: #000 !important; }
     font-family: 'Rajdhani', sans-serif !important;
 }
 
+/* ── Scrollbar ── */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: #000; }
 ::-webkit-scrollbar-thumb { background: rgba(255,215,0,0.3); border-radius: 3px; }
+
+/* ════════════════════════════════════
+   MOBILE / NARROW SCREEN FIXES
+   ════════════════════════════════════ */
+
+/* Stack home page columns on small screens */
+@media (max-width: 768px) {
+    /* Force Streamlit columns to stack vertically */
+    [data-testid="stHorizontalBlock"] {
+        flex-direction: column !important;
+    }
+    [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {
+        width: 100% !important;
+        flex: 1 1 100% !important;
+        min-width: 0 !important;
+    }
+
+    /* Shrink tab font on very small screens */
+    .stTabs [data-baseweb="tab"] {
+        font-size: 11px !important;
+        padding: 0 8px !important;
+        height: 40px !important;
+    }
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 6px !important;
+        padding: 6px 8px !important;
+    }
+
+    /* Make course filter buttons wrap tighter */
+    div[data-testid="stHorizontalBlock"] {
+        flex-wrap: wrap !important;
+    }
+
+    /* Shrink hero title on mobile */
+    .hero-title { font-size: 1.4rem !important; }
+
+    /* Ensure images don't overflow */
+    img { max-width: 100% !important; height: auto !important; }
+
+    /* Stat boxes in quarter tab — wrap on mobile */
+    .quarter-stats { flex-direction: column !important; }
+
+    /* Reduce padding on containers */
+    [data-testid="stVerticalBlockBorderWrapper"] {
+        border-radius: 12px !important;
+        margin-bottom: 8px !important;
+    }
+
+    /* Plotly charts — don't let them overflow */
+    .js-plotly-plot { max-width: 100% !important; overflow: hidden !important; }
+
+    /* Welcome card grid — single column on mobile */
+    .grid { grid-template-columns: 1fr !important; }
+
+    /* Info / linkedin cards full width */
+    .sc { width: 100% !important; }
+    .cd { width: 100% !important; }
+}
+
+/* Medium screens (tablet) */
+@media (max-width: 1024px) and (min-width: 769px) {
+    .stTabs [data-baseweb="tab"] {
+        font-size: 14px !important;
+        padding: 0 14px !important;
+    }
+    .stTabs [data-baseweb="tab-list"] { gap: 12px !important; }
+}
+
+/* Prevent horizontal scroll on the whole app */
+[data-testid="stAppViewContainer"] {
+    overflow-x: hidden !important;
+}
+section[data-testid="stMain"] > div {
+    overflow-x: hidden !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -324,22 +406,22 @@ def render_welcome_card():
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@400;600&display=swap');
 *{margin:0;padding:0;box-sizing:border-box}body{background:transparent;overflow:hidden}
-.scene{perspective:1400px;width:100%;height:620px;display:flex;justify-content:center;align-items:center}
-.card{width:97%;height:580px;background:rgba(0,18,40,.85);border-radius:26px;
+.scene{perspective:1400px;width:100%;min-height:480px;height:auto;display:flex;justify-content:center;align-items:center;padding:10px 0}
+.card{width:97%;background:rgba(0,18,40,.85);border-radius:26px;
       border:1.5px solid rgba(255,215,0,.35);
       box-shadow:0 30px 70px rgba(0,0,0,.7),0 0 60px rgba(0,116,217,.08);
       transform-style:preserve-3d;transition:transform .1s ease;
-      position:relative;overflow:hidden;padding:50px 48px;color:white}
+      position:relative;overflow:hidden;padding:clamp(24px,5vw,50px) clamp(20px,5vw,48px);color:white}
 canvas{position:absolute;top:0;left:0;width:100%;height:100%;z-index:0}
-.content{position:relative;z-index:1;height:100%;display:flex;flex-direction:column;justify-content:center}
-h1{font-family:'Orbitron',sans-serif;font-size:2.1em;font-weight:900;color:#FFD700;
-   text-shadow:0 0 20px rgba(255,215,0,.4);margin-bottom:18px}
-p{font-family:'Rajdhani',sans-serif;font-size:1.15em;line-height:1.75;color:#c8d8ef;margin-bottom:32px}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
-.box{background:rgba(255,255,255,.05);border-radius:16px;padding:20px 22px;backdrop-filter:blur(10px);transition:background .2s}
+.content{position:relative;z-index:1;display:flex;flex-direction:column;justify-content:center}
+h1{font-family:'Orbitron',sans-serif;font-size:clamp(1.2em,3vw,2.1em);font-weight:900;color:#FFD700;
+   text-shadow:0 0 20px rgba(255,215,0,.4);margin-bottom:14px}
+p{font-family:'Rajdhani',sans-serif;font-size:clamp(.95em,2vw,1.15em);line-height:1.75;color:#c8d8ef;margin-bottom:24px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+.box{background:rgba(255,255,255,.05);border-radius:16px;padding:16px 18px;backdrop-filter:blur(10px);transition:background .2s}
 .box:hover{background:rgba(255,255,255,.09)}
-.bt{font-family:'Orbitron',sans-serif;font-size:.82em;font-weight:700;margin-bottom:8px}
-.bb{font-family:'Rajdhani',sans-serif;font-size:.98em;color:#9ab;line-height:1.6}
+.bt{font-family:'Orbitron',sans-serif;font-size:clamp(.7em,.9vw,.82em);font-weight:700;margin-bottom:8px}
+.bb{font-family:'Rajdhani',sans-serif;font-size:clamp(.88em,1.5vw,.98em);color:#9ab;line-height:1.6}
 </style>
 <div class="scene" id="sc">
   <div class="card" id="cd">
@@ -401,7 +483,7 @@ const N=75,pts=Array.from({length:N},()=>({
   requestAnimationFrame(loop);
 })();
 </script>
-""", height=640)
+""", height=700)
 
 
 def render_info_card():
@@ -954,7 +1036,8 @@ def main():
 
     # ── HOME ────────────────────────────────────────────────────────────────
     with tab_home:
-        col_main, col_side = st.columns([5, 2])
+        # On mobile Streamlit stacks columns automatically via CSS above
+        col_main, col_side = st.columns([5, 2], gap="large")
         with col_main:
             render_welcome_card()
         with col_side:
@@ -963,21 +1046,21 @@ def main():
             render_linkedin_card()
             st.markdown("""
 <div style="background:rgba(0,18,40,.7);border:1px solid rgba(255,215,0,.2);
-            border-radius:18px;padding:22px 24px;margin-top:16px;font-family:'Rajdhani',sans-serif;">
-  <div style="font-family:'Orbitron',sans-serif;font-size:.78em;color:#FFD700;
-              margin-bottom:14px;letter-spacing:1px;">GRADING LEGEND</div>
-  <div style="margin-bottom:10px">
-    <span style="background:#2ECC40;color:#000;padding:3px 12px;border-radius:20px;
-                 font-weight:700;font-size:.85em;">EASY</span>
-    <span style="color:#8ab;font-size:.9em;margin-left:8px">Avg GPA &gt; 3.5</span></div>
-  <div style="margin-bottom:10px">
-    <span style="background:#0074D9;color:#fff;padding:3px 12px;border-radius:20px;
-                 font-weight:700;font-size:.85em;">CHILL</span>
-    <span style="color:#8ab;font-size:.9em;margin-left:8px">Avg GPA 3.1 – 3.5</span></div>
-  <div>
-    <span style="background:#FF4136;color:#fff;padding:3px 12px;border-radius:20px;
-                 font-weight:700;font-size:.85em;">STRESSFUL</span>
-    <span style="color:#8ab;font-size:.9em;margin-left:8px">Avg GPA &lt; 3.0</span></div>
+            border-radius:18px;padding:18px 20px;margin-top:16px;font-family:'Rajdhani',sans-serif;">
+  <div style="font-family:'Orbitron',sans-serif;font-size:.75em;color:#FFD700;
+              margin-bottom:12px;letter-spacing:1px;">GRADING LEGEND</div>
+  <div style="margin-bottom:8px;display:flex;align-items:center;gap:10px;">
+    <span style="background:#2ECC40;color:#000;padding:3px 10px;border-radius:20px;
+                 font-weight:700;font-size:.82em;white-space:nowrap;">EASY</span>
+    <span style="color:#8ab;font-size:.88em;">Avg GPA &gt; 3.5</span></div>
+  <div style="margin-bottom:8px;display:flex;align-items:center;gap:10px;">
+    <span style="background:#0074D9;color:#fff;padding:3px 10px;border-radius:20px;
+                 font-weight:700;font-size:.82em;white-space:nowrap;">CHILL</span>
+    <span style="color:#8ab;font-size:.88em;">Avg GPA 3.1 – 3.5</span></div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <span style="background:#FF4136;color:#fff;padding:3px 10px;border-radius:20px;
+                 font-weight:700;font-size:.82em;white-space:nowrap;">STRESSFUL</span>
+    <span style="color:#8ab;font-size:.88em;">Avg GPA &lt; 3.0</span></div>
 </div>""", unsafe_allow_html=True)
 
     # ── SEARCH TOOL ─────────────────────────────────────────────────────────
