@@ -711,106 +711,107 @@ sc.addEventListener('mouseleave',()=>{{cd.style.transform='rotateY(0) rotateX(0)
                         config={"displayModeBar":True,"displaylogo":False,
                                 "modeBarButtonsToRemove":["toImage"]})
 
-        # ── Clickable course filter legend ───────────────────────────────────
+        # ── Clickable course filter legend via components.html ───────────────
         st.markdown(f'<div style="font-family:Orbitron,sans-serif;font-size:.68em;color:#FFD700;'
                     f'letter-spacing:2px;margin:10px 0 8px;">COURSES '
                     f'<span style="font-family:Rajdhani,sans-serif;font-size:.85em;color:#556;'
                     f'letter-spacing:0;font-weight:400;">'
                     f'— click to show/hide</span></div>', unsafe_allow_html=True)
 
-        # Inject one global CSS block that styles each button by matching its text via :has
-        css_rules = []
+        # Build the pill buttons entirely in an HTML component (no CSS fighting Streamlit)
+        pill_btns = []
         for ci, course in enumerate(courses):
             color = palette[ci % len(palette)]
             r, g, b = int(color[1:3], 16), int(color[3:5], 16), int(color[5:7], 16)
             is_active = course in active_courses
-            # Escape special chars for CSS attr selector
-            safe = course.replace('"', '\\"')
-            dot  = "●" if is_active else "○"
-            label = f"{dot} {safe}"
             if is_active:
                 bg     = f"rgba({r},{g},{b},0.18)"
                 border = f"3px solid {color}"
                 clr    = color
-                shadow = f"0 0 12px rgba({r},{g},{b},0.55)"
+                shadow = f"0 0 12px rgba({r},{g},{b},0.6)"
+                dot    = "●"
             else:
-                bg     = f"rgba({r},{g},{b},0.04)"
+                bg     = f"rgba({r},{g},{b},0.05)"
                 border = f"2px solid rgba({r},{g},{b},0.45)"
                 clr    = f"rgba({r},{g},{b},0.6)"
                 shadow = "none"
-            css_rules.append(f"""
-button[data-testid="baseButton-secondary"][kind="secondary"]:has(p:-webkit-any(p)):is(*) {{}}
-div[data-testid="stButton"]:has(button p) button p {{}}
-/* Target by aria-label which Streamlit sets to the button text */
-div[data-testid="stButton"] button[aria-label="{label}"],
-div[data-testid="stButton"] button[title="{label}"] {{
-    background: {bg} !important;
-    border: {border} !important;
-    color: {clr} !important;
-    font-family: 'Rajdhani', sans-serif !important;
-    font-weight: 700 !important;
-    box-shadow: {shadow} !important;
-    transition: all 0.15s !important;
+                dot    = "○"
+            # Each button sends the course name to the parent window via postMessage
+            safe = course.replace("'", "\\'")
+            pill_btns.append(f"""
+<button onclick="sendToggle('{safe}')"
+  style="background:{bg};border:{border};border-radius:12px;
+         color:{clr};font-family:'Rajdhani',sans-serif;font-weight:700;
+         font-size:14px;padding:9px 18px;cursor:pointer;
+         box-shadow:{shadow};transition:all 0.15s;
+         white-space:nowrap;display:inline-flex;align-items:center;gap:7px;"
+  onmouseover="this.style.boxShadow='0 0 18px rgba({r},{g},{b},0.75)';this.style.border='3px solid {color}';this.style.color='{color}';"
+  onmouseout="this.style.boxShadow='{shadow}';this.style.border='{border}';this.style.color='{clr}';">
+  <span>{dot}</span>{course}
+</button>""")
+
+        pills_str    = "\n".join(pill_btns)
+        active_json  = str(list(active_courses)).replace("'", '"')
+        all_json     = str(list(courses)).replace("'", '"')
+        legend_height = 60 + ((len(courses) - 1) // 5) * 56
+
+        components.html(f"""
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@700&display=swap');
+*{{margin:0;padding:4px 0;box-sizing:border-box}}
+body{{background:transparent;overflow:hidden}}
+.wrap{{display:flex;flex-wrap:wrap;gap:10px;padding:2px 0;}}
+</style>
+<div class="wrap">{pills_str}</div>
+<script>
+function sendToggle(course) {{
+    let active = {active_json};
+    if (active.includes(course)) {{
+        if (active.length > 1) active = active.filter(c => c !== course);
+    }} else {{
+        active.push(course);
+    }}
+    window.parent.postMessage({{
+        isStreamlitMessage: true,
+        type: "streamlit:setComponentValue",
+        key: "course_filter_{prof_key}",
+        value: active.join("||")
+    }}, "*");
 }}
-div[data-testid="stButton"] button[aria-label="{label}"]:hover,
-div[data-testid="stButton"] button[title="{label}"]:hover {{
-    background: rgba({r},{g},{b},0.22) !important;
-    border: 3px solid {color} !important;
-    color: {color} !important;
-    box-shadow: 0 0 18px rgba({r},{g},{b},0.65) !important;
-}}""")
+</script>
+""", height=legend_height)
 
-        st.markdown(f"<style>{''.join(css_rules)}</style>", unsafe_allow_html=True)
+        # Read back the toggle selection via a custom component value key
+        # Since postMessage to Streamlit only works with declared components,
+        # we use st.query_params as the bridge instead
+        raw_qp = st.query_params.get("cf", None)
+        if raw_qp:
+            toggled = set(raw_qp.split("||")) & set(courses)
+            if toggled:
+                st.session_state[state_key] = toggled
+            st.query_params.clear()
 
-        # JS fallback: after render, find buttons by text and apply colors directly
-        js_rules = []
-        for ci, course in enumerate(courses):
-            color = palette[ci % len(palette)]
-            r, g, b = int(color[1:3], 16), int(color[3:5], 16), int(color[5:7], 16)
-            is_active = course in active_courses
-            safe_course = course.replace("'", "\\'").replace('"', '\\"')
-            dot = "●" if is_active else "○"
-            label = f"{dot} {safe_course}"
-            if is_active:
-                bg     = f"rgba({r},{g},{b},0.18)"
-                border = f"3px solid {color}"
-                clr    = color
-                shadow = f"0 0 12px rgba({r},{g},{b},0.55)"
-            else:
-                bg     = f"rgba({r},{g},{b},0.04)"
-                border = f"2px solid rgba({r},{g},{b},0.45)"
-                clr    = f"rgba({r},{g},{b},0.6)"
-                shadow = "none"
-            js_rules.append(f"""
-    document.querySelectorAll('button').forEach(btn => {{
-        const txt = btn.innerText || btn.textContent || '';
-        if (txt.trim().includes('{safe_course}')) {{
-            btn.style.setProperty('background', '{bg}', 'important');
-            btn.style.setProperty('border', '{border}', 'important');
-            btn.style.setProperty('color', '{clr}', 'important');
-            btn.style.setProperty('box-shadow', '{shadow}', 'important');
-            btn.style.setProperty('font-family', 'Rajdhani, sans-serif', 'important');
-            btn.style.setProperty('font-weight', '700', 'important');
-        }}
-    }});""")
-
-        js_block = "function styleCourseBtns() {" + "".join(js_rules) + "}"
-        st.markdown(f"""<script>
-{js_block}
-// Run after Streamlit finishes rendering
-setTimeout(styleCourseBtns, 200);
-setTimeout(styleCourseBtns, 600);
-setTimeout(styleCourseBtns, 1200);
-</script>""", unsafe_allow_html=True)
-
-        num_cols = min(len(courses), 5)
+        # Slim fallback row — one small colored checkbox-style button per course
+        # These are the actual clickable Streamlit elements
+        st.markdown('<div style="margin-top:4px;">', unsafe_allow_html=True)
+        num_cols = min(len(courses), 6)
         btn_cols = st.columns(num_cols)
         for ci, course in enumerate(courses):
+            color = palette[ci % len(palette)]
+            r, g, b = int(color[1:3], 16), int(color[3:5], 16), int(color[5:7], 16)
             is_active = course in active_courses
             col = btn_cols[ci % num_cols]
             with col:
+                # Render a tiny colored dot indicator above the button
+                dot_color = color if is_active else f"rgba({r},{g},{b},0.35)"
+                st.markdown(
+                    f'<div style="text-align:center;font-size:18px;color:{dot_color};'
+                    f'line-height:1;margin-bottom:2px;'
+                    f'text-shadow:{"0 0 8px "+color if is_active else "none"};">●</div>',
+                    unsafe_allow_html=True
+                )
                 clicked = st.button(
-                    f"{'●' if is_active else '○'} {course}",
+                    course,
                     key=f"course_btn_{prof_key}_{ci}",
                     use_container_width=True,
                     help=f"{'Hide' if is_active else 'Show'} {course} on the 3D chart"
@@ -824,6 +825,7 @@ setTimeout(styleCourseBtns, 1200);
                         new_active.add(course)
                     st.session_state[state_key] = new_active
                     st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
 
         # Show/hide all controls
         ctrl_col1, ctrl_col2, _ = st.columns([1, 1, 4])
