@@ -783,6 +783,51 @@ sc.addEventListener('mouseleave',()=>{{cd.style.transform='rotateY(0) rotateX(0)
 # ─────────────────────────────────────────────
 #  TEXT-BASED SCHEDULE PARSER  (regex)
 # ─────────────────────────────────────────────
+def clean_instructor_name(raw: str) -> str:
+    """
+    Robustly clean an instructor name extracted from OCR or copy-paste.
+    Handles: junk characters, bracket noise, extra spaces, missing initials,
+    OCR artifacts like }] or |, numbers leaking in, etc.
+    Returns cleaned LASTNAME F M style string, or "" if invalid.
+    """
+    if not raw:
+        return ""
+
+    s = raw.upper().strip()
+
+    # Remove anything that isn't a letter, space, period, hyphen, or apostrophe
+    s = re.sub(r"[^A-Z\s.\-']", "", s)
+
+    # Collapse multiple spaces
+    s = re.sub(r"\s+", " ", s).strip()
+
+    # Split into tokens
+    tokens = s.split()
+
+    # Filter out pure-noise tokens (single non-alpha chars, empty, etc.)
+    tokens = [t for t in tokens if re.search(r"[A-Z]", t)]
+
+    if not tokens:
+        return ""
+
+    # Heuristic: GOLD format is "LASTNAME F M" (last name + up to 2 initials)
+    # Initials are 1-2 chars (possibly with a dot), last name is longer
+    # Keep at most: one last name token + up to 2 initial tokens
+    last = tokens[0]
+    initials = []
+    for t in tokens[1:]:
+        # An initial is 1 letter, optionally followed by a dot
+        clean_t = t.rstrip(".")
+        if len(clean_t) <= 2 and clean_t.isalpha():
+            initials.append(clean_t[0])  # keep just the letter
+        # If it's longer, it might be a second last-name word (hyphenated names) — skip
+        if len(initials) >= 2:
+            break
+
+    parts = [last] + initials
+    return " ".join(parts)
+
+
 def parse_gold_schedule(text: str) -> list[dict]:
     """
     Parse UCSB GOLD schedule text (from OCR or copy-paste).
@@ -791,10 +836,12 @@ def parse_gold_schedule(text: str) -> list[dict]:
     results = []
     lines = [l.strip() for l in text.strip().splitlines() if l.strip()]
 
-    # Course header: "CLASS 180B - INTERFACE CLASS CIV"
-    course_pat  = re.compile(r'^([A-Z][A-Z &]+?)\s+(\d+[A-Z]*)\s*[-–]\s*(.+)$')
+    # Course header: "DEPT NUM - TITLE"  e.g. "MATH 3A - CALC WITH APPLI 1"
+    course_pat  = re.compile(r'^([A-Z][A-Z\s&]+?)\s+(\d+[A-Z]*)\s*[-–]\s*(.+)$')
     # Section line starts with a 5-digit enrollment code
     section_pat = re.compile(r'^\d{5}\b')
+    # Days pattern — used to find where instructor name ends
+    day_pat     = re.compile(r'\b([MTWRF]{1,5}|T\.B\.A\.?|TBA)\b')
 
     current_course = current_dept = current_num = None
 
@@ -807,22 +854,31 @@ def parse_gold_schedule(text: str) -> list[dict]:
             continue
 
         if section_pat.match(line) and current_course:
-            day_pat   = re.compile(r'\b([MTWRF]{1,5}|T\.B\.A\.?)\b')
             units_idx = line.find("Units")
-            instructor = ""
+            instructor_raw = ""
             if units_idx != -1:
                 after = line[units_idx + 5:].strip()
                 dm = day_pat.search(after)
                 if dm:
-                    instructor = after[:dm.start()].strip().rstrip(",").strip()
+                    instructor_raw = after[:dm.start()].strip().rstrip(",").strip()
                 else:
-                    instructor = after.split()[0] if after else ""
+                    # No day found — take everything up to first digit (time) or end
+                    m2 = re.search(r'\d', after)
+                    instructor_raw = after[:m2.start()].strip() if m2 else after.strip()
 
-            instructor = instructor.upper()
-            if instructor and instructor not in ("T.B.A", "TBA", "T.B.A.", ""):
+            instructor = clean_instructor_name(instructor_raw)
+            if instructor and instructor not in ("T B A", "TBA", ""):
                 results.append({"course": current_course, "dept": current_dept,
                                  "num": current_num, "instructor": instructor})
 
+        # Also handle lines that are just an instructor name (multi-instructor OCR lines)
+        # e.g. a line like "FENG X" or "NAKAYAMA M T" appearing after a section line
+        elif current_course and not section_pat.match(line):
+            # If the line looks like a name (all caps, no digits, short), try to use it
+            # but only if we haven't already captured an instructor for this course
+            pass
+
+    # Deduplicate — keep first occurrence of each (course, instructor) pair
     seen, unique = set(), []
     for r in results:
         key = (r["course"], r["instructor"])
@@ -1166,6 +1222,33 @@ sc.addEventListener('mouseleave',()=>{cd.style.transform='';});
             instructor   = entry["instructor"]
             jk           = make_join_key(instructor)
             course_color = palette[pi % len(palette)]
+
+            # ── Fuzzy instructor match fallback ──────────────────────────────
+            # If exact join key not found, try matching by last name only
+            def best_jk_match(instructor_str, df):
+                exact = make_join_key(instructor_str)
+                if exact in df["join_key"].values:
+                    return exact
+                # Try last-name-only match
+                last, first = parse_name(instructor_str)
+                if not last:
+                    return exact
+                candidates = df[df["join_key"].str.startswith(last + "||")]
+                if candidates.empty:
+                    return exact
+                if len(candidates["join_key"].unique()) == 1:
+                    return candidates["join_key"].iloc[0]
+                # If multiple matches, pick the one whose first initial best matches
+                best, best_score = exact, -1
+                for jk_cand in candidates["join_key"].unique():
+                    _, cand_first = parse_name(jk_cand.replace("||", " "))
+                    score = name_similarity(first, cand_first)
+                    if score > best_score:
+                        best_score = score
+                        best = jk_cand
+                return best
+
+            jk = best_jk_match(instructor, full_df)
 
             specific_hist = full_df[
                 (full_df["join_key"] == jk) &
