@@ -718,49 +718,99 @@ sc.addEventListener('mouseleave',()=>{{cd.style.transform='rotateY(0) rotateX(0)
                     f'letter-spacing:0;font-weight:400;">'
                     f'— click to show/hide</span></div>', unsafe_allow_html=True)
 
-        # One row of Streamlit buttons — colored border only, transparent bg when inactive
-        num_cols = min(len(courses), 5)
-        btn_cols = st.columns(num_cols)
+        # Inject one global CSS block that styles each button by matching its text via :has
+        css_rules = []
         for ci, course in enumerate(courses):
             color = palette[ci % len(palette)]
             r, g, b = int(color[1:3], 16), int(color[3:5], 16), int(color[5:7], 16)
             is_active = course in active_courses
-            col = btn_cols[ci % num_cols]
-            with col:
-                if is_active:
-                    bg     = f"rgba({r},{g},{b},0.18)"
-                    border = f"2px solid {color}"
-                    clr    = color
-                    shadow = f"0 0 10px rgba({r},{g},{b},0.5)"
-                    dot    = "●"
-                else:
-                    bg     = "transparent"
-                    border = f"2px solid rgba({r},{g},{b},0.40)"
-                    clr    = f"rgba({r},{g},{b},0.55)"
-                    shadow = "none"
-                    dot    = "○"
-
-                st.markdown(f"""<style>
-div[data-testid="column"]:nth-child({(ci % num_cols) + 1}) div[data-testid="stButton"] button {{
+            # Escape special chars for CSS attr selector
+            safe = course.replace('"', '\\"')
+            dot  = "●" if is_active else "○"
+            label = f"{dot} {safe}"
+            if is_active:
+                bg     = f"rgba({r},{g},{b},0.18)"
+                border = f"3px solid {color}"
+                clr    = color
+                shadow = f"0 0 12px rgba({r},{g},{b},0.55)"
+            else:
+                bg     = f"rgba({r},{g},{b},0.04)"
+                border = f"2px solid rgba({r},{g},{b},0.45)"
+                clr    = f"rgba({r},{g},{b},0.6)"
+                shadow = "none"
+            css_rules.append(f"""
+button[data-testid="baseButton-secondary"][kind="secondary"]:has(p:-webkit-any(p)):is(*) {{}}
+div[data-testid="stButton"]:has(button p) button p {{}}
+/* Target by aria-label which Streamlit sets to the button text */
+div[data-testid="stButton"] button[aria-label="{label}"],
+div[data-testid="stButton"] button[title="{label}"] {{
     background: {bg} !important;
     border: {border} !important;
     color: {clr} !important;
     font-family: 'Rajdhani', sans-serif !important;
     font-weight: 700 !important;
-    font-size: 0.88em !important;
     box-shadow: {shadow} !important;
     transition: all 0.15s !important;
 }}
-div[data-testid="column"]:nth-child({(ci % num_cols) + 1}) div[data-testid="stButton"] button:hover {{
-    background: rgba({r},{g},{b},0.15) !important;
-    border: 2px solid {color} !important;
+div[data-testid="stButton"] button[aria-label="{label}"]:hover,
+div[data-testid="stButton"] button[title="{label}"]:hover {{
+    background: rgba({r},{g},{b},0.22) !important;
+    border: 3px solid {color} !important;
     color: {color} !important;
-    box-shadow: 0 0 14px rgba({r},{g},{b},0.6) !important;
-}}
-</style>""", unsafe_allow_html=True)
+    box-shadow: 0 0 18px rgba({r},{g},{b},0.65) !important;
+}}""")
 
+        st.markdown(f"<style>{''.join(css_rules)}</style>", unsafe_allow_html=True)
+
+        # JS fallback: after render, find buttons by text and apply colors directly
+        js_rules = []
+        for ci, course in enumerate(courses):
+            color = palette[ci % len(palette)]
+            r, g, b = int(color[1:3], 16), int(color[3:5], 16), int(color[5:7], 16)
+            is_active = course in active_courses
+            safe_course = course.replace("'", "\\'").replace('"', '\\"')
+            dot = "●" if is_active else "○"
+            label = f"{dot} {safe_course}"
+            if is_active:
+                bg     = f"rgba({r},{g},{b},0.18)"
+                border = f"3px solid {color}"
+                clr    = color
+                shadow = f"0 0 12px rgba({r},{g},{b},0.55)"
+            else:
+                bg     = f"rgba({r},{g},{b},0.04)"
+                border = f"2px solid rgba({r},{g},{b},0.45)"
+                clr    = f"rgba({r},{g},{b},0.6)"
+                shadow = "none"
+            js_rules.append(f"""
+    document.querySelectorAll('button').forEach(btn => {{
+        const txt = btn.innerText || btn.textContent || '';
+        if (txt.trim().includes('{safe_course}')) {{
+            btn.style.setProperty('background', '{bg}', 'important');
+            btn.style.setProperty('border', '{border}', 'important');
+            btn.style.setProperty('color', '{clr}', 'important');
+            btn.style.setProperty('box-shadow', '{shadow}', 'important');
+            btn.style.setProperty('font-family', 'Rajdhani, sans-serif', 'important');
+            btn.style.setProperty('font-weight', '700', 'important');
+        }}
+    }});""")
+
+        js_block = "function styleCourseBtns() {" + "".join(js_rules) + "}"
+        st.markdown(f"""<script>
+{js_block}
+// Run after Streamlit finishes rendering
+setTimeout(styleCourseBtns, 200);
+setTimeout(styleCourseBtns, 600);
+setTimeout(styleCourseBtns, 1200);
+</script>""", unsafe_allow_html=True)
+
+        num_cols = min(len(courses), 5)
+        btn_cols = st.columns(num_cols)
+        for ci, course in enumerate(courses):
+            is_active = course in active_courses
+            col = btn_cols[ci % num_cols]
+            with col:
                 clicked = st.button(
-                    f"{dot} {course}",
+                    f"{'●' if is_active else '○'} {course}",
                     key=f"course_btn_{prof_key}_{ci}",
                     use_container_width=True,
                     help=f"{'Hide' if is_active else 'Show'} {course} on the 3D chart"
