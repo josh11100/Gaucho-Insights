@@ -904,7 +904,7 @@ def parse_schedule_from_image(image_bytes: bytes, mime_type: str = "image/png") 
     b64 = base64.b64encode(image_bytes).decode()
 
     payload = {
-        "model": "claude-sonnet-4-5",
+        "model": "claude-haiku-4-5-20251001",
         "max_tokens": 1000,
         "messages": [{
             "role": "user",
@@ -956,7 +956,9 @@ def parse_schedule_from_image(image_bytes: bytes, mime_type: str = "image/png") 
             json=payload,
             timeout=30,
         )
-        resp.raise_for_status()
+        if not resp.ok:
+            st.error(f"API Error {resp.status_code}: {resp.text}")
+            return []
         data = resp.json()
         text = "".join(
             block.get("text", "")
