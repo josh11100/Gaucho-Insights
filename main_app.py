@@ -2,8 +2,7 @@ import streamlit as st
 import pandas as pd
 import os
 import re
-import base64
-import requests
+import io
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit.components.v1 as components
@@ -115,8 +114,6 @@ def name_similarity(first_a: str, first_b: str) -> float:
             matches += 0.9
         elif len(tb) == 1 and ta.startswith(tb):
             matches += 0.9
-        else:
-            matches += 0
     total = max(len(toks_a), len(toks_b))
     return matches / total if total else 0.5
 
@@ -208,13 +205,10 @@ def load_data():
             if len(candidates) == 1:
                 best = candidates[0]
             else:
-                scored = sorted(
-                    candidates,
-                    key=lambda e: name_similarity(g_first, e["_first"]),
-                    reverse=True,
-                )
-                best_score = name_similarity(g_first, scored[0]["_first"])
-                if best_score < 0.4:
+                scored = sorted(candidates,
+                                key=lambda e: name_similarity(g_first, e["_first"]),
+                                reverse=True)
+                if name_similarity(g_first, scored[0]["_first"]) < 0.4:
                     continue
                 best = scored[0]
 
@@ -223,14 +217,10 @@ def load_data():
         rmp_rows = [{"join_key": jk, **v} for jk, v in rmp_lookup.items()]
         if rmp_rows:
             rmp_df = pd.DataFrame(rmp_rows).rename(columns={
-                "rating":      "rmp_rating",
-                "difficulty":  "rmp_difficulty",
-                "take_again":  "rmp_take_again",
-                "num_ratings": "rmp_num_ratings",
-                "tags":        "rmp_tags",
-                "url":         "rmp_url",
-                "dept":        "rmp_dept",
-                "full_name":   "rmp_full_name",
+                "rating": "rmp_rating", "difficulty": "rmp_difficulty",
+                "take_again": "rmp_take_again", "num_ratings": "rmp_num_ratings",
+                "tags": "rmp_tags", "url": "rmp_url",
+                "dept": "rmp_dept", "full_name": "rmp_full_name",
             })
             df = pd.merge(df, rmp_df, on="join_key", how="left")
 
@@ -247,7 +237,7 @@ def load_data():
 
 
 # ─────────────────────────────────────────────
-#  SESSION STATE HELPERS
+#  SESSION STATE
 # ─────────────────────────────────────────────
 for key in ["sel_prof_key", "sel_prof_name"]:
     if key not in st.session_state:
@@ -255,24 +245,20 @@ for key in ["sel_prof_key", "sel_prof_name"]:
 for key in ["dept_q", "course_q", "prof_q"]:
     if key not in st.session_state:
         st.session_state[key] = ""
-if "schedule_text" not in st.session_state:
-    st.session_state.schedule_text = ""
 if "parsed_schedule" not in st.session_state:
     st.session_state.parsed_schedule = []
-if "api_key_input" not in st.session_state:
-    st.session_state.api_key_input = ""
 
 
 def clear_filters():
-    st.session_state.dept_q        = ""
-    st.session_state.course_q      = ""
-    st.session_state.prof_q        = ""
-    st.session_state.sel_prof_key  = None
+    st.session_state.dept_q = ""
+    st.session_state.course_q = ""
+    st.session_state.prof_q = ""
+    st.session_state.sel_prof_key = None
     st.session_state.sel_prof_name = None
 
 
 def dismiss_prof():
-    st.session_state.sel_prof_key  = None
+    st.session_state.sel_prof_key = None
     st.session_state.sel_prof_name = None
 
 
@@ -286,7 +272,7 @@ def gpa_badge(gpa):
 
 
 # ─────────────────────────────────────────────
-#  HERO BANNER
+#  HERO
 # ─────────────────────────────────────────────
 def render_hero():
     components.html("""
@@ -380,7 +366,6 @@ sc.addEventListener('mousemove',e=>{
   cd.style.transform=`rotateY(${(e.clientX-r.left-r.width/2)/48}deg) rotateX(${-(e.clientY-r.top-r.height/2)/36}deg)`;
 });
 sc.addEventListener('mouseleave',()=>{cd.style.transform='';});
-
 const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
 function resize(){cv.width=cd.clientWidth;cv.height=cd.clientHeight;}
 window.addEventListener('resize',resize);resize();setTimeout(resize,80);
@@ -414,25 +399,21 @@ def render_info_card():
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Rajdhani:wght@500;700&display=swap');
 *{margin:0;padding:0;box-sizing:border-box}body{background:transparent;overflow:hidden}
 .sc{perspective:900px;width:100%;height:250px;display:flex;justify-content:center;align-items:center}
-.cd{width:90%;height:215px;
-    background:linear-gradient(140deg,#001428 0%,#002255 60%,#001e4a 100%);
+.cd{width:90%;height:215px;background:linear-gradient(140deg,#001428 0%,#002255 60%,#001e4a 100%);
     border-radius:22px;border:1.5px solid rgba(255,215,0,.5);
     box-shadow:0 20px 50px rgba(0,0,0,.6),inset 0 0 40px rgba(0,116,217,.07);
     transform-style:preserve-3d;transition:transform .1s ease;
-    display:flex;flex-direction:column;justify-content:space-between;
-    padding:24px 26px;color:white}
+    display:flex;flex-direction:column;justify-content:space-between;padding:24px 26px;color:white}
 .t{font-family:'Orbitron',sans-serif;font-size:.95em;font-weight:700;color:#FFD700;margin-bottom:4px}
 .b{font-family:'Rajdhani',sans-serif;font-size:1.02em;line-height:1.7;color:#8ab}
 .h{font-family:'Rajdhani',sans-serif;font-size:.8em;color:rgba(255,255,255,.2);
    background:rgba(255,255,255,.04);border-radius:8px;padding:6px 10px;text-align:center}
 </style>
-<div class="sc" id="sc">
-  <div class="cd" id="cd">
-    <div><div class="t">꒰✩‿✩꒱ DATA INFO</div>
-    <div class="b"><b>Coverage:</b> Through Summer 2025<br><b>Source:</b> UCSB Registrar + RMP<br><b>Built by:</b> Joshua Chung</div></div>
-    <div class="h">Hover to tilt ↗</div>
-  </div>
-</div>
+<div class="sc" id="sc"><div class="cd" id="cd">
+  <div><div class="t">꒰✩‿✩꒱ DATA INFO</div>
+  <div class="b"><b>Coverage:</b> Through Summer 2025<br><b>Source:</b> UCSB Registrar + RMP<br><b>Built by:</b> Joshua Chung</div></div>
+  <div class="h">Hover to tilt ↗</div>
+</div></div>
 <script>
 const sc=document.getElementById('sc'),cd=document.getElementById('cd');
 sc.addEventListener('mousemove',e=>{const r=sc.getBoundingClientRect();
@@ -468,16 +449,16 @@ sc.addEventListener('mouseleave',()=>{li.style.transform='';});
 
 
 # ─────────────────────────────────────────────
-#  PROFESSOR PROFILE CARD  (with GPA history)
+#  PROFESSOR PROFILE CARD
 # ─────────────────────────────────────────────
 def render_prof_card(info: dict, prof_name: str, prof_history_df: pd.DataFrame, gpa_col: str):
-    rating     = info.get("rating")
-    difficulty = info.get("difficulty")
-    take_again = info.get("take_again")
-    num_ratings= info.get("num_ratings")
-    tags_raw   = info.get("tags", "")
-    url        = info.get("url", "")
-    dept       = info.get("dept", "")
+    rating      = info.get("rating")
+    difficulty  = info.get("difficulty")
+    take_again  = info.get("take_again")
+    num_ratings = info.get("num_ratings")
+    tags_raw    = info.get("tags", "")
+    url         = info.get("url", "")
+    dept        = info.get("dept", "")
 
     try:
         rv = float(rating)
@@ -489,84 +470,69 @@ def render_prof_card(info: dict, prof_name: str, prof_history_df: pd.DataFrame, 
     if ta_str != "N/A" and "%" not in ta_str:
         ta_str += "%"
     num_str = f"{int(float(num_ratings))}" if num_ratings and str(num_ratings) != "nan" else "N/A"
-    r_str   = str(rating) if rating and str(rating) != "nan" else "N/A"
+    r_str   = str(rating)    if rating     and str(rating)     != "nan" else "N/A"
     d_str   = str(difficulty) if difficulty and str(difficulty) != "nan" else "N/A"
 
     tags_html = ""
     if tags_raw and str(tags_raw) != "nan":
-        raw   = str(tags_raw).strip("\"'[]")
-        tags  = [t.strip().strip("\"'") for t in raw.split(",") if t.strip()]
+        raw       = str(tags_raw).strip("\"'[]")
+        tags      = [t.strip().strip("\"'") for t in raw.split(",") if t.strip()]
         tags_html = "".join(f'<span class="tag">{t}</span>' for t in tags[:8])
 
     dept_badge = f'<span class="dept">{dept}</span>' if dept and str(dept) != "nan" else ""
-    rmp_btn    = (
-        f'<a href="{url}" target="_blank" class="rmp-btn">(づ ◕‿◕ )づ View Full RMP Profile</a>'
-        if url and str(url) != "nan" else ""
-    )
+    rmp_btn    = (f'<a href="{url}" target="_blank" class="rmp-btn">(づ ◕‿◕ )づ View Full RMP Profile</a>'
+                  if url and str(url) != "nan" else "")
 
-    has_tags   = bool(tags_html)
-    card_h     = 420 + (70 if has_tags else 0)
-    scene_h    = card_h + 40
+    has_tags = bool(tags_html)
+    card_h   = 420 + (70 if has_tags else 0)
+    scene_h  = card_h + 40
 
     components.html(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@400;600;700&display=swap');
-*{{margin:0;padding:0;box-sizing:border-box}}
-body{{background:transparent;overflow:hidden}}
-.scene{{perspective:1100px;width:100%;height:{scene_h}px;
-        display:flex;justify-content:center;align-items:center}}
-.pcard{{width:98%;
-        background:linear-gradient(140deg,#001428 0%,#001e4a 55%,#002255 100%);
-        border:2px solid rgba(255,215,0,.55);border-radius:22px;
-        padding:28px 32px 24px;
-        box-shadow:0 0 60px rgba(255,215,0,.07),0 30px 60px rgba(0,0,0,.65),
-                   inset 0 0 40px rgba(0,116,217,.05);
-        font-family:'Rajdhani',sans-serif;color:white;
-        transform-style:preserve-3d;transition:transform .1s ease;
+*{{margin:0;padding:0;box-sizing:border-box}}body{{background:transparent;overflow:hidden}}
+.scene{{perspective:1100px;width:100%;height:{scene_h}px;display:flex;justify-content:center;align-items:center}}
+.pcard{{width:98%;background:linear-gradient(140deg,#001428 0%,#001e4a 55%,#002255 100%);
+        border:2px solid rgba(255,215,0,.55);border-radius:22px;padding:28px 32px 24px;
+        box-shadow:0 0 60px rgba(255,215,0,.07),0 30px 60px rgba(0,0,0,.65),inset 0 0 40px rgba(0,116,217,.05);
+        font-family:'Rajdhani',sans-serif;color:white;transform-style:preserve-3d;transition:transform .1s ease;
         position:relative;overflow:hidden}}
 .pcard::before{{content:'';position:absolute;top:0;left:-60%;width:40%;height:100%;
   background:linear-gradient(105deg,transparent 40%,rgba(255,215,0,.06) 50%,transparent 60%);
   animation:shimmer 4s infinite;pointer-events:none}}
 @keyframes shimmer{{0%{{left:-60%}}100%{{left:130%}}}}
-.pname{{font-family:'Orbitron',sans-serif;font-size:1.25em;font-weight:900;
-        color:#FFD700;margin-bottom:8px;
-        text-shadow:0 0 14px rgba(255,215,0,.35)}}
+.pname{{font-family:'Orbitron',sans-serif;font-size:1.25em;font-weight:900;color:#FFD700;
+        margin-bottom:8px;text-shadow:0 0 14px rgba(255,215,0,.35)}}
 .dept{{background:rgba(0,116,217,.22);color:#5bb8ff;border:1px solid rgba(0,116,217,.5);
        padding:3px 14px;border-radius:20px;font-size:.8em;display:inline-block;margin-bottom:20px}}
 .stats{{display:flex;gap:12px;margin-bottom:14px}}
-.stat{{flex:1;background:rgba(255,255,255,.05);border-radius:14px;padding:18px 10px;
-       text-align:center;border:1px solid rgba(255,255,255,.07);
-       transition:background .2s,border-color .2s}}
+.stat{{flex:1;background:rgba(255,255,255,.05);border-radius:14px;padding:18px 10px;text-align:center;
+       border:1px solid rgba(255,255,255,.07);transition:background .2s,border-color .2s}}
 .stat:hover{{background:rgba(255,255,255,.09);border-color:rgba(255,215,0,.25)}}
 .stat .v{{font-size:2em;font-weight:900;line-height:1;font-family:'Orbitron',sans-serif}}
 .stat .l{{font-size:.65em;color:#556;margin-top:7px;text-transform:uppercase;letter-spacing:.8px}}
 .num{{text-align:center;color:#445;font-size:.78em;margin:-4px 0 16px}}
 .tag-lbl{{font-size:.68em;color:#445;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}}
 .tag{{background:rgba(0,204,255,.1);color:#00CCFF;border:1px solid rgba(0,204,255,.3);
-      padding:4px 12px;border-radius:20px;display:inline-block;margin:3px;
-      font-size:.76em;font-weight:600}}
+      padding:4px 12px;border-radius:20px;display:inline-block;margin:3px;font-size:.76em;font-weight:600}}
 .rmp-btn{{display:inline-block;margin-top:18px;padding:11px 26px;
-          background:linear-gradient(135deg,#0077b5,#00a0dc);color:white;
-          text-decoration:none;border-radius:14px;font-weight:800;font-size:.9em;
-          box-shadow:0 6px 22px rgba(0,119,181,.45);
-          border:1.5px solid rgba(255,255,255,.15);
-          font-family:'Rajdhani',sans-serif;transition:background .2s,transform .15s}}
+          background:linear-gradient(135deg,#0077b5,#00a0dc);color:white;text-decoration:none;
+          border-radius:14px;font-weight:800;font-size:.9em;box-shadow:0 6px 22px rgba(0,119,181,.45);
+          border:1.5px solid rgba(255,255,255,.15);font-family:'Rajdhani',sans-serif;
+          transition:background .2s,transform .15s}}
 .rmp-btn:hover{{background:linear-gradient(135deg,#0087cc,#00bbf5);transform:translateY(-2px)}}
 </style>
-<div class="scene" id="sc">
-  <div class="pcard" id="cd">
-    <div class="pname">{prof_name}</div>
-    {dept_badge}
-    <div class="stats">
-      <div class="stat"><div class="v" style="color:{r_color}">{r_str}</div><div class="l">Rating</div></div>
-      <div class="stat"><div class="v" style="color:#FF851B">{d_str}</div><div class="l">Difficulty</div></div>
-      <div class="stat"><div class="v" style="color:#2ECC40;font-size:1.4em">{ta_str}</div><div class="l">Would Retake</div></div>
-    </div>
-    <div class="num">Based on {num_str} student ratings</div>
-    {"<div class='tag-lbl'>Student Tags</div><div>" + tags_html + "</div>" if tags_html else ""}
-    {rmp_btn}
+<div class="scene" id="sc"><div class="pcard" id="cd">
+  <div class="pname">{prof_name}</div>{dept_badge}
+  <div class="stats">
+    <div class="stat"><div class="v" style="color:{r_color}">{r_str}</div><div class="l">Rating</div></div>
+    <div class="stat"><div class="v" style="color:#FF851B">{d_str}</div><div class="l">Difficulty</div></div>
+    <div class="stat"><div class="v" style="color:#2ECC40;font-size:1.4em">{ta_str}</div><div class="l">Would Retake</div></div>
   </div>
-</div>
+  <div class="num">Based on {num_str} student ratings</div>
+  {"<div class='tag-lbl'>Student Tags</div><div>" + tags_html + "</div>" if tags_html else ""}
+  {rmp_btn}
+</div></div>
 <script>
 const sc=document.getElementById('sc'),cd=document.getElementById('cd');
 sc.addEventListener('mousemove',e=>{{
@@ -578,233 +544,133 @@ sc.addEventListener('mouseleave',()=>{{cd.style.transform='rotateY(0) rotateX(0)
 """, height=scene_h)
 
     if not prof_history_df.empty and gpa_col in prof_history_df.columns:
-        st.markdown(
-            '<div style="font-family:Orbitron,sans-serif;font-size:.78em;'
-            'color:#FFD700;letter-spacing:2px;margin:24px 0 4px;">GPA HISTORY — INTERACTIVE 3D</div>',
-            unsafe_allow_html=True,
-        )
-        st.markdown(
-            '<div style="font-family:Rajdhani,sans-serif;font-size:.82em;color:#556;'
-            'margin:0 0 14px;">Drag to rotate · Scroll to zoom · Hover dots for details'
-            ' &nbsp;|&nbsp; <b style="color:#aaa">X</b> = Term &nbsp;'
-            '<b style="color:#aaa">Y</b> = Course &nbsp;'
-            '<b style="color:#aaa">Z</b> = Avg GPA</div>',
-            unsafe_allow_html=True,
-        )
+        st.markdown('<div style="font-family:Orbitron,sans-serif;font-size:.78em;color:#FFD700;'
+                    'letter-spacing:2px;margin:24px 0 4px;">GPA HISTORY — INTERACTIVE 3D</div>',
+                    unsafe_allow_html=True)
+        st.markdown('<div style="font-family:Rajdhani,sans-serif;font-size:.82em;color:#556;margin:0 0 14px;">'
+                    'Drag to rotate · Scroll to zoom · Hover dots for details'
+                    ' &nbsp;|&nbsp; <b style="color:#aaa">X</b> = Term &nbsp;'
+                    '<b style="color:#aaa">Y</b> = Course &nbsp;<b style="color:#aaa">Z</b> = Avg GPA</div>',
+                    unsafe_allow_html=True)
 
         hist = prof_history_df.copy()
         hist["term"] = hist["quarter"].astype(str) + " " + hist["year"].astype(str)
-
-        quarter_order = {"WINTER": 0, "SPRING": 1, "SUMMER": 2, "FALL": 3}
-        hist["_qord"] = hist["quarter"].map(quarter_order).fillna(9)
-        hist = hist.sort_values(["year", "_qord"]).reset_index(drop=True)
+        q_ord = {"WINTER":0,"SPRING":1,"SUMMER":2,"FALL":3}
+        hist["_qord"] = hist["quarter"].map(q_ord).fillna(9)
+        hist = hist.sort_values(["year","_qord"]).reset_index(drop=True)
 
         courses = sorted(hist["course"].unique())
         terms   = list(dict.fromkeys(hist["term"].tolist()))
-
         term_idx   = {t: i for i, t in enumerate(terms)}
         course_idx = {c: i for i, c in enumerate(courses)}
-
-        palette = [
-            "#FF4136", "#0074D9", "#FFD700", "#2ECC40",
-            "#FF851B", "#B10DC9", "#00CCFF", "#FF69B4",
-            "#AAAAAA", "#01FF70", "#F012BE", "#7FDBFF",
-        ]
+        palette = ["#FF4136","#0074D9","#FFD700","#2ECC40","#FF851B","#B10DC9",
+                   "#00CCFF","#FF69B4","#AAAAAA","#01FF70","#F012BE","#7FDBFF"]
 
         fig = go.Figure()
-
         for ci, course in enumerate(courses):
             sub   = hist[hist["course"] == course].copy()
             color = palette[ci % len(palette)]
-
-            xs = [term_idx[t]   for t in sub["term"]]
+            xs = [term_idx[t] for t in sub["term"]]
             ys = [course_idx[c] for c in sub["course"]]
             zs = sub[gpa_col].tolist()
 
-            fig.add_trace(go.Scatter3d(
-                x=xs, y=ys, z=zs,
-                mode="markers+lines",
-                name=course,
-                legendgroup=course,
-                showlegend=False,
+            fig.add_trace(go.Scatter3d(x=xs, y=ys, z=zs, mode="markers+lines", name=course,
+                legendgroup=course, showlegend=False,
                 line=dict(color=color, width=2, dash="dot"),
-                marker=dict(
-                    size=6,
-                    color=color,
-                    opacity=0.95,
-                    symbol="circle",
-                    line=dict(color="rgba(255,255,255,0.4)", width=1),
-                ),
-                hovertemplate=(
-                    f"<b>{course}</b><br>"
-                    "Term: <b>%{customdata}</b><br>"
-                    "Avg GPA: <b>%{z:.2f}</b>"
-                    "<extra></extra>"
-                ),
-                customdata=sub["term"].tolist(),
-            ))
+                marker=dict(size=6, color=color, opacity=0.95, symbol="circle",
+                            line=dict(color="rgba(255,255,255,0.4)", width=1)),
+                hovertemplate=(f"<b>{course}</b><br>Term: <b>%{{customdata}}</b><br>"
+                               "Avg GPA: <b>%{z:.2f}</b><extra></extra>"),
+                customdata=sub["term"].tolist()))
 
-            drop_x, drop_y, drop_z = [], [], []
+            dx, dy, dz = [], [], []
             for x, y, z in zip(xs, ys, zs):
-                drop_x += [x, x, None]
-                drop_y += [y, y, None]
-                drop_z += [2.0, z, None]
-
-            fig.add_trace(go.Scatter3d(
-                x=drop_x, y=drop_y, z=drop_z,
-                mode="lines",
-                line=dict(color=color, width=1, dash="dot"),
-                opacity=0.25,
-                showlegend=False,
-                hoverinfo="skip",
-                legendgroup=course,
-            ))
-
-            fig.add_trace(go.Scatter3d(
-                x=xs, y=ys, z=[z + 0.13 for z in zs],
-                mode="text",
+                dx += [x,x,None]; dy += [y,y,None]; dz += [2.0,z,None]
+            fig.add_trace(go.Scatter3d(x=dx, y=dy, z=dz, mode="lines",
+                line=dict(color=color,width=1,dash="dot"), opacity=0.25,
+                showlegend=False, hoverinfo="skip", legendgroup=course))
+            fig.add_trace(go.Scatter3d(x=xs, y=ys, z=[z+0.13 for z in zs], mode="text",
                 text=[f"{z:.2f}" for z in zs],
-                textfont=dict(size=13, color="white", family="Orbitron"),
-                showlegend=False,
-                hoverinfo="skip",
-                legendgroup=course,
-            ))
+                textfont=dict(size=13,color="white",family="Orbitron"),
+                showlegend=False, hoverinfo="skip", legendgroup=course))
 
-        xr = [-0.5, len(terms) - 0.5]
-        yr = [-0.5, len(courses) - 0.5]
+        xr=[-0.5, len(terms)-0.5]; yr=[-0.5, len(courses)-0.5]
         for ref_z, ref_color, ref_name in [
-            (3.5, "rgba(46,204,64,0.15)",  "── EASY ≥ 3.5"),
-            (3.0, "rgba(255,65,54,0.15)",  "── STRESSFUL < 3.0"),
-        ]:
+            (3.5,"rgba(46,204,64,0.15)","── EASY ≥ 3.5"),
+            (3.0,"rgba(255,65,54,0.15)","── STRESSFUL < 3.0")]:
             fig.add_trace(go.Surface(
-                x=[[xr[0], xr[1]], [xr[0], xr[1]]],
-                y=[[yr[0], yr[0]], [yr[1], yr[1]]],
-                z=[[ref_z, ref_z], [ref_z, ref_z]],
-                colorscale=[[0, ref_color], [1, ref_color]],
-                showscale=False,
-                opacity=0.55,
-                name=ref_name,
-                showlegend=True,
-                hoverinfo="skip",
-            ))
+                x=[[xr[0],xr[1]],[xr[0],xr[1]]], y=[[yr[0],yr[0]],[yr[1],yr[1]]],
+                z=[[ref_z,ref_z],[ref_z,ref_z]], colorscale=[[0,ref_color],[1,ref_color]],
+                showscale=False, opacity=0.55, name=ref_name, showlegend=True, hoverinfo="skip"))
 
         fig.update_layout(
-            template="plotly_dark",
-            height=540,
-            margin=dict(l=0, r=0, t=10, b=0),
+            template="plotly_dark", height=540, margin=dict(l=0,r=0,t=10,b=0),
             paper_bgcolor="rgba(0,0,0,0)",
             scene=dict(
                 bgcolor="rgba(0,6,18,1)",
-                xaxis=dict(
-                    tickvals=list(range(len(terms))),
-                    ticktext=terms,
-                    tickfont=dict(size=11, color="#bbc"),
-                    gridcolor="rgba(255,255,255,0.03)",
-                    showbackground=True,
-                    backgroundcolor="rgba(0,8,24,0.5)",
-                    title=dict(text="Term", font=dict(size=13, color="#ccd")),
-                ),
-                yaxis=dict(
-                    tickvals=list(range(len(courses))),
-                    ticktext=courses,
-                    tickfont=dict(size=11, color="#ddd"),
-                    gridcolor="rgba(255,255,255,0.03)",
-                    showbackground=True,
-                    backgroundcolor="rgba(0,8,24,0.5)",
-                    title=dict(text="Course", font=dict(size=13, color="#ccd")),
-                ),
-                zaxis=dict(
-                    range=[2.0, 4.3],
-                    tickfont=dict(size=11, color="#bbc"),
-                    gridcolor="rgba(255,255,255,0.03)",
-                    showbackground=True,
-                    backgroundcolor="rgba(0,10,28,0.7)",
-                    title=dict(text="Avg GPA", font=dict(size=13, color="#ccd")),
-                ),
-                camera=dict(
-                    eye=dict(x=1.8, y=-1.8, z=1.0),
-                    up=dict(x=0, y=0, z=1),
-                ),
+                xaxis=dict(tickvals=list(range(len(terms))), ticktext=terms,
+                           tickfont=dict(size=11,color="#bbc"), gridcolor="rgba(255,255,255,0.03)",
+                           showbackground=True, backgroundcolor="rgba(0,8,24,0.5)",
+                           title=dict(text="Term",font=dict(size=13,color="#ccd"))),
+                yaxis=dict(tickvals=list(range(len(courses))), ticktext=courses,
+                           tickfont=dict(size=11,color="#ddd"), gridcolor="rgba(255,255,255,0.03)",
+                           showbackground=True, backgroundcolor="rgba(0,8,24,0.5)",
+                           title=dict(text="Course",font=dict(size=13,color="#ccd"))),
+                zaxis=dict(range=[2.0,4.3], tickfont=dict(size=11,color="#bbc"),
+                           gridcolor="rgba(255,255,255,0.03)", showbackground=True,
+                           backgroundcolor="rgba(0,10,28,0.7)",
+                           title=dict(text="Avg GPA",font=dict(size=13,color="#ccd"))),
+                camera=dict(eye=dict(x=1.8,y=-1.8,z=1.0), up=dict(x=0,y=0,z=1)),
                 aspectmode="manual",
-                aspectratio=dict(
-                    x=max(1.4, len(terms) * 0.28),
-                    y=max(0.7, len(courses) * 0.22),
-                    z=0.9,
-                ),
-            ),
-            legend=dict(
-                x=0.01, y=0.99,
-                font=dict(family="Rajdhani", size=11, color="#aaa"),
-                bgcolor="rgba(0,0,0,0)",
-                itemsizing="constant",
-                bordercolor="rgba(255,215,0,0.15)",
-                borderwidth=1,
-                visible=False,
-            ),
-        )
+                aspectratio=dict(x=max(1.4,len(terms)*0.28), y=max(0.7,len(courses)*0.22), z=0.9)),
+            legend=dict(x=0.01,y=0.99, font=dict(family="Rajdhani",size=11,color="#aaa"),
+                        bgcolor="rgba(0,0,0,0)", itemsizing="constant",
+                        bordercolor="rgba(255,215,0,0.15)", borderwidth=1, visible=False))
 
-        st.plotly_chart(
-            fig,
-            use_container_width=True,
-            key=f"prof_hist_{st.session_state.sel_prof_key}",
-            config={"displayModeBar": True, "displaylogo": False,
-                    "modeBarButtonsToRemove": ["toImage"]},
-        )
+        st.plotly_chart(fig, use_container_width=True,
+                        key=f"prof_hist_{st.session_state.sel_prof_key}",
+                        config={"displayModeBar":True,"displaylogo":False,
+                                "modeBarButtonsToRemove":["toImage"]})
 
         legend_items = "".join([
             f'<div style="display:flex;align-items:center;gap:8px;padding:6px 14px;'
-            f'background:rgba(255,255,255,0.04);border-radius:10px;'
-            f'border:1px solid rgba(255,255,255,0.07);">'
+            f'background:rgba(255,255,255,0.04);border-radius:10px;border:1px solid rgba(255,255,255,0.07);">'
             f'<span style="display:inline-block;width:12px;height:12px;border-radius:50%;'
-            f'background:{palette[ci % len(palette)]};'
-            f'box-shadow:0 0 6px {palette[ci % len(palette)]};flex-shrink:0;"></span>'
-            f'<span style="font-family:Rajdhani,sans-serif;font-size:.88em;'
-            f'color:#ccc;white-space:nowrap;">{course}</span>'
-            f'</div>'
-            for ci, course in enumerate(courses)
-        ])
-        st.markdown(
-            f'<div style="margin:10px 0 20px;">'
-            f'<div style="font-family:Orbitron,sans-serif;font-size:.68em;color:#FFD700;'
-            f'letter-spacing:2px;margin-bottom:10px;">COURSES</div>'
-            f'<div style="display:flex;flex-wrap:wrap;gap:8px;">{legend_items}</div>'
-            f'</div>',
-            unsafe_allow_html=True,
-        )
+            f'background:{palette[ci%len(palette)]};box-shadow:0 0 6px {palette[ci%len(palette)]};flex-shrink:0;"></span>'
+            f'<span style="font-family:Rajdhani,sans-serif;font-size:.88em;color:#ccc;white-space:nowrap;">{course}</span></div>'
+            for ci, course in enumerate(courses)])
+        st.markdown(f'<div style="margin:10px 0 20px;"><div style="font-family:Orbitron,sans-serif;'
+                    f'font-size:.68em;color:#FFD700;letter-spacing:2px;margin-bottom:10px;">COURSES</div>'
+                    f'<div style="display:flex;flex-wrap:wrap;gap:8px;">{legend_items}</div></div>',
+                    unsafe_allow_html=True)
 
-        summary = (
-            hist.groupby("course")[gpa_col]
-            .agg(["mean", "count"])
-            .reset_index()
-            .rename(columns={"mean": "Avg GPA", "count": "Sections"})
-            .sort_values("Avg GPA", ascending=False)
-        )
+        summary = (hist.groupby("course")[gpa_col].agg(["mean","count"]).reset_index()
+                   .rename(columns={"mean":"Avg GPA","count":"Sections"})
+                   .sort_values("Avg GPA", ascending=False))
         summary["Avg GPA"] = summary["Avg GPA"].map("{:.2f}".format)
-        st.markdown(
-            '<div style="font-family:Orbitron,sans-serif;font-size:.72em;'
-            'color:#FFD700;letter-spacing:2px;margin:14px 0 8px;">꒰✩‿✩꒱ COURSE SUMMARY</div>',
-            unsafe_allow_html=True,
-        )
-        st.dataframe(
-            summary,
-            hide_index=True,
-            use_container_width=True,
-        )
+        st.markdown('<div style="font-family:Orbitron,sans-serif;font-size:.72em;color:#FFD700;'
+                    'letter-spacing:2px;margin:14px 0 8px;">꒰✩‿✩꒱ COURSE SUMMARY</div>',
+                    unsafe_allow_html=True)
+        st.dataframe(summary, hide_index=True, use_container_width=True)
 
 
 # ─────────────────────────────────────────────
-#  SCHEDULE PARSER
+#  TEXT-BASED SCHEDULE PARSER  (regex)
 # ─────────────────────────────────────────────
 def parse_gold_schedule(text: str) -> list[dict]:
+    """
+    Parse UCSB GOLD schedule text (from OCR or copy-paste).
+    Handles the exact 'My Class Schedule' table layout.
+    """
     results = []
     lines = [l.strip() for l in text.strip().splitlines() if l.strip()]
 
+    # Course header: "CLASS 180B - INTERFACE CLASS CIV"
     course_pat  = re.compile(r'^([A-Z][A-Z &]+?)\s+(\d+[A-Z]*)\s*[-–]\s*(.+)$')
-    section_pat = re.compile(r'^\d{5}\s+Grading')
+    # Section line starts with a 5-digit enrollment code
+    section_pat = re.compile(r'^\d{5}\b')
 
-    current_course = None
-    current_dept   = None
-    current_num    = None
+    current_course = current_dept = current_num = None
 
     for line in lines:
         m = course_pat.match(line)
@@ -815,28 +681,23 @@ def parse_gold_schedule(text: str) -> list[dict]:
             continue
 
         if section_pat.match(line) and current_course:
-            day_pat = re.compile(r'([MTWRF]{1,5}|T\.B\.A)')
+            day_pat   = re.compile(r'\b([MTWRF]{1,5}|T\.B\.A\.?)\b')
             units_idx = line.find("Units")
             instructor = ""
             if units_idx != -1:
                 after = line[units_idx + 5:].strip()
                 dm = day_pat.search(after)
                 if dm:
-                    raw_inst = after[:dm.start()].strip().rstrip(",").strip()
-                    instructor = raw_inst.strip()
+                    instructor = after[:dm.start()].strip().rstrip(",").strip()
                 else:
                     instructor = after.split()[0] if after else ""
 
-            if instructor and instructor.upper() not in ("T.B.A", "TBA", ""):
-                results.append({
-                    "course":     current_course,
-                    "dept":       current_dept,
-                    "num":        current_num,
-                    "instructor": instructor.upper(),
-                })
+            instructor = instructor.upper()
+            if instructor and instructor not in ("T.B.A", "TBA", "T.B.A.", ""):
+                results.append({"course": current_course, "dept": current_dept,
+                                 "num": current_num, "instructor": instructor})
 
-    seen = set()
-    unique = []
+    seen, unique = set(), []
     for r in results:
         key = (r["course"], r["instructor"])
         if key not in seen:
@@ -846,88 +707,38 @@ def parse_gold_schedule(text: str) -> list[dict]:
 
 
 # ─────────────────────────────────────────────
-#  VISION SCHEDULE PARSER — NOW USES GEMINI ✨
+#  OCR SCHEDULE PARSER  (no API — uses tesseract)
 # ─────────────────────────────────────────────
-def parse_schedule_from_image(image_bytes: bytes, mime_type: str = "image/png") -> list[dict]:
+def parse_schedule_from_image(image_bytes: bytes) -> list[dict]:
     """
-    Send a screenshot to Google Gemini and extract
-    course + instructor pairs from the UCSB GOLD schedule image.
-    Returns list of dicts: {course, dept, num, instructor}
+    Extract courses + instructors from a UCSB GOLD screenshot.
+
+    Uses pytesseract (free, local OCR) — zero API calls, zero cost.
+
+    Setup:
+      pip install pytesseract Pillow
+      Tesseract binary:
+        Mac:                  brew install tesseract
+        Linux/Streamlit Cloud: add 'tesseract-ocr' to packages.txt
+        Windows:              https://github.com/UB-Mannheim/tesseract/wiki
     """
-    import json
-
-    b64 = base64.b64encode(image_bytes).decode()
-
-    # ── Resolve Gemini API key: secrets → env var → session input ──
-    api_key = ""
     try:
-        api_key = st.secrets.get("GEMINI_API_KEY", "")
-    except Exception:
-        pass
-    if not api_key:
-        api_key = os.environ.get("GEMINI_API_KEY", "")
-    if not api_key:
-        st.error("No Gemini API key configured. Enter your key in the API Key Settings above.")
+        from PIL import Image
+        import pytesseract
+    except ImportError:
+        st.error("Missing packages. Add 'pytesseract' and 'Pillow' to requirements.txt, "
+                 "and 'tesseract-ocr' to packages.txt (Streamlit Cloud).")
         return []
 
-    payload = {
-        "contents": [{
-            "parts": [
-                {
-                    "inline_data": {
-                        "mime_type": mime_type,
-                        "data": b64,
-                    }
-                },
-                {
-                    "text": (
-                        "This is a UCSB GOLD 'My Class Schedule' screenshot. "
-                        "Extract every course and its instructor. "
-                        "Return ONLY valid JSON — an array of objects, each with exactly these keys: "
-                        "course (e.g. 'PSTAT 122'), dept (e.g. 'PSTAT'), num (e.g. '122'), instructor (e.g. 'ABUZAID A H'). "
-                        "If a section shows 'T.B.A' as instructor, skip it. "
-                        "Deduplicate: if the same course+instructor appears more than once, include it only once. "
-                        "Return ONLY the JSON array, no explanation, no markdown fences."
-                    )
-                }
-            ]
-        }]
-    }
-
     try:
-        resp = requests.post(
-            f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}",
-            headers={"Content-Type": "application/json"},
-            json=payload,
-            timeout=30,
-        )
-
-        if not resp.ok:
-            st.error(f"Gemini API Error {resp.status_code}: {resp.text}")
-            return []
-
-        data = resp.json()
-
-        # Extract text from Gemini response structure
-        text = data["candidates"][0]["content"]["parts"][0]["text"].strip()
-
-        # Strip possible markdown fences
-        text = re.sub(r"^```[a-z]*\n?", "", text).rstrip("`").strip()
-
-        entries = json.loads(text)
-        results = []
-        for e in entries:
-            course = str(e.get("course", "")).upper().strip()
-            dept   = str(e.get("dept",   "")).upper().strip()
-            num    = str(e.get("num",    "")).upper().strip()
-            inst   = str(e.get("instructor", "")).upper().strip()
-            if course and inst and inst not in ("T.B.A", "TBA", ""):
-                results.append({"course": course, "dept": dept,
-                                 "num": num, "instructor": inst})
-        return results
-
+        image    = Image.open(io.BytesIO(image_bytes))
+        # Upscale for better OCR accuracy on small/retina screenshots
+        w, h     = image.size
+        image    = image.resize((w * 2, h * 2), Image.LANCZOS)
+        raw_text = pytesseract.image_to_string(image, config="--psm 6")
+        return parse_gold_schedule(raw_text)
     except Exception as ex:
-        st.error(f"Vision API error: {ex}")
+        st.error(f"OCR error: {ex}")
         return []
 
 
@@ -936,12 +747,11 @@ def parse_schedule_from_image(image_bytes: bytes, mime_type: str = "image/png") 
 # ─────────────────────────────────────────────
 def main():
     full_df, gpa_col, rmp_lookup = load_data()
-
     render_hero()
 
     tab_home, tab_search, tab_quarter = st.tabs(["HOME", "SEARCH TOOL", "MY QUARTER"])
 
-    # ── HOME ────────────────────────────────
+    # ── HOME ────────────────────────────────────────────────────────────────
     with tab_home:
         col_main, col_side = st.columns([5, 2])
         with col_main:
@@ -952,69 +762,54 @@ def main():
             render_linkedin_card()
             st.markdown("""
 <div style="background:rgba(0,18,40,.7);border:1px solid rgba(255,215,0,.2);
-            border-radius:18px;padding:22px 24px;margin-top:16px;
-            font-family:'Rajdhani',sans-serif;">
+            border-radius:18px;padding:22px 24px;margin-top:16px;font-family:'Rajdhani',sans-serif;">
   <div style="font-family:'Orbitron',sans-serif;font-size:.78em;color:#FFD700;
               margin-bottom:14px;letter-spacing:1px;">GRADING LEGEND</div>
   <div style="margin-bottom:10px">
     <span style="background:#2ECC40;color:#000;padding:3px 12px;border-radius:20px;
                  font-weight:700;font-size:.85em;">EASY</span>
-    <span style="color:#8ab;font-size:.9em;margin-left:8px">Avg GPA &gt; 3.5</span>
-  </div>
+    <span style="color:#8ab;font-size:.9em;margin-left:8px">Avg GPA &gt; 3.5</span></div>
   <div style="margin-bottom:10px">
     <span style="background:#0074D9;color:#fff;padding:3px 12px;border-radius:20px;
                  font-weight:700;font-size:.85em;">CHILL</span>
-    <span style="color:#8ab;font-size:.9em;margin-left:8px">Avg GPA 3.1 – 3.5</span>
-  </div>
+    <span style="color:#8ab;font-size:.9em;margin-left:8px">Avg GPA 3.1 – 3.5</span></div>
   <div>
     <span style="background:#FF4136;color:#fff;padding:3px 12px;border-radius:20px;
                  font-weight:700;font-size:.85em;">STRESSFUL</span>
-    <span style="color:#8ab;font-size:.9em;margin-left:8px">Avg GPA &lt; 3.0</span>
-  </div>
-</div>
-""", unsafe_allow_html=True)
+    <span style="color:#8ab;font-size:.9em;margin-left:8px">Avg GPA &lt; 3.0</span></div>
+</div>""", unsafe_allow_html=True)
 
-    # ── SEARCH TOOL ─────────────────────────
+    # ── SEARCH TOOL ─────────────────────────────────────────────────────────
     with tab_search:
-
         with st.sidebar:
             st.markdown("""
-<div style="font-family:'Orbitron',sans-serif;color:#FFD700;font-size:.82em;
-            letter-spacing:2px;padding:10px 0 6px;
-            border-bottom:1px solid rgba(255,215,0,.2);margin-bottom:16px;">
-  FILTERS
-</div>
-""", unsafe_allow_html=True)
+<div style="font-family:'Orbitron',sans-serif;color:#FFD700;font-size:.82em;letter-spacing:2px;
+            padding:10px 0 6px;border-bottom:1px solid rgba(255,215,0,.2);margin-bottom:16px;">
+  FILTERS</div>""", unsafe_allow_html=True)
             all_depts     = [""] + sorted(full_df["dept"].unique().tolist())
-            selected_dept = st.selectbox(
-                "Department", options=all_depts, index=0,
-                key="dept_q",
-                on_change=dismiss_prof,
-                format_func=lambda x: "All Departments" if x == "" else x
-            )
-            course_q = st.text_input("Course Number (e.g. 120A, 5A, 10)", key="course_q", on_change=dismiss_prof).strip().upper()
-            prof_q   = st.text_input("Professor Name", key="prof_q", on_change=dismiss_prof).strip().upper()
+            selected_dept = st.selectbox("Department", options=all_depts, index=0,
+                                         key="dept_q", on_change=dismiss_prof,
+                                         format_func=lambda x: "All Departments" if x == "" else x)
+            course_q = st.text_input("Course Number (e.g. 120A, 5A, 10)",
+                                     key="course_q", on_change=dismiss_prof).strip().upper()
+            prof_q   = st.text_input("Professor Name",
+                                     key="prof_q", on_change=dismiss_prof).strip().upper()
             st.button("(シ_ _)シ  Clear Filters", on_click=clear_filters, use_container_width=True)
             st.markdown("---")
-            st.markdown("""
-<div style="font-family:'Rajdhani',sans-serif;font-size:.88em;color:#556;line-height:1.7;">
-<b style="color:#FFD700;">RMP</b> badge = click professor name to view RateMyProfessors data + GPA history.
-</div>
-""", unsafe_allow_html=True)
+            st.markdown('<div style="font-family:Rajdhani,sans-serif;font-size:.88em;color:#556;line-height:1.7;">'
+                        '<b style="color:#FFD700;">RMP</b> badge = click professor name to view '
+                        'RateMyProfessors data + GPA history.</div>', unsafe_allow_html=True)
 
         if st.session_state.sel_prof_key:
-            lk = st.session_state.sel_prof_key
-            info = rmp_lookup.get(lk, {})
-
+            lk        = st.session_state.sel_prof_key
+            info      = rmp_lookup.get(lk, {})
             prof_hist = full_df[full_df["join_key"] == lk].copy()
-
             if info:
                 render_prof_card(info, st.session_state.sel_prof_name, prof_hist, gpa_col)
             else:
                 st.info(f"No RMP data found for {st.session_state.sel_prof_name}.")
                 if not prof_hist.empty:
                     render_prof_card({}, st.session_state.sel_prof_name, prof_hist, gpa_col)
-
             if st.button("(シ_ _)シ  Close Professor Card", key="close_prof"):
                 st.session_state.sel_prof_key  = None
                 st.session_state.sel_prof_name = None
@@ -1033,103 +828,71 @@ def main():
             st.warning("No results found. Try adjusting the filters.")
             return
 
-        df   = df.sort_values(["course", "year"], ascending=[True, False])
+        df    = df.sort_values(["course","year"], ascending=[True,False])
         shown = df.head(25)
 
-        st.markdown(f"""
-<div style="font-family:'Orbitron',sans-serif;font-size:.75em;
-            color:rgba(255,215,0,.45);letter-spacing:2px;margin-bottom:18px;">
-  SHOWING {len(shown)} OF {len(df)} RESULTS
-</div>""", unsafe_allow_html=True)
+        st.markdown(f'<div style="font-family:Orbitron,sans-serif;font-size:.75em;'
+                    f'color:rgba(255,215,0,.45);letter-spacing:2px;margin-bottom:18px;">'
+                    f'SHOWING {len(shown)} OF {len(df)} RESULTS</div>', unsafe_allow_html=True)
 
         for idx, row in shown.iterrows():
             gpa_val          = row[gpa_col]
             status, clr, shd = gpa_badge(gpa_val)
             prof_name        = row["instructor"]
-            jk               = row.get("join_key", "")
-
-            has_rmp = jk in rmp_lookup
+            jk               = row.get("join_key","")
+            has_rmp          = jk in rmp_lookup
 
             with st.container(border=True):
                 col_info, col_chart = st.columns([3, 2])
-
                 with col_info:
                     st.markdown(
-                        f'<div style="font-family:Orbitron,sans-serif;font-size:1.05em;'
-                        f'font-weight:700;color:#e8f4ff;margin-bottom:4px;">'
-                        f'{row["course"]}'
+                        f'<div style="font-family:Orbitron,sans-serif;font-size:1.05em;font-weight:700;'
+                        f'color:#e8f4ff;margin-bottom:4px;">{row["course"]}'
                         f'<span style="color:#445;font-size:.78em;margin-left:10px;">'
-                        f'{row["quarter"]} {row["year"]}</span></div>',
-                        unsafe_allow_html=True
-                    )
+                        f'{row["quarter"]} {row["year"]}</span></div>', unsafe_allow_html=True)
 
                     if has_rmp:
                         pb_col, _ = st.columns([2, 3])
                         with pb_col:
-                            if st.button(
-                                f"{prof_name}",
-                                key=f"pb_{idx}",
-                                help="Click to view RMP profile + GPA history",
-                            ):
+                            if st.button(f"{prof_name}", key=f"pb_{idx}",
+                                         help="Click to view RMP profile + GPA history"):
                                 st.session_state.sel_prof_key  = jk
                                 st.session_state.sel_prof_name = prof_name
                                 st.rerun()
                     else:
-                        st.markdown(
-                            f'<div style="font-family:Rajdhani,sans-serif;font-size:1em;'
-                            f'color:#667;margin:4px 0 6px;">{prof_name}</div>',
-                            unsafe_allow_html=True
-                        )
+                        st.markdown(f'<div style="font-family:Rajdhani,sans-serif;font-size:1em;'
+                                    f'color:#667;margin:4px 0 6px;">{prof_name}</div>',
+                                    unsafe_allow_html=True)
 
-                    rmp_pill = (
-                        '<span style="font-size:.7em;color:#FFD700;'
-                        'background:rgba(255,215,0,.08);border:1px solid rgba(255,215,0,.22);'
-                        'padding:2px 10px;border-radius:12px;margin-left:8px;">꒰✩‿✩꒱ RMP</span>'
-                        if has_rmp else ""
-                    )
+                    rmp_pill = ('<span style="font-size:.7em;color:#FFD700;background:rgba(255,215,0,.08);'
+                                'border:1px solid rgba(255,215,0,.22);padding:2px 10px;border-radius:12px;'
+                                'margin-left:8px;">꒰✩‿✩꒱ RMP</span>' if has_rmp else "")
                     txt_col = "#000" if status == "EASY" else "#fff"
                     st.markdown(
                         f'<div style="display:flex;align-items:center;gap:8px;margin-top:6px;">'
-                        f'<span style="font-family:Orbitron,sans-serif;font-size:.88em;'
-                        f'font-weight:700;color:#cde;">GPA {gpa_val:.2f}</span>'
-                        f'<span style="background:{clr};color:{txt_col};'
-                        f'padding:4px 14px;border-radius:20px;font-size:.76em;font-weight:900;'
-                        f'box-shadow:0 0 14px {shd};letter-spacing:1px;">{status}</span>'
-                        f'{rmp_pill}</div>',
-                        unsafe_allow_html=True
-                    )
+                        f'<span style="font-family:Orbitron,sans-serif;font-size:.88em;font-weight:700;'
+                        f'color:#cde;">GPA {gpa_val:.2f}</span>'
+                        f'<span style="background:{clr};color:{txt_col};padding:4px 14px;border-radius:20px;'
+                        f'font-size:.76em;font-weight:900;box-shadow:0 0 14px {shd};letter-spacing:1px;">'
+                        f'{status}</span>{rmp_pill}</div>', unsafe_allow_html=True)
 
                 with col_chart:
                     grades = pd.DataFrame({
-                        "Grade": ["A", "B", "C", "D", "F"],
-                        "Count": [
-                            row.get("a", 0), row.get("b", 0),
-                            row.get("c", 0), row.get("d", 0), row.get("f", 0)
-                        ],
+                        "Grade": ["A","B","C","D","F"],
+                        "Count": [row.get("a",0),row.get("b",0),row.get("c",0),
+                                  row.get("d",0),row.get("f",0)],
                     })
-                    fig = px.bar(
-                        grades, x="Grade", y="Count", color="Grade",
-                        color_discrete_map={
-                            "A": "#2ECC40", "B": "#0074D9",
-                            "C": "#FFDC00", "D": "#FF851B", "F": "#FF4136"
-                        },
-                        template="plotly_dark", height=120,
-                    )
-                    fig.update_layout(
-                        margin=dict(l=0, r=0, t=4, b=0),
-                        showlegend=False,
-                        xaxis_title=None, yaxis_title=None,
-                        paper_bgcolor="rgba(0,0,0,0)",
-                        plot_bgcolor="rgba(0,0,0,0)",
-                        xaxis=dict(tickfont=dict(size=11, color="#aaa")),
-                        yaxis=dict(tickfont=dict(size=10, color="#555")),
-                    )
-                    st.plotly_chart(
-                        fig, use_container_width=True,
-                        key=f"fig_{idx}",
-                        config={"displayModeBar": False},
-                    )
-
+                    fig = px.bar(grades, x="Grade", y="Count", color="Grade",
+                                 color_discrete_map={"A":"#2ECC40","B":"#0074D9",
+                                                     "C":"#FFDC00","D":"#FF851B","F":"#FF4136"},
+                                 template="plotly_dark", height=120)
+                    fig.update_layout(margin=dict(l=0,r=0,t=4,b=0), showlegend=False,
+                                      xaxis_title=None, yaxis_title=None,
+                                      paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                                      xaxis=dict(tickfont=dict(size=11,color="#aaa")),
+                                      yaxis=dict(tickfont=dict(size=10,color="#555")))
+                    st.plotly_chart(fig, use_container_width=True, key=f"fig_{idx}",
+                                    config={"displayModeBar": False})
 
     # ── MY QUARTER ──────────────────────────────────────────────────────────
     with tab_quarter:
@@ -1139,8 +902,7 @@ def main():
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;600&display=swap');
 *{margin:0;padding:0;box-sizing:border-box}body{background:transparent;overflow:hidden}
 .sc{perspective:900px;width:100%;height:165px;display:flex;justify-content:center;align-items:center}
-.cd{width:96%;height:140px;
-    background:linear-gradient(135deg,#001428 0%,#001e4a 60%,#002255 100%);
+.cd{width:96%;height:140px;background:linear-gradient(135deg,#001428 0%,#001e4a 60%,#002255 100%);
     border-radius:18px;border:1.5px solid rgba(255,215,0,.4);
     box-shadow:0 16px 40px rgba(0,0,0,.5),inset 0 0 30px rgba(0,116,217,.06);
     transform-style:preserve-3d;transition:transform .1s ease;
@@ -1150,16 +912,14 @@ def main():
        color:#FFD700;margin-bottom:6px;text-shadow:0 0 10px rgba(255,215,0,.3)}
 .desc{font-family:'Rajdhani',sans-serif;font-size:.95em;color:#8ab;line-height:1.55}
 </style>
-<div class="sc" id="sc">
-  <div class="cd" id="cd">
-    <div class="icon">꒰✩‿✩꒱</div>
-    <div>
-      <div class="title">MY QUARTER — INSTANT SCHEDULE INSIGHTS</div>
-      <div class="desc">Upload a screenshot of your UCSB GOLD schedule. Gemini reads it automatically
-      and shows GPA history + RMP data for every class instantly.</div>
-    </div>
+<div class="sc" id="sc"><div class="cd" id="cd">
+  <div class="icon">꒰✩‿✩꒱</div>
+  <div>
+    <div class="title">MY QUARTER — INSTANT SCHEDULE INSIGHTS</div>
+    <div class="desc">Upload a screenshot of your UCSB GOLD schedule.
+    Local OCR reads it automatically — no API key, no cost.</div>
   </div>
-</div>
+</div></div>
 <script>
 const sc=document.getElementById('sc'),cd=document.getElementById('cd');
 sc.addEventListener('mousemove',e=>{const r=sc.getBoundingClientRect();
@@ -1172,41 +932,16 @@ sc.addEventListener('mouseleave',()=>{cd.style.transform='';});
 <div style="background:rgba(0,116,217,0.07);border:1px solid rgba(0,116,217,0.25);
             border-radius:14px;padding:16px 20px;margin-bottom:18px;
             font-family:'Rajdhani',sans-serif;font-size:.92em;color:#8ab;line-height:1.9;">
-  <span style="font-family:'Orbitron',sans-serif;font-size:.75em;color:#5bb8ff;
-               letter-spacing:1px;">HOW TO USE</span><br>
+  <span style="font-family:'Orbitron',sans-serif;font-size:.75em;color:#5bb8ff;letter-spacing:1px;">HOW TO USE</span><br>
   1. Go to <b style="color:#fff">UCSB GOLD</b> → <b style="color:#fff">My Class Schedule</b><br>
-  2. Take a <b style="color:#fff">screenshot</b> of the schedule table (the whole page or just the class list)<br>
-  3. Upload it below — Gemini reads the image and pulls insights for every class ꒰✩‿✩꒱
+  2. Take a <b style="color:#fff">screenshot</b> of the full schedule table<br>
+  3. Upload it below — OCR scans it instantly, no API key needed ꒰✩‿✩꒱<br>
+  <span style="font-size:.85em;color:#445;">
+    Deployment note: add <code>pytesseract</code> + <code>Pillow</code> to requirements.txt
+    and <code>tesseract-ocr</code> to packages.txt
+  </span>
 </div>
 """, unsafe_allow_html=True)
-
-        # ── Gemini API key input ─────────────────────────────────────────────
-        stored_key = ""
-        try:
-            stored_key = st.secrets.get("GEMINI_API_KEY", "")
-        except Exception:
-            pass
-        if not stored_key:
-            stored_key = os.environ.get("GEMINI_API_KEY", "")
-
-        with st.expander("🔑  API Key Settings" + (" ✓ Gemini key configured" if stored_key else " ⚠ No key found — enter below"), expanded=not bool(stored_key)):
-            st.markdown("""<div style="font-family:'Rajdhani',sans-serif;font-size:.85em;color:#8ab;line-height:1.7;margin-bottom:8px;">
-Enter your <b style="color:#fff">Google Gemini API key</b> here (free at Google AI Studio).
-Get one at <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:#5bb8ff;">aistudio.google.com</a>
-</div>""", unsafe_allow_html=True)
-            api_key_val = st.text_input(
-                "Gemini API Key",
-                type="password",
-                placeholder="AIzaSy...",
-                key="api_key_input",
-                label_visibility="collapsed",
-            )
-            if api_key_val:
-                os.environ["GEMINI_API_KEY"] = api_key_val
-                st.success("Gemini key set for this session!")
-            elif stored_key:
-                key_preview = stored_key[:8] + "..." + stored_key[-4:]
-                st.markdown(f'<div style="font-family:Rajdhani,sans-serif;font-size:.8em;color:#2ECC40;">✓ Using stored key: {key_preview}</div>', unsafe_allow_html=True)
 
         # ── Image uploader ───────────────────────────────────────────────────
         uploaded_img = st.file_uploader(
@@ -1217,9 +952,9 @@ Get one at <a href="https://aistudio.google.com/app/apikey" target="_blank" styl
 
         col_analyze, col_clear = st.columns([2, 1])
         with col_analyze:
-            run_vision = st.button("Analyze Schedule Image",
-                                   use_container_width=True,
-                                   disabled=(uploaded_img is None))
+            run_ocr = st.button("Analyze Schedule Image",
+                                use_container_width=True,
+                                disabled=(uploaded_img is None))
         with col_clear:
             if st.button("(シ_ _)シ  Clear", use_container_width=True):
                 st.session_state.parsed_schedule = []
@@ -1228,22 +963,20 @@ Get one at <a href="https://aistudio.google.com/app/apikey" target="_blank" styl
         if uploaded_img is not None:
             st.image(uploaded_img, caption="Your uploaded schedule", use_column_width=True)
 
-        if run_vision and uploaded_img is not None:
-            mime = uploaded_img.type or "image/png"
+        if run_ocr and uploaded_img is not None:
             img_bytes = uploaded_img.read()
-            with st.spinner("꒰(･‿･)꒱ Gemini is reading your schedule..."):
-                st.session_state.parsed_schedule = parse_schedule_from_image(img_bytes, mime)
+            with st.spinner("꒰(･‿･)꒱ Reading your schedule with OCR..."):
+                st.session_state.parsed_schedule = parse_schedule_from_image(img_bytes)
             if not st.session_state.parsed_schedule:
-                st.warning("No courses detected. Make sure the screenshot shows the class list clearly.")
+                st.warning("No courses detected. Make sure the screenshot clearly shows the full schedule table.")
             else:
                 st.rerun()
 
         parsed = st.session_state.parsed_schedule
-
         if not parsed:
             st.stop()
 
-        # ── Quarter summary strip ────────────────────────────────────────────
+        # ── Quarter summary ──────────────────────────────────────────────────
         n_courses  = len(parsed)
         n_with_rmp = sum(1 for p in parsed if make_join_key(p["instructor"]) in rmp_lookup)
         avg_gpas   = []
@@ -1252,65 +985,52 @@ Get one at <a href="https://aistudio.google.com/app/apikey" target="_blank" styl
             sub = full_df[full_df["join_key"] == jk]
             if not sub.empty:
                 avg_gpas.append(sub[gpa_col].mean())
-        overall_avg = sum(avg_gpas) / len(avg_gpas) if avg_gpas else None
-        ov_status, ov_clr, _ = gpa_badge(overall_avg) if overall_avg else ("N/A", "#666", "")
+        overall_avg             = sum(avg_gpas) / len(avg_gpas) if avg_gpas else None
+        ov_status, ov_clr, _    = gpa_badge(overall_avg) if overall_avg else ("N/A","#666","")
 
         st.markdown(f"""
 <div style="display:flex;gap:14px;margin:18px 0 24px;flex-wrap:wrap;">
   <div style="flex:1;min-width:130px;background:rgba(255,215,0,.07);border:1px solid rgba(255,215,0,.2);
               border-radius:14px;padding:16px;text-align:center;">
     <div style="font-family:'Orbitron',sans-serif;font-size:1.8em;font-weight:900;color:#FFD700">{n_courses}</div>
-    <div style="font-family:'Rajdhani',sans-serif;font-size:.8em;color:#556;letter-spacing:1px;margin-top:4px;">CLASSES DETECTED</div>
-  </div>
+    <div style="font-family:'Rajdhani',sans-serif;font-size:.8em;color:#556;letter-spacing:1px;margin-top:4px;">CLASSES DETECTED</div></div>
   <div style="flex:1;min-width:130px;background:rgba(0,116,217,.07);border:1px solid rgba(0,116,217,.2);
               border-radius:14px;padding:16px;text-align:center;">
     <div style="font-family:'Orbitron',sans-serif;font-size:1.8em;font-weight:900;color:#5bb8ff">{n_with_rmp}</div>
-    <div style="font-family:'Rajdhani',sans-serif;font-size:.8em;color:#556;letter-spacing:1px;margin-top:4px;">PROFS WITH RMP</div>
-  </div>
+    <div style="font-family:'Rajdhani',sans-serif;font-size:.8em;color:#556;letter-spacing:1px;margin-top:4px;">PROFS WITH RMP</div></div>
   <div style="flex:1;min-width:130px;background:rgba(46,204,64,.06);border:1px solid rgba(46,204,64,.15);
               border-radius:14px;padding:16px;text-align:center;">
     <div style="font-family:'Orbitron',sans-serif;font-size:1.8em;font-weight:900;color:{ov_clr}">{f"{overall_avg:.2f}" if overall_avg else "N/A"}</div>
-    <div style="font-family:'Rajdhani',sans-serif;font-size:.8em;color:#556;letter-spacing:1px;margin-top:4px;">PROJECTED AVG GPA</div>
-  </div>
+    <div style="font-family:'Rajdhani',sans-serif;font-size:.8em;color:#556;letter-spacing:1px;margin-top:4px;">PROJECTED AVG GPA</div></div>
   <div style="flex:1;min-width:130px;background:rgba(255,65,54,.06);border:1px solid rgba(255,65,54,.12);
               border-radius:14px;padding:16px;text-align:center;">
     <div style="font-family:'Orbitron',sans-serif;font-size:1.4em;font-weight:900;color:{ov_clr};margin-top:4px">{ov_status}</div>
-    <div style="font-family:'Rajdhani',sans-serif;font-size:.8em;color:#556;letter-spacing:1px;margin-top:4px;">QUARTER VIBE</div>
-  </div>
-</div>
-""", unsafe_allow_html=True)
+    <div style="font-family:'Rajdhani',sans-serif;font-size:.8em;color:#556;letter-spacing:1px;margin-top:4px;">QUARTER VIBE</div></div>
+</div>""", unsafe_allow_html=True)
 
-        st.markdown(
-            f'<div style="font-family:Orbitron,sans-serif;font-size:.75em;'
-            f'color:rgba(255,215,0,.5);letter-spacing:2px;margin-bottom:18px;">'
-            f'YOUR {n_courses} CLASSES THIS QUARTER</div>',
-            unsafe_allow_html=True
-        )
+        st.markdown(f'<div style="font-family:Orbitron,sans-serif;font-size:.75em;color:rgba(255,215,0,.5);'
+                    f'letter-spacing:2px;margin-bottom:18px;">YOUR {n_courses} CLASSES THIS QUARTER</div>',
+                    unsafe_allow_html=True)
 
-        palette = [
-            "#FF4136","#0074D9","#FFD700","#2ECC40",
-            "#FF851B","#B10DC9","#00CCFF","#FF69B4",
-            "#AAAAAA","#01FF70","#F012BE","#7FDBFF",
-        ]
-        quarter_order_map = {"WINTER": 0, "SPRING": 1, "SUMMER": 2, "FALL": 3}
+        palette = ["#FF4136","#0074D9","#FFD700","#2ECC40","#FF851B","#B10DC9",
+                   "#00CCFF","#FF69B4","#AAAAAA","#01FF70","#F012BE","#7FDBFF"]
+        qmap    = {"WINTER":0,"SPRING":1,"SUMMER":2,"FALL":3}
 
         for pi, entry in enumerate(parsed):
-            course_name = entry["course"]
-            instructor  = entry["instructor"]
-            dept        = entry["dept"]
-            jk          = make_join_key(instructor)
+            course_name  = entry["course"]
+            instructor   = entry["instructor"]
+            jk           = make_join_key(instructor)
             course_color = palette[pi % len(palette)]
 
             specific_hist = full_df[
                 (full_df["join_key"] == jk) &
-                (full_df["course"].str.contains(entry["num"], na=False))
-            ].copy()
+                (full_df["course"].str.contains(entry["num"], na=False))].copy()
             all_prof_hist = full_df[full_df["join_key"] == jk].copy()
             hist_for_gpa  = specific_hist if not specific_hist.empty else all_prof_hist
 
-            avg_gpa = hist_for_gpa[gpa_col].mean() if not hist_for_gpa.empty else None
-            status, clr, shd = gpa_badge(avg_gpa) if avg_gpa else ("N/A", "#666", "rgba(0,0,0,0)")
-            txt_col = "#000" if status == "EASY" else "#fff"
+            avg_gpa              = hist_for_gpa[gpa_col].mean() if not hist_for_gpa.empty else None
+            status, clr, shd     = gpa_badge(avg_gpa) if avg_gpa else ("N/A","#666","rgba(0,0,0,0)")
+            txt_col              = "#000" if status == "EASY" else "#fff"
 
             rmp_info   = rmp_lookup.get(jk, {})
             has_rmp    = bool(rmp_info)
@@ -1321,16 +1041,16 @@ Get one at <a href="https://aistudio.google.com/app/apikey" target="_blank" styl
             ta_str     = (f"{rmp_ta}%" if rmp_ta and str(rmp_ta) != "nan"
                           and "%" not in str(rmp_ta) else str(rmp_ta))
             try:
-                rv    = float(rmp_rating)
-                r_clr = "#2ECC40" if rv >= 4.0 else ("#FFDC00" if rv >= 3.0 else "#FF4136")
+                r_clr = "#2ECC40" if float(rmp_rating) >= 4.0 else \
+                        ("#FFDC00" if float(rmp_rating) >= 3.0 else "#FF4136")
             except Exception:
                 r_clr = "#888"
 
             gpa_display = f"{avg_gpa:.2f}" if avg_gpa else "No Data"
 
             with st.container(border=True):
-                st.markdown(
-                    f'''<div style="display:flex;align-items:center;gap:12px;margin-bottom:2px;">
+                st.markdown(f'''
+<div style="display:flex;align-items:center;gap:12px;margin-bottom:2px;">
   <span style="display:inline-block;width:10px;height:10px;border-radius:50%;
                background:{course_color};box-shadow:0 0 8px {course_color};flex-shrink:0;"></span>
   <span style="font-family:Orbitron,sans-serif;font-size:1.05em;font-weight:900;color:#FFD700;">{course_name}</span>
@@ -1340,28 +1060,24 @@ Get one at <a href="https://aistudio.google.com/app/apikey" target="_blank" styl
 </div>
 <div style="font-family:Rajdhani,sans-serif;font-size:.88em;color:#556;margin-bottom:10px;padding-left:22px;">
   Instructor: <b style="color:#aac;">{instructor}</b>
-</div>''',
-                    unsafe_allow_html=True
-                )
+</div>''', unsafe_allow_html=True)
 
                 tab_class, tab_prof = st.tabs([
                     f"📊  {course_name} — Class Stats",
                     f"👤  {instructor} — Professor"
                 ])
 
+                # ── CLASS STATS ─────────────────────────────────────────────
                 with tab_class:
                     if specific_hist.empty and all_prof_hist.empty:
-                        st.markdown(
-                            '<div style="color:#445;font-family:Rajdhani,sans-serif;padding:16px 0;">'
-                            'No historical grade data found for this course.</div>',
-                            unsafe_allow_html=True
-                        )
+                        st.markdown('<div style="color:#445;font-family:Rajdhani,sans-serif;padding:16px 0;">'
+                                    'No historical grade data found for this course.</div>',
+                                    unsafe_allow_html=True)
                     else:
-                        use_hist = specific_hist if not specific_hist.empty else all_prof_hist
-                        use_hist = use_hist.copy()
-                        use_hist["term"] = use_hist["quarter"].astype(str) + " " + use_hist["year"].astype(str)
-                        use_hist["_qord"] = use_hist["quarter"].map(quarter_order_map).fillna(9)
-                        use_hist = use_hist.sort_values(["year", "_qord"])
+                        use_hist = (specific_hist if not specific_hist.empty else all_prof_hist).copy()
+                        use_hist["term"]  = use_hist["quarter"].astype(str) + " " + use_hist["year"].astype(str)
+                        use_hist["_qord"] = use_hist["quarter"].map(qmap).fillna(9)
+                        use_hist          = use_hist.sort_values(["year","_qord"])
 
                         n_sections  = len(use_hist)
                         best_gpa    = use_hist[gpa_col].max()
@@ -1371,31 +1087,21 @@ Get one at <a href="https://aistudio.google.com/app/apikey" target="_blank" styl
 
                         st.markdown(f'''
 <div style="display:flex;gap:10px;flex-wrap:wrap;margin:10px 0 16px;">
-  <div style="flex:1;min-width:100px;background:rgba(255,255,255,.04);border-radius:12px;
-              padding:12px;text-align:center;border:1px solid rgba(255,255,255,.07);">
+  <div style="flex:1;min-width:100px;background:rgba(255,255,255,.04);border-radius:12px;padding:12px;text-align:center;border:1px solid rgba(255,255,255,.07);">
     <div style="font-family:Orbitron,sans-serif;font-size:1.4em;font-weight:900;color:{clr}">{avg_gpa:.2f}</div>
-    <div style="font-size:.65em;color:#445;margin-top:4px;letter-spacing:.8px;">AVG GPA</div>
-  </div>
-  <div style="flex:1;min-width:100px;background:rgba(255,255,255,.04);border-radius:12px;
-              padding:12px;text-align:center;border:1px solid rgba(255,255,255,.07);">
+    <div style="font-size:.65em;color:#445;margin-top:4px;letter-spacing:.8px;">AVG GPA</div></div>
+  <div style="flex:1;min-width:100px;background:rgba(255,255,255,.04);border-radius:12px;padding:12px;text-align:center;border:1px solid rgba(255,255,255,.07);">
     <div style="font-family:Orbitron,sans-serif;font-size:1.4em;font-weight:900;color:#2ECC40">{best_gpa:.2f}</div>
-    <div style="font-size:.65em;color:#445;margin-top:4px;letter-spacing:.8px;">BEST TERM</div>
-  </div>
-  <div style="flex:1;min-width:100px;background:rgba(255,255,255,.04);border-radius:12px;
-              padding:12px;text-align:center;border:1px solid rgba(255,255,255,.07);">
+    <div style="font-size:.65em;color:#445;margin-top:4px;letter-spacing:.8px;">BEST TERM</div></div>
+  <div style="flex:1;min-width:100px;background:rgba(255,255,255,.04);border-radius:12px;padding:12px;text-align:center;border:1px solid rgba(255,255,255,.07);">
     <div style="font-family:Orbitron,sans-serif;font-size:1.4em;font-weight:900;color:#FF4136">{worst_gpa:.2f}</div>
-    <div style="font-size:.65em;color:#445;margin-top:4px;letter-spacing:.8px;">TOUGHEST TERM</div>
-  </div>
-  <div style="flex:1;min-width:100px;background:rgba(255,255,255,.04);border-radius:12px;
-              padding:12px;text-align:center;border:1px solid rgba(255,255,255,.07);">
+    <div style="font-size:.65em;color:#445;margin-top:4px;letter-spacing:.8px;">TOUGHEST TERM</div></div>
+  <div style="flex:1;min-width:100px;background:rgba(255,255,255,.04);border-radius:12px;padding:12px;text-align:center;border:1px solid rgba(255,255,255,.07);">
     <div style="font-family:Orbitron,sans-serif;font-size:1.4em;font-weight:900;color:#5bb8ff">{n_sections}</div>
-    <div style="font-size:.65em;color:#445;margin-top:4px;letter-spacing:.8px;">SECTIONS</div>
-  </div>
-  <div style="flex:1;min-width:120px;background:rgba(255,255,255,.04);border-radius:12px;
-              padding:12px;text-align:center;border:1px solid rgba(255,255,255,.07);">
+    <div style="font-size:.65em;color:#445;margin-top:4px;letter-spacing:.8px;">SECTIONS</div></div>
+  <div style="flex:1;min-width:120px;background:rgba(255,255,255,.04);border-radius:12px;padding:12px;text-align:center;border:1px solid rgba(255,255,255,.07);">
     <div style="font-family:Orbitron,sans-serif;font-size:1.2em;font-weight:900;color:#FFD700">{latest_gpa:.2f}</div>
-    <div style="font-size:.65em;color:#445;margin-top:4px;letter-spacing:.8px;">LAST: {latest_term}</div>
-  </div>
+    <div style="font-size:.65em;color:#445;margin-top:4px;letter-spacing:.8px;">LAST: {latest_term}</div></div>
 </div>''', unsafe_allow_html=True)
 
                         trend_fig = go.Figure()
@@ -1409,11 +1115,10 @@ Get one at <a href="https://aistudio.google.com/app/apikey" target="_blank" styl
                             marker=dict(size=8, color=course_color,
                                         line=dict(color="rgba(255,255,255,0.5)", width=1.5)),
                             fill="tozeroy",
-                            fillcolor=f"rgba({int(course_color[1:3],16)},"
-                                      f"{int(course_color[3:5],16)},"
-                                      f"{int(course_color[5:7],16)},0.07)",
-                            hovertemplate="<b>%{x}</b><br>Avg GPA: <b>%{y:.2f}</b><extra></extra>",
-                        ))
+                            fillcolor=(f"rgba({int(course_color[1:3],16)},"
+                                       f"{int(course_color[3:5],16)},"
+                                       f"{int(course_color[5:7],16)},0.07)"),
+                            hovertemplate="<b>%{x}</b><br>Avg GPA: <b>%{y:.2f}</b><extra></extra>"))
                         trend_fig.add_hline(y=3.5, line_dash="dot",
                                             line_color="rgba(46,204,64,0.4)", line_width=1.5,
                                             annotation_text="EASY", annotation_font_color="#2ECC40",
@@ -1424,54 +1129,40 @@ Get one at <a href="https://aistudio.google.com/app/apikey" target="_blank" styl
                                             annotation_font_size=9)
                         trend_fig.update_layout(
                             template="plotly_dark", height=200,
-                            margin=dict(l=0, r=40, t=20, b=0),
-                            paper_bgcolor="rgba(0,0,0,0)",
-                            plot_bgcolor="rgba(0,8,22,0.5)",
+                            margin=dict(l=0,r=40,t=20,b=0),
+                            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,8,22,0.5)",
                             showlegend=False,
-                            xaxis=dict(tickfont=dict(size=9, color="#778"),
-                                       showgrid=False, tickangle=-30),
-                            yaxis=dict(tickfont=dict(size=9, color="#556"),
+                            xaxis=dict(tickfont=dict(size=9,color="#778"), showgrid=False, tickangle=-30),
+                            yaxis=dict(tickfont=dict(size=9,color="#556"),
                                        gridcolor="rgba(255,255,255,0.04)",
-                                       range=[max(1.5, use_hist[gpa_col].min()-0.4), 4.3]),
-                        )
+                                       range=[max(1.5,use_hist[gpa_col].min()-0.4),4.3]))
                         st.plotly_chart(trend_fig, use_container_width=True,
-                                        key=f"ctrend_{pi}",
-                                        config={"displayModeBar": False})
+                                        key=f"ctrend_{pi}", config={"displayModeBar": False})
 
-                        latest = use_hist.iloc[-1]
-                        grade_cols = {"A": latest.get("a",0), "B": latest.get("b",0),
-                                      "C": latest.get("c",0), "D": latest.get("d",0),
-                                      "F": latest.get("f",0)}
-                        total_students = sum(grade_cols.values())
-                        if total_students > 0:
-                            st.markdown(
-                                f'<div style="font-family:Orbitron,sans-serif;font-size:.65em;'
-                                f'color:#FFD700;letter-spacing:2px;margin:8px 0 6px;">'
-                                f'GRADE DISTRIBUTION — {latest_term}</div>',
-                                unsafe_allow_html=True
-                            )
-                            grade_df = pd.DataFrame({
-                                "Grade": list(grade_cols.keys()),
-                                "Students": list(grade_cols.values()),
-                            })
+                        latest     = use_hist.iloc[-1]
+                        grade_vals = {"A":latest.get("a",0),"B":latest.get("b",0),
+                                      "C":latest.get("c",0),"D":latest.get("d",0),"F":latest.get("f",0)}
+                        if sum(grade_vals.values()) > 0:
+                            st.markdown(f'<div style="font-family:Orbitron,sans-serif;font-size:.65em;'
+                                        f'color:#FFD700;letter-spacing:2px;margin:8px 0 6px;">'
+                                        f'GRADE DISTRIBUTION — {latest_term}</div>', unsafe_allow_html=True)
                             dist_fig = px.bar(
-                                grade_df, x="Grade", y="Students", color="Grade",
+                                pd.DataFrame({"Grade":list(grade_vals.keys()),
+                                              "Students":list(grade_vals.values())}),
+                                x="Grade", y="Students", color="Grade",
                                 color_discrete_map={"A":"#2ECC40","B":"#0074D9",
                                                     "C":"#FFDC00","D":"#FF851B","F":"#FF4136"},
-                                template="plotly_dark", height=140,
-                            )
+                                template="plotly_dark", height=140)
                             dist_fig.update_layout(
                                 margin=dict(l=0,r=0,t=0,b=0), showlegend=False,
                                 xaxis_title=None, yaxis_title=None,
-                                paper_bgcolor="rgba(0,0,0,0)",
-                                plot_bgcolor="rgba(0,8,22,0.5)",
-                                xaxis=dict(tickfont=dict(size=11, color="#aaa")),
-                                yaxis=dict(tickfont=dict(size=9, color="#445")),
-                            )
+                                paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,8,22,0.5)",
+                                xaxis=dict(tickfont=dict(size=11,color="#aaa")),
+                                yaxis=dict(tickfont=dict(size=9,color="#445")))
                             st.plotly_chart(dist_fig, use_container_width=True,
-                                            key=f"cdist_{pi}",
-                                            config={"displayModeBar": False})
+                                            key=f"cdist_{pi}", config={"displayModeBar": False})
 
+                # ── PROFESSOR ────────────────────────────────────────────────
                 with tab_prof:
                     col_rmp, col_history = st.columns([1, 2])
 
@@ -1479,27 +1170,20 @@ Get one at <a href="https://aistudio.google.com/app/apikey" target="_blank" styl
                         if has_rmp:
                             st.markdown(f'''
 <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px;">
-  <div style="background:rgba(255,255,255,.05);border-radius:14px;padding:16px;
-              text-align:center;border:1px solid rgba(255,255,255,.08);">
-    <div style="font-family:Orbitron,sans-serif;font-size:2em;font-weight:900;
-                color:{r_clr}">{rmp_rating}</div>
-    <div style="font-size:.7em;color:#445;margin-top:5px;letter-spacing:.8px;">OVERALL RATING</div>
-  </div>
+  <div style="background:rgba(255,255,255,.05);border-radius:14px;padding:16px;text-align:center;border:1px solid rgba(255,255,255,.08);">
+    <div style="font-family:Orbitron,sans-serif;font-size:2em;font-weight:900;color:{r_clr}">{rmp_rating}</div>
+    <div style="font-size:.7em;color:#445;margin-top:5px;letter-spacing:.8px;">OVERALL RATING</div></div>
   <div style="display:flex;gap:8px;">
-    <div style="flex:1;background:rgba(255,255,255,.05);border-radius:12px;padding:12px;
-                text-align:center;border:1px solid rgba(255,255,255,.07);">
+    <div style="flex:1;background:rgba(255,255,255,.05);border-radius:12px;padding:12px;text-align:center;border:1px solid rgba(255,255,255,.07);">
       <div style="font-family:Orbitron,sans-serif;font-size:1.3em;font-weight:900;color:#FF851B">{rmp_diff}</div>
-      <div style="font-size:.6em;color:#445;margin-top:4px;">DIFFICULTY</div>
-    </div>
-    <div style="flex:1;background:rgba(255,255,255,.05);border-radius:12px;padding:12px;
-                text-align:center;border:1px solid rgba(255,255,255,.07);">
+      <div style="font-size:.6em;color:#445;margin-top:4px;">DIFFICULTY</div></div>
+    <div style="flex:1;background:rgba(255,255,255,.05);border-radius:12px;padding:12px;text-align:center;border:1px solid rgba(255,255,255,.07);">
       <div style="font-family:Orbitron,sans-serif;font-size:1.3em;font-weight:900;color:#2ECC40">{ta_str}</div>
-      <div style="font-size:.6em;color:#445;margin-top:4px;">RETAKE</div>
-    </div>
+      <div style="font-size:.6em;color:#445;margin-top:4px;">RETAKE</div></div>
   </div>
 </div>''', unsafe_allow_html=True)
 
-                            tags_raw = rmp_info.get("tags", "")
+                            tags_raw = rmp_info.get("tags","")
                             if tags_raw and str(tags_raw) != "nan":
                                 raw  = str(tags_raw).strip('"\'[]\'').strip("\'")
                                 tags = [t.strip().strip("\"'") for t in raw.split(",") if t.strip()][:8]
@@ -1507,103 +1191,74 @@ Get one at <a href="https://aistudio.google.com/app/apikey" target="_blank" styl
                                     f'<span style="background:rgba(0,204,255,.1);color:#00CCFF;'
                                     f'border:1px solid rgba(0,204,255,.3);padding:3px 10px;'
                                     f'border-radius:20px;display:inline-block;margin:3px 3px 0 0;'
-                                    f'font-size:.72em;">{t}</span>'
-                                    for t in tags
-                                )
+                                    f'font-size:.72em;">{t}</span>' for t in tags)
                                 st.markdown(
                                     f'<div style="font-family:Orbitron,sans-serif;font-size:.6em;'
                                     f'color:#FFD700;letter-spacing:1px;margin-bottom:6px;">STUDENT TAGS</div>'
                                     f'<div style="margin-bottom:12px;">{pills}</div>',
-                                    unsafe_allow_html=True
-                                )
-
+                                    unsafe_allow_html=True)
                             num_r = rmp_info.get("num_ratings","")
                             if num_r and str(num_r) != "nan":
-                                st.markdown(
-                                    f'<div style="font-family:Rajdhani,sans-serif;font-size:.8em;'
-                                    f'color:#445;margin-bottom:10px;">Based on {int(float(num_r))} student ratings</div>',
-                                    unsafe_allow_html=True
-                                )
+                                st.markdown(f'<div style="font-family:Rajdhani,sans-serif;font-size:.8em;'
+                                            f'color:#445;margin-bottom:10px;">Based on {int(float(num_r))} student ratings</div>',
+                                            unsafe_allow_html=True)
                             if rmp_url and str(rmp_url) != "nan":
-                                st.markdown(
-                                    f'<a href="{rmp_url}" target="_blank" style="font-family:Rajdhani,'
-                                    f'sans-serif;font-size:.85em;color:#5bb8ff;text-decoration:none;">'
-                                    f'(づ ◕‿◕ )づ Full RMP Profile →</a>',
-                                    unsafe_allow_html=True
-                                )
+                                st.markdown(f'<a href="{rmp_url}" target="_blank" style="font-family:Rajdhani,'
+                                            f'sans-serif;font-size:.85em;color:#5bb8ff;text-decoration:none;">'
+                                            f'(づ ◕‿◕ )づ Full RMP Profile →</a>', unsafe_allow_html=True)
                         else:
-                            st.markdown(
-                                '<div style="font-family:Rajdhani,sans-serif;font-size:.9em;'
-                                'color:#445;padding:16px 0;">No RMP data found for this professor.</div>',
-                                unsafe_allow_html=True
-                            )
+                            st.markdown('<div style="font-family:Rajdhani,sans-serif;font-size:.9em;'
+                                        'color:#445;padding:16px 0;">No RMP data found for this professor.</div>',
+                                        unsafe_allow_html=True)
 
                     with col_history:
                         if all_prof_hist.empty:
-                            st.markdown(
-                                '<div style="font-family:Rajdhani,sans-serif;font-size:.9em;'
-                                'color:#445;padding:16px 0;">No teaching history found.</div>',
-                                unsafe_allow_html=True
-                            )
+                            st.markdown('<div style="font-family:Rajdhani,sans-serif;font-size:.9em;'
+                                        'color:#445;padding:16px 0;">No teaching history found.</div>',
+                                        unsafe_allow_html=True)
                         else:
-                            st.markdown(
-                                f'<div style="font-family:Orbitron,sans-serif;font-size:.65em;'
-                                f'color:#FFD700;letter-spacing:2px;margin-bottom:10px;">'
-                                f'ALL COURSES TAUGHT BY {instructor}</div>',
-                                unsafe_allow_html=True
-                            )
+                            st.markdown(f'<div style="font-family:Orbitron,sans-serif;font-size:.65em;'
+                                        f'color:#FFD700;letter-spacing:2px;margin-bottom:10px;">'
+                                        f'ALL COURSES TAUGHT BY {instructor}</div>', unsafe_allow_html=True)
 
                             ph = all_prof_hist.copy()
                             ph["term"]  = ph["quarter"].astype(str) + " " + ph["year"].astype(str)
-                            ph["_qord"] = ph["quarter"].map(quarter_order_map).fillna(9)
-                            ph = ph.sort_values(["year","_qord"])
+                            ph["_qord"] = ph["quarter"].map(qmap).fillna(9)
+                            ph          = ph.sort_values(["year","_qord"])
 
-                            courses_taught = sorted(ph["course"].unique())
                             hist_fig = go.Figure()
-                            for ci, c in enumerate(courses_taught):
-                                sub = ph[ph["course"] == c]
-                                cc  = palette[ci % len(palette)]
+                            for ci, c in enumerate(sorted(ph["course"].unique())):
+                                sub  = ph[ph["course"] == c]
+                                cc   = palette[ci % len(palette)]
                                 lw   = 3.0 if c.startswith(entry["num"]) else 1.5
                                 opac = 1.0 if c.startswith(entry["num"]) else 0.55
                                 hist_fig.add_trace(go.Scatter(
                                     x=sub["term"], y=sub[gpa_col],
-                                    mode="lines+markers",
-                                    name=c,
+                                    mode="lines+markers", name=c,
                                     line=dict(color=cc, width=lw),
-                                    marker=dict(size=6 if lw > 2 else 4, color=cc, opacity=opac),
+                                    marker=dict(size=6 if lw>2 else 4, color=cc, opacity=opac),
                                     opacity=opac,
-                                    hovertemplate=f"<b>{c}</b><br>%{{x}}<br>GPA: <b>%{{y:.2f}}</b><extra></extra>",
-                                ))
+                                    hovertemplate=f"<b>{c}</b><br>%{{x}}<br>GPA: <b>%{{y:.2f}}</b><extra></extra>"))
                             hist_fig.add_hline(y=3.5, line_dash="dot",
                                                line_color="rgba(46,204,64,0.35)", line_width=1)
                             hist_fig.add_hline(y=3.0, line_dash="dot",
                                                line_color="rgba(255,65,54,0.35)", line_width=1)
                             hist_fig.update_layout(
                                 template="plotly_dark", height=260,
-                                margin=dict(l=0, r=0, t=10, b=0),
-                                paper_bgcolor="rgba(0,0,0,0)",
-                                plot_bgcolor="rgba(0,8,22,0.5)",
-                                legend=dict(font=dict(size=10, color="#aaa"),
-                                            bgcolor="rgba(0,0,0,0)",
+                                margin=dict(l=0,r=0,t=10,b=0),
+                                paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,8,22,0.5)",
+                                legend=dict(font=dict(size=10,color="#aaa"), bgcolor="rgba(0,0,0,0)",
                                             orientation="h", y=-0.25),
-                                xaxis=dict(tickfont=dict(size=8, color="#667"),
-                                           showgrid=False, tickangle=-30),
-                                yaxis=dict(tickfont=dict(size=9, color="#556"),
-                                           gridcolor="rgba(255,255,255,0.04)",
-                                           range=[2.0, 4.3],
-                                           title=dict(text="Avg GPA", font=dict(size=10, color="#778"))),
-                            )
+                                xaxis=dict(tickfont=dict(size=8,color="#667"), showgrid=False, tickangle=-30),
+                                yaxis=dict(tickfont=dict(size=9,color="#556"),
+                                           gridcolor="rgba(255,255,255,0.04)", range=[2.0,4.3],
+                                           title=dict(text="Avg GPA",font=dict(size=10,color="#778"))))
                             st.plotly_chart(hist_fig, use_container_width=True,
-                                            key=f"phist_{pi}",
-                                            config={"displayModeBar": False})
+                                            key=f"phist_{pi}", config={"displayModeBar": False})
 
-                            summary = (
-                                ph.groupby("course")[gpa_col]
-                                .agg(["mean","count"])
-                                .reset_index()
-                                .rename(columns={"mean":"Avg GPA","count":"Sections"})
-                                .sort_values("Avg GPA", ascending=False)
-                            )
+                            summary = (ph.groupby("course")[gpa_col].agg(["mean","count"]).reset_index()
+                                       .rename(columns={"mean":"Avg GPA","count":"Sections"})
+                                       .sort_values("Avg GPA", ascending=False))
                             summary["Avg GPA"] = summary["Avg GPA"].map("{:.2f}".format)
                             st.dataframe(summary, hide_index=True, use_container_width=True)
 
