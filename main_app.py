@@ -718,37 +718,61 @@ sc.addEventListener('mouseleave',()=>{{cd.style.transform='rotateY(0) rotateX(0)
                     f'letter-spacing:0;font-weight:400;">'
                     f'— click to show/hide</span></div>', unsafe_allow_html=True)
 
-        btn_cols = st.columns(min(len(courses), 4))
+        # ── Render one Streamlit button per course, always in its course color ─
+        num_cols = min(len(courses), 4)
+        btn_cols = st.columns(num_cols)
         for ci, course in enumerate(courses):
             color = palette[ci % len(palette)]
+            r, g, b = int(color[1:3], 16), int(color[3:5], 16), int(color[5:7], 16)
             is_active = course in active_courses
-            col = btn_cols[ci % min(len(courses), 4)]
+            col = btn_cols[ci % num_cols]
             with col:
-                # Build styled button label with color dot
                 dot = "●" if is_active else "○"
-                btn_label = f"{dot} {course}"
-                border_style = f"2px solid {color}" if is_active else "2px solid rgba(255,255,255,0.1)"
-                bg_style = f"rgba({int(color[1:3],16)},{int(color[3:5],16)},{int(color[5:7],16)},0.18)" if is_active else "rgba(255,255,255,0.03)"
+                # Always use the course color; just reduce opacity when inactive
+                if is_active:
+                    bg      = f"rgba({r},{g},{b},0.22)"
+                    border  = f"2px solid {color}"
+                    txt_clr = color
+                    opacity = "1.0"
+                else:
+                    bg      = f"rgba({r},{g},{b},0.06)"
+                    border  = f"2px solid rgba({r},{g},{b},0.35)"
+                    txt_clr = f"rgba({r},{g},{b},0.55)"
+                    opacity = "0.65"
 
+                # Inject per-button CSS keyed on the unique button key
+                btn_key = f"course_btn_{prof_key}_{ci}"
                 st.markdown(f"""
 <style>
-div[data-testid="stButton"] button[kind="secondary"].course-btn-{ci} {{
-    background: {bg_style} !important;
-    border: {border_style} !important;
-    color: {color if is_active else '#555'} !important;
+div[data-testid="column"]:nth-child({(ci % num_cols) + 1}) div[data-testid="stButton"] button {{
+    background: {bg} !important;
+    border: {border} !important;
+    color: {txt_clr} !important;
+    opacity: {opacity} !important;
+    font-weight: 700 !important;
+    font-family: 'Rajdhani', sans-serif !important;
+    font-size: 0.95em !important;
+    transition: opacity 0.15s, box-shadow 0.15s !important;
+    box-shadow: {'0 0 10px rgba(' + str(r) + ',' + str(g) + ',' + str(b) + ',0.3)' if is_active else 'none'} !important;
+}}
+div[data-testid="column"]:nth-child({(ci % num_cols) + 1}) div[data-testid="stButton"] button:hover {{
+    opacity: 1.0 !important;
+    box-shadow: 0 0 14px rgba({r},{g},{b},0.5) !important;
+    border: 2px solid {color} !important;
+    color: {color} !important;
 }}
 </style>""", unsafe_allow_html=True)
 
                 clicked = st.button(
-                    btn_label,
-                    key=f"course_btn_{prof_key}_{ci}",
+                    f"{dot} {course}",
+                    key=btn_key,
                     use_container_width=True,
                     help=f"{'Hide' if is_active else 'Show'} {course} on the 3D chart"
                 )
                 if clicked:
                     new_active = set(st.session_state[state_key])
                     if course in new_active:
-                        if len(new_active) > 1:  # keep at least one visible
+                        if len(new_active) > 1:
                             new_active.discard(course)
                     else:
                         new_active.add(course)
@@ -763,7 +787,7 @@ div[data-testid="stButton"] button[kind="secondary"].course-btn-{ci} {{
                 st.rerun()
         with ctrl_col2:
             if st.button("○ Hide All", key=f"hide_all_{prof_key}", use_container_width=True):
-                st.session_state[state_key] = {courses[0]}  # keep first visible
+                st.session_state[state_key] = {courses[0]}
                 st.rerun()
 
         summary = (hist.groupby("course")[gpa_col].agg(["mean","count"]).reset_index()
