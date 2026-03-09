@@ -90,15 +90,6 @@ html, body { background: #000 !important; }
 #  JOIN KEY HELPERS
 # ─────────────────────────────────────────────
 def parse_name(name: str) -> tuple[str, str]:
-    """
-    Parse an instructor name into (last, first_tokens) regardless of format.
-
-    Handles:
-      "RAVAT, UMA"       → ("RAVAT",  "UMA")
-      "RAVAT U V"        → ("RAVAT",  "U V")   ← last name is first token
-      "SYLVESTER BRYANNA"→ ("SYLVESTER", "BRYANNA")
-      "SMITH"            → ("SMITH",  "")
-    """
     if not name or pd.isna(name):
         return ("UNKNOWN", "")
     s = str(name).upper().strip()
@@ -110,22 +101,14 @@ def parse_name(name: str) -> tuple[str, str]:
 
 
 def name_similarity(first_a: str, first_b: str) -> float:
-    """
-    Compare two 'first name' strings and return a 0-1 similarity score.
-    Works even when one side is initials ("U V") and the other is a full name ("UMA VANDANA").
-    """
     if not first_a or not first_b:
-        return 0.5  # neutral when one side is missing
+        return 0.5
     toks_a = first_a.upper().split()
     toks_b = first_b.upper().split()
     if not toks_a or not toks_b:
         return 0.5
-    # Compare token by token up to the shorter side
     matches = 0
     for ta, tb in zip(toks_a, toks_b):
-        # Both are initials (single char) → must match exactly
-        # One is initial, other is full token → match if initial == first char of full
-        # Both are full words → must match exactly
         if ta == tb:
             matches += 1
         elif len(ta) == 1 and tb.startswith(ta):
@@ -133,13 +116,12 @@ def name_similarity(first_a: str, first_b: str) -> float:
         elif len(tb) == 1 and ta.startswith(tb):
             matches += 0.9
         else:
-            matches += 0  # mismatch
+            matches += 0
     total = max(len(toks_a), len(toks_b))
     return matches / total if total else 0.5
 
 
 def make_join_key(name: str) -> str:
-    """Stable per-row key = LAST||first_tokens (used only inside grades df)."""
     last, first = parse_name(name)
     return f"{last}||{first}"
 
@@ -178,14 +160,12 @@ def load_data():
 
     df["join_key"] = df["instructor"].apply(make_join_key)
 
-    # ── Build RMP lookup via similarity matching ─────────────────────────
-    rmp_lookup = {}   # grades join_key → rmp entry dict
+    rmp_lookup = {}
 
     if rmp_path:
         rmp = pd.read_csv(rmp_path)
         rmp.columns = [c.strip().lower() for c in rmp.columns]
 
-        # Normalise column names: strip "rmp_" prefix so we handle both variants
         col_alias = {}
         for c in rmp.columns:
             col_alias[c.replace("rmp_", "")] = c
@@ -193,7 +173,6 @@ def load_data():
         def get_rmp(row, field):
             return row.get(col_alias.get(field, field))
 
-        # Build list of (last, first, entry) from RMP for matching
         rmp_entries = []
         for _, r in rmp.iterrows():
             raw_name = str(r.get("instructor", ""))
@@ -212,12 +191,10 @@ def load_data():
             }
             rmp_entries.append(entry)
 
-        # Last-name bucket for fast lookup
         rmp_by_last: dict = {}
         for e in rmp_entries:
             rmp_by_last.setdefault(e["_last"], []).append(e)
 
-        # For each unique grades instructor find the best-matching RMP entry
         unique_instructors = df[["instructor", "join_key"]].drop_duplicates()
         for _, urow in unique_instructors.iterrows():
             inst = urow["instructor"]
@@ -238,12 +215,11 @@ def load_data():
                 )
                 best_score = name_similarity(g_first, scored[0]["_first"])
                 if best_score < 0.4:
-                    continue  # ambiguous match — skip
+                    continue
                 best = scored[0]
 
             rmp_lookup[jk] = {k: v for k, v in best.items() if not k.startswith("_")}
 
-        # Merge matched data back into grades df
         rmp_rows = [{"join_key": jk, **v} for jk, v in rmp_lookup.items()]
         if rmp_rows:
             rmp_df = pd.DataFrame(rmp_rows).rename(columns={
@@ -296,7 +272,6 @@ def clear_filters():
 
 
 def dismiss_prof():
-    """Called whenever a filter changes — closes the open professor card."""
     st.session_state.sel_prof_key  = None
     st.session_state.sel_prof_name = None
 
@@ -529,7 +504,6 @@ def render_prof_card(info: dict, prof_name: str, prof_history_df: pd.DataFrame, 
         if url and str(url) != "nan" else ""
     )
 
-    # Dynamic height: base + extra for tags row
     has_tags   = bool(tags_html)
     card_h     = 420 + (70 if has_tags else 0)
     scene_h    = card_h + 40
@@ -550,7 +524,6 @@ body{{background:transparent;overflow:hidden}}
         font-family:'Rajdhani',sans-serif;color:white;
         transform-style:preserve-3d;transition:transform .1s ease;
         position:relative;overflow:hidden}}
-/* animated shimmer line */
 .pcard::before{{content:'';position:absolute;top:0;left:-60%;width:40%;height:100%;
   background:linear-gradient(105deg,transparent 40%,rgba(255,215,0,.06) 50%,transparent 60%);
   animation:shimmer 4s infinite;pointer-events:none}}
@@ -604,7 +577,6 @@ sc.addEventListener('mouseleave',()=>{{cd.style.transform='rotateY(0) rotateX(0)
 </script>
 """, height=scene_h)
 
-    # ── GPA History 3D Scatter Chart ───────────────────────────────
     if not prof_history_df.empty and gpa_col in prof_history_df.columns:
         st.markdown(
             '<div style="font-family:Orbitron,sans-serif;font-size:.78em;'
@@ -649,13 +621,12 @@ sc.addEventListener('mouseleave',()=>{{cd.style.transform='rotateY(0) rotateX(0)
             ys = [course_idx[c] for c in sub["course"]]
             zs = sub[gpa_col].tolist()
 
-            # Main dots + connecting line — solid course color, no GPA colorscale
             fig.add_trace(go.Scatter3d(
                 x=xs, y=ys, z=zs,
                 mode="markers+lines",
                 name=course,
                 legendgroup=course,
-                showlegend=False,          # legend handled externally below chart
+                showlegend=False,
                 line=dict(color=color, width=2, dash="dot"),
                 marker=dict(
                     size=6,
@@ -673,7 +644,6 @@ sc.addEventListener('mouseleave',()=>{{cd.style.transform='rotateY(0) rotateX(0)
                 customdata=sub["term"].tolist(),
             ))
 
-            # Vertical drop lines from dot down to floor
             drop_x, drop_y, drop_z = [], [], []
             for x, y, z in zip(xs, ys, zs):
                 drop_x += [x, x, None]
@@ -690,7 +660,6 @@ sc.addEventListener('mouseleave',()=>{{cd.style.transform='rotateY(0) rotateX(0)
                 legendgroup=course,
             ))
 
-            # Floating GPA labels above each dot
             fig.add_trace(go.Scatter3d(
                 x=xs, y=ys, z=[z + 0.13 for z in zs],
                 mode="text",
@@ -701,7 +670,6 @@ sc.addEventListener('mouseleave',()=>{{cd.style.transform='rotateY(0) rotateX(0)
                 legendgroup=course,
             ))
 
-        # Reference planes for EASY and STRESSFUL thresholds
         xr = [-0.5, len(terms) - 0.5]
         yr = [-0.5, len(courses) - 0.5]
         for ref_z, ref_color, ref_name in [
@@ -783,7 +751,6 @@ sc.addEventListener('mouseleave',()=>{{cd.style.transform='rotateY(0) rotateX(0)
                     "modeBarButtonsToRemove": ["toImage"]},
         )
 
-        # ── External legend below the chart ──────────────────────────
         legend_items = "".join([
             f'<div style="display:flex;align-items:center;gap:8px;padding:6px 14px;'
             f'background:rgba(255,255,255,0.04);border-radius:10px;'
@@ -805,7 +772,6 @@ sc.addEventListener('mouseleave',()=>{{cd.style.transform='rotateY(0) rotateX(0)
             unsafe_allow_html=True,
         )
 
-        # Summary table below chart
         summary = (
             hist.groupby("course")[gpa_col]
             .agg(["mean", "count"])
@@ -830,14 +796,6 @@ sc.addEventListener('mouseleave',()=>{{cd.style.transform='rotateY(0) rotateX(0)
 #  SCHEDULE PARSER
 # ─────────────────────────────────────────────
 def parse_gold_schedule(text: str) -> list[dict]:
-    """
-    Parse pasted UCSB GOLD schedule text.
-    Returns list of dicts: {course, dept, num, instructor, raw_line}
-
-    Handles formats like:
-      PSTAT 122 - DESIGN OF EXPERMNTS
-      40220  Grading: L  4.0 Units  ABUZAID A H  M W  8:00 AM-9:15 AM  ILP, 1101
-    """
     results = []
     lines = [l.strip() for l in text.strip().splitlines() if l.strip()]
 
@@ -857,17 +815,14 @@ def parse_gold_schedule(text: str) -> list[dict]:
             continue
 
         if section_pat.match(line) and current_course:
-            # Extract instructor: after "Units" token, grab the name before day codes
-            day_pat = re.compile(r'([MTWRF]{1,5}|T\.B\.A)')
+            day_pat = re.compile(r'([MTWRF]{1,5}|T\.B\.A)')
             units_idx = line.find("Units")
             instructor = ""
             if units_idx != -1:
                 after = line[units_idx + 5:].strip()
-                # instructor is everything before the first day-of-week pattern
                 dm = day_pat.search(after)
                 if dm:
                     raw_inst = after[:dm.start()].strip().rstrip(",").strip()
-                    # clean up: remove leading/trailing punctuation
                     instructor = raw_inst.strip()
                 else:
                     instructor = after.split()[0] if after else ""
@@ -880,7 +835,6 @@ def parse_gold_schedule(text: str) -> list[dict]:
                     "instructor": instructor.upper(),
                 })
 
-    # Deduplicate by course+instructor
     seen = set()
     unique = []
     for r in results:
@@ -891,34 +845,41 @@ def parse_gold_schedule(text: str) -> list[dict]:
     return unique
 
 
-
 # ─────────────────────────────────────────────
-#  VISION SCHEDULE PARSER (Claude API)
+#  VISION SCHEDULE PARSER — NOW USES GEMINI ✨
 # ─────────────────────────────────────────────
 def parse_schedule_from_image(image_bytes: bytes, mime_type: str = "image/png") -> list[dict]:
     """
-    Send a screenshot to Claude claude-sonnet-4-5 and extract
+    Send a screenshot to Google Gemini and extract
     course + instructor pairs from the UCSB GOLD schedule image.
     Returns list of dicts: {course, dept, num, instructor}
     """
+    import json
+
     b64 = base64.b64encode(image_bytes).decode()
 
+    # ── Resolve Gemini API key: secrets → env var → session input ──
+    api_key = ""
+    try:
+        api_key = st.secrets.get("GEMINI_API_KEY", "")
+    except Exception:
+        pass
+    if not api_key:
+        api_key = os.environ.get("GEMINI_API_KEY", "")
+    if not api_key:
+        st.error("No Gemini API key configured. Enter your key in the API Key Settings above.")
+        return []
+
     payload = {
-        "model": "claude-haiku-4-5-20251001",
-        "max_tokens": 1000,
-        "messages": [{
-            "role": "user",
-            "content": [
+        "contents": [{
+            "parts": [
                 {
-                    "type": "image",
-                    "source": {
-                        "type": "base64",
-                        "media_type": mime_type,
+                    "inline_data": {
+                        "mime_type": mime_type,
                         "data": b64,
                     }
                 },
                 {
-                    "type": "text",
                     "text": (
                         "This is a UCSB GOLD 'My Class Schedule' screenshot. "
                         "Extract every course and its instructor. "
@@ -934,42 +895,25 @@ def parse_schedule_from_image(image_bytes: bytes, mime_type: str = "image/png") 
     }
 
     try:
-        # Resolve API key: secrets → env var
-        api_key = ""
-        try:
-            api_key = st.secrets["ANTHROPIC_API_KEY"]
-        except Exception:
-            pass
-        if not api_key:
-            api_key = os.environ.get("ANTHROPIC_API_KEY", "")
-        if not api_key:
-            st.error("No Anthropic API key configured. Set ANTHROPIC_API_KEY in Streamlit secrets or as an environment variable.")
-            return []
-
         resp = requests.post(
-            "https://api.anthropic.com/v1/messages",
-            headers={
-                "Content-Type": "application/json",
-                "x-api-key": api_key,
-                "anthropic-version": "2023-06-01",
-            },
+            f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}",
+            headers={"Content-Type": "application/json"},
             json=payload,
             timeout=30,
         )
+
         if not resp.ok:
-            st.error(f"API Error {resp.status_code}: {resp.text}")
+            st.error(f"Gemini API Error {resp.status_code}: {resp.text}")
             return []
+
         data = resp.json()
-        text = "".join(
-            block.get("text", "")
-            for block in data.get("content", [])
-            if block.get("type") == "text"
-        ).strip()
+
+        # Extract text from Gemini response structure
+        text = data["candidates"][0]["content"]["parts"][0]["text"].strip()
 
         # Strip possible markdown fences
         text = re.sub(r"^```[a-z]*\n?", "", text).rstrip("`").strip()
 
-        import json
         entries = json.loads(text)
         results = []
         for e in entries:
@@ -1033,7 +977,6 @@ def main():
     # ── SEARCH TOOL ─────────────────────────
     with tab_search:
 
-        # sidebar
         with st.sidebar:
             st.markdown("""
 <div style="font-family:'Orbitron',sans-serif;color:#FFD700;font-size:.82em;
@@ -1059,12 +1002,10 @@ def main():
 </div>
 """, unsafe_allow_html=True)
 
-        # ── Prof card (shown at top when selected) ────────────
         if st.session_state.sel_prof_key:
             lk = st.session_state.sel_prof_key
             info = rmp_lookup.get(lk, {})
 
-            # Pull all historical rows for this professor from the FULL dataset
             prof_hist = full_df[full_df["join_key"] == lk].copy()
 
             if info:
@@ -1080,7 +1021,6 @@ def main():
                 st.rerun()
             st.markdown("---")
 
-        # ── Filter ────────────────────────────────────────────
         df = full_df.copy()
         if selected_dept:
             df = df[df["dept"] == selected_dept]
@@ -1108,7 +1048,6 @@ def main():
             prof_name        = row["instructor"]
             jk               = row.get("join_key", "")
 
-            # ── Resolve RMP membership with fuzzy fallback ──
             has_rmp = jk in rmp_lookup
 
             with st.container(border=True):
@@ -1195,7 +1134,6 @@ def main():
     # ── MY QUARTER ──────────────────────────────────────────────────────────
     with tab_quarter:
 
-        # ── Intro card ──────────────────────────────────────────────────────
         components.html("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;600&display=swap');
@@ -1217,7 +1155,7 @@ def main():
     <div class="icon">꒰✩‿✩꒱</div>
     <div>
       <div class="title">MY QUARTER — INSTANT SCHEDULE INSIGHTS</div>
-      <div class="desc">Upload a screenshot of your UCSB GOLD schedule. Claude reads it automatically
+      <div class="desc">Upload a screenshot of your UCSB GOLD schedule. Gemini reads it automatically
       and shows GPA history + RMP data for every class instantly.</div>
     </div>
   </div>
@@ -1230,7 +1168,6 @@ sc.addEventListener('mouseleave',()=>{cd.style.transform='';});
 </script>
 """, height=185)
 
-        # ── How-to instructions ──────────────────────────────────────────────
         st.markdown("""
 <div style="background:rgba(0,116,217,0.07);border:1px solid rgba(0,116,217,0.25);
             border-radius:14px;padding:16px 20px;margin-bottom:18px;
@@ -1239,37 +1176,36 @@ sc.addEventListener('mouseleave',()=>{cd.style.transform='';});
                letter-spacing:1px;">HOW TO USE</span><br>
   1. Go to <b style="color:#fff">UCSB GOLD</b> → <b style="color:#fff">My Class Schedule</b><br>
   2. Take a <b style="color:#fff">screenshot</b> of the schedule table (the whole page or just the class list)<br>
-  3. Upload it below — Claude reads the image and pulls insights for every class ꒰✩‿✩꒱
+  3. Upload it below — Gemini reads the image and pulls insights for every class ꒰✩‿✩꒱
 </div>
 """, unsafe_allow_html=True)
 
-        # ── API key input (if not set via secrets/env) ──────────────────────
-        # ── Always show key input as override option ────────────────────────
+        # ── Gemini API key input ─────────────────────────────────────────────
         stored_key = ""
         try:
-            stored_key = st.secrets.get("ANTHROPIC_API_KEY", "")
+            stored_key = st.secrets.get("GEMINI_API_KEY", "")
         except Exception:
             pass
         if not stored_key:
-            stored_key = os.environ.get("ANTHROPIC_API_KEY", "")
+            stored_key = os.environ.get("GEMINI_API_KEY", "")
 
-        with st.expander("🔑  API Key Settings" + (" ✓ Key configured via secrets" if stored_key else " ⚠ No key found — enter below"), expanded=not bool(stored_key)):
+        with st.expander("🔑  API Key Settings" + (" ✓ Gemini key configured" if stored_key else " ⚠ No key found — enter below"), expanded=not bool(stored_key)):
             st.markdown("""<div style="font-family:'Rajdhani',sans-serif;font-size:.85em;color:#8ab;line-height:1.7;margin-bottom:8px;">
-Enter your <b style="color:#fff">Anthropic API key</b> here (overrides Streamlit secrets).
-Get one at <a href="https://console.anthropic.com/settings/keys" target="_blank" style="color:#5bb8ff;">console.anthropic.com</a>
+Enter your <b style="color:#fff">Google Gemini API key</b> here (free at Google AI Studio).
+Get one at <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:#5bb8ff;">aistudio.google.com</a>
 </div>""", unsafe_allow_html=True)
             api_key_val = st.text_input(
-                "API Key",
+                "Gemini API Key",
                 type="password",
-                placeholder="sk-ant-api03-...",
+                placeholder="AIzaSy...",
                 key="api_key_input",
                 label_visibility="collapsed",
             )
             if api_key_val:
-                os.environ["ANTHROPIC_API_KEY"] = api_key_val
-                st.success("Key set for this session!")
+                os.environ["GEMINI_API_KEY"] = api_key_val
+                st.success("Gemini key set for this session!")
             elif stored_key:
-                key_preview = stored_key[:12] + "..." + stored_key[-4:]
+                key_preview = stored_key[:8] + "..." + stored_key[-4:]
                 st.markdown(f'<div style="font-family:Rajdhani,sans-serif;font-size:.8em;color:#2ECC40;">✓ Using stored key: {key_preview}</div>', unsafe_allow_html=True)
 
         # ── Image uploader ───────────────────────────────────────────────────
@@ -1289,14 +1225,13 @@ Get one at <a href="https://console.anthropic.com/settings/keys" target="_blank"
                 st.session_state.parsed_schedule = []
                 st.rerun()
 
-        # Show the uploaded image preview
         if uploaded_img is not None:
             st.image(uploaded_img, caption="Your uploaded schedule", use_column_width=True)
 
         if run_vision and uploaded_img is not None:
             mime = uploaded_img.type or "image/png"
             img_bytes = uploaded_img.read()
-            with st.spinner("꒰(･‿･)꒱ Claude is reading your schedule..."):
+            with st.spinner("꒰(･‿･)꒱ Gemini is reading your schedule..."):
                 st.session_state.parsed_schedule = parse_schedule_from_image(img_bytes, mime)
             if not st.session_state.parsed_schedule:
                 st.warning("No courses detected. Make sure the screenshot shows the class list clearly.")
@@ -1352,7 +1287,6 @@ Get one at <a href="https://console.anthropic.com/settings/keys" target="_blank"
             unsafe_allow_html=True
         )
 
-        # ── One expandable card per detected class ──────────────────────────
         palette = [
             "#FF4136","#0074D9","#FFD700","#2ECC40",
             "#FF851B","#B10DC9","#00CCFF","#FF69B4",
@@ -1367,14 +1301,11 @@ Get one at <a href="https://console.anthropic.com/settings/keys" target="_blank"
             jk          = make_join_key(instructor)
             course_color = palette[pi % len(palette)]
 
-            # ── Data for this specific course + instructor ──────────────
             specific_hist = full_df[
                 (full_df["join_key"] == jk) &
                 (full_df["course"].str.contains(entry["num"], na=False))
             ].copy()
-            # All courses this instructor has taught (for professor tab)
             all_prof_hist = full_df[full_df["join_key"] == jk].copy()
-            # Fallback for GPA calc
             hist_for_gpa  = specific_hist if not specific_hist.empty else all_prof_hist
 
             avg_gpa = hist_for_gpa[gpa_col].mean() if not hist_for_gpa.empty else None
@@ -1397,9 +1328,7 @@ Get one at <a href="https://console.anthropic.com/settings/keys" target="_blank"
 
             gpa_display = f"{avg_gpa:.2f}" if avg_gpa else "No Data"
 
-            # ── Outer container ─────────────────────────────────────────
             with st.container(border=True):
-                # Header row: course name + badge
                 st.markdown(
                     f'''<div style="display:flex;align-items:center;gap:12px;margin-bottom:2px;">
   <span style="display:inline-block;width:10px;height:10px;border-radius:50%;
@@ -1415,15 +1344,11 @@ Get one at <a href="https://console.anthropic.com/settings/keys" target="_blank"
                     unsafe_allow_html=True
                 )
 
-                # ── Nested tabs: CLASS  |  PROFESSOR ───────────────────
                 tab_class, tab_prof = st.tabs([
                     f"📊  {course_name} — Class Stats",
                     f"👤  {instructor} — Professor"
                 ])
 
-                # ════════════════════════════════════════════════════════
-                #  TAB 1 — CLASS STATS
-                # ════════════════════════════════════════════════════════
                 with tab_class:
                     if specific_hist.empty and all_prof_hist.empty:
                         st.markdown(
@@ -1438,7 +1363,6 @@ Get one at <a href="https://console.anthropic.com/settings/keys" target="_blank"
                         use_hist["_qord"] = use_hist["quarter"].map(quarter_order_map).fillna(9)
                         use_hist = use_hist.sort_values(["year", "_qord"])
 
-                        # ── Summary stat boxes ──────────────────────────
                         n_sections  = len(use_hist)
                         best_gpa    = use_hist[gpa_col].max()
                         worst_gpa   = use_hist[gpa_col].min()
@@ -1474,7 +1398,6 @@ Get one at <a href="https://console.anthropic.com/settings/keys" target="_blank"
   </div>
 </div>''', unsafe_allow_html=True)
 
-                        # ── GPA trend chart ─────────────────────────────
                         trend_fig = go.Figure()
                         trend_fig.add_trace(go.Scatter(
                             x=use_hist["term"], y=use_hist[gpa_col],
@@ -1515,7 +1438,6 @@ Get one at <a href="https://console.anthropic.com/settings/keys" target="_blank"
                                         key=f"ctrend_{pi}",
                                         config={"displayModeBar": False})
 
-                        # ── Grade distribution for most recent section ──
                         latest = use_hist.iloc[-1]
                         grade_cols = {"A": latest.get("a",0), "B": latest.get("b",0),
                                       "C": latest.get("c",0), "D": latest.get("d",0),
@@ -1550,15 +1472,11 @@ Get one at <a href="https://console.anthropic.com/settings/keys" target="_blank"
                                             key=f"cdist_{pi}",
                                             config={"displayModeBar": False})
 
-                # ════════════════════════════════════════════════════════
-                #  TAB 2 — PROFESSOR
-                # ════════════════════════════════════════════════════════
                 with tab_prof:
                     col_rmp, col_history = st.columns([1, 2])
 
                     with col_rmp:
                         if has_rmp:
-                            # RMP stat boxes
                             st.markdown(f'''
 <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px;">
   <div style="background:rgba(255,255,255,.05);border-radius:14px;padding:16px;
@@ -1581,7 +1499,6 @@ Get one at <a href="https://console.anthropic.com/settings/keys" target="_blank"
   </div>
 </div>''', unsafe_allow_html=True)
 
-                            # Tags
                             tags_raw = rmp_info.get("tags", "")
                             if tags_raw and str(tags_raw) != "nan":
                                 raw  = str(tags_raw).strip('"\'[]\'').strip("\'")
@@ -1636,7 +1553,6 @@ Get one at <a href="https://console.anthropic.com/settings/keys" target="_blank"
                                 unsafe_allow_html=True
                             )
 
-                            # Build multi-course GPA trend (one line per course)
                             ph = all_prof_hist.copy()
                             ph["term"]  = ph["quarter"].astype(str) + " " + ph["year"].astype(str)
                             ph["_qord"] = ph["quarter"].map(quarter_order_map).fillna(9)
@@ -1647,7 +1563,6 @@ Get one at <a href="https://console.anthropic.com/settings/keys" target="_blank"
                             for ci, c in enumerate(courses_taught):
                                 sub = ph[ph["course"] == c]
                                 cc  = palette[ci % len(palette)]
-                                # Highlight the current course
                                 lw   = 3.0 if c.startswith(entry["num"]) else 1.5
                                 opac = 1.0 if c.startswith(entry["num"]) else 0.55
                                 hist_fig.add_trace(go.Scatter(
@@ -1682,7 +1597,6 @@ Get one at <a href="https://console.anthropic.com/settings/keys" target="_blank"
                                             key=f"phist_{pi}",
                                             config={"displayModeBar": False})
 
-                            # Summary table
                             summary = (
                                 ph.groupby("course")[gpa_col]
                                 .agg(["mean","count"])
@@ -1692,7 +1606,6 @@ Get one at <a href="https://console.anthropic.com/settings/keys" target="_blank"
                             )
                             summary["Avg GPA"] = summary["Avg GPA"].map("{:.2f}".format)
                             st.dataframe(summary, hide_index=True, use_container_width=True)
-
 
 
 if __name__ == "__main__":
