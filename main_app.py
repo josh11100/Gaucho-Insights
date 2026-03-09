@@ -711,89 +711,13 @@ sc.addEventListener('mouseleave',()=>{{cd.style.transform='rotateY(0) rotateX(0)
                         config={"displayModeBar":True,"displaylogo":False,
                                 "modeBarButtonsToRemove":["toImage"]})
 
-        # ── Clickable course filter legend via components.html ───────────────
+        # ── Clickable course filter legend ───────────────────────────────────
         st.markdown(f'<div style="font-family:Orbitron,sans-serif;font-size:.68em;color:#FFD700;'
                     f'letter-spacing:2px;margin:10px 0 8px;">COURSES '
                     f'<span style="font-family:Rajdhani,sans-serif;font-size:.85em;color:#556;'
                     f'letter-spacing:0;font-weight:400;">'
                     f'— click to show/hide</span></div>', unsafe_allow_html=True)
 
-        # Build the pill buttons entirely in an HTML component (no CSS fighting Streamlit)
-        pill_btns = []
-        for ci, course in enumerate(courses):
-            color = palette[ci % len(palette)]
-            r, g, b = int(color[1:3], 16), int(color[3:5], 16), int(color[5:7], 16)
-            is_active = course in active_courses
-            if is_active:
-                bg     = f"rgba({r},{g},{b},0.18)"
-                border = f"3px solid {color}"
-                clr    = color
-                shadow = f"0 0 12px rgba({r},{g},{b},0.6)"
-                dot    = "●"
-            else:
-                bg     = f"rgba({r},{g},{b},0.05)"
-                border = f"2px solid rgba({r},{g},{b},0.45)"
-                clr    = f"rgba({r},{g},{b},0.6)"
-                shadow = "none"
-                dot    = "○"
-            # Each button sends the course name to the parent window via postMessage
-            safe = course.replace("'", "\\'")
-            pill_btns.append(f"""
-<button onclick="sendToggle('{safe}')"
-  style="background:{bg};border:{border};border-radius:12px;
-         color:{clr};font-family:'Rajdhani',sans-serif;font-weight:700;
-         font-size:14px;padding:9px 18px;cursor:pointer;
-         box-shadow:{shadow};transition:all 0.15s;
-         white-space:nowrap;display:inline-flex;align-items:center;gap:7px;"
-  onmouseover="this.style.boxShadow='0 0 18px rgba({r},{g},{b},0.75)';this.style.border='3px solid {color}';this.style.color='{color}';"
-  onmouseout="this.style.boxShadow='{shadow}';this.style.border='{border}';this.style.color='{clr}';">
-  <span>{dot}</span>{course}
-</button>""")
-
-        pills_str    = "\n".join(pill_btns)
-        active_json  = str(list(active_courses)).replace("'", '"')
-        all_json     = str(list(courses)).replace("'", '"')
-        legend_height = 60 + ((len(courses) - 1) // 5) * 56
-
-        components.html(f"""
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@700&display=swap');
-*{{margin:0;padding:4px 0;box-sizing:border-box}}
-body{{background:transparent;overflow:hidden}}
-.wrap{{display:flex;flex-wrap:wrap;gap:10px;padding:2px 0;}}
-</style>
-<div class="wrap">{pills_str}</div>
-<script>
-function sendToggle(course) {{
-    let active = {active_json};
-    if (active.includes(course)) {{
-        if (active.length > 1) active = active.filter(c => c !== course);
-    }} else {{
-        active.push(course);
-    }}
-    window.parent.postMessage({{
-        isStreamlitMessage: true,
-        type: "streamlit:setComponentValue",
-        key: "course_filter_{prof_key}",
-        value: active.join("||")
-    }}, "*");
-}}
-</script>
-""", height=legend_height)
-
-        # Read back the toggle selection via a custom component value key
-        # Since postMessage to Streamlit only works with declared components,
-        # we use st.query_params as the bridge instead
-        raw_qp = st.query_params.get("cf", None)
-        if raw_qp:
-            toggled = set(raw_qp.split("||")) & set(courses)
-            if toggled:
-                st.session_state[state_key] = toggled
-            st.query_params.clear()
-
-        # Slim fallback row — one small colored checkbox-style button per course
-        # These are the actual clickable Streamlit elements
-        st.markdown('<div style="margin-top:4px;">', unsafe_allow_html=True)
         num_cols = min(len(courses), 6)
         btn_cols = st.columns(num_cols)
         for ci, course in enumerate(courses):
@@ -802,12 +726,12 @@ function sendToggle(course) {{
             is_active = course in active_courses
             col = btn_cols[ci % num_cols]
             with col:
-                # Render a tiny colored dot indicator above the button
                 dot_color = color if is_active else f"rgba({r},{g},{b},0.35)"
+                dot_shadow = f"0 0 8px {color}" if is_active else "none"
                 st.markdown(
                     f'<div style="text-align:center;font-size:18px;color:{dot_color};'
                     f'line-height:1;margin-bottom:2px;'
-                    f'text-shadow:{"0 0 8px "+color if is_active else "none"};">●</div>',
+                    f'text-shadow:{dot_shadow};">●</div>',
                     unsafe_allow_html=True
                 )
                 clicked = st.button(
@@ -825,7 +749,6 @@ function sendToggle(course) {{
                         new_active.add(course)
                     st.session_state[state_key] = new_active
                     st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
 
         # Show/hide all controls
         ctrl_col1, ctrl_col2, _ = st.columns([1, 1, 4])
