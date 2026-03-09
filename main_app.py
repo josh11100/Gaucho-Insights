@@ -377,19 +377,19 @@ p{font-family:'Rajdhani',sans-serif;font-size:1.15em;line-height:1.75;color:#c8d
          <strong style="color:#FFD700">Search by department, course number, or professor name.</strong></p>
       <div class="grid">
         <div class="box" style="border-left:4px solid #FFD700;padding-left:18px">
-          <div class="bt" style="color:#FFD700">꒡ꆚ꒡ MISSION</div>
+          <div class="bt" style="color:#FFD700">MISSION</div>
           <div class="bb">Help UCSB students make smarter scheduling decisions with real data.</div>
         </div>
         <div class="box" style="border-left:4px solid #5bb8ff;padding-left:18px">
-          <div class="bt" style="color:#5bb8ff">⸂⸂⸜(രᴗര๑)⸝⸃⸃ SEARCH TOOL</div>
+          <div class="bt" style="color:#5bb8ff">SEARCH TOOL</div>
           <div class="bb">Filter classes and click any professor name to see their full RMP profile + GPA history.</div>
         </div>
         <div class="box" style="border-left:4px solid #2ECC40;padding-left:18px">
-          <div class="bt" style="color:#2ECC40">꒡ꆚ꒡ EASY  › 3.5 avg GPA</div>
+          <div class="bt" style="color:#2ECC40">EASY  › 3.5 avg GPA</div>
           <div class="bb">Class is known to be manageable. High average grades historically.</div>
         </div>
         <div class="box" style="border-left:4px solid #FF4136;padding-left:18px">
-          <div class="bt" style="color:#FF4136">(ᗒᗣᗕ)՞ STRESSFUL ‹ 3.0 avg GPA</div>
+          <div class="bt" style="color:#FF4136">STRESSFUL ‹ 3.0 avg GPA</div>
           <div class="bb">Historically tough. Prepare carefully or choose a different section.</div>
         </div>
       </div>
@@ -606,12 +606,12 @@ sc.addEventListener('mouseleave',()=>{{cd.style.transform='rotateY(0) rotateX(0)
     if not prof_history_df.empty and gpa_col in prof_history_df.columns:
         st.markdown(
             '<div style="font-family:Orbitron,sans-serif;font-size:.78em;'
-            'color:#FFD700;letter-spacing:2px;margin:24px 0 4px;">彡໒(⊙ᴗ⊙)७彡 GPA HISTORY — INTERACTIVE 3D</div>',
+            'color:#FFD700;letter-spacing:2px;margin:24px 0 4px;">GPA HISTORY — INTERACTIVE 3D</div>',
             unsafe_allow_html=True,
         )
         st.markdown(
             '<div style="font-family:Rajdhani,sans-serif;font-size:.82em;color:#556;'
-            'margin:0 0 14px;">( ≚ᄌ≚ )>⌐■-■ Drag to rotate · Scroll to zoom · Hover dots for details'
+            'margin:0 0 14px;">Drag to rotate · Scroll to zoom · Hover dots for details'
             ' &nbsp;|&nbsp; <b style="color:#aaa">X</b> = Term &nbsp;'
             '<b style="color:#aaa">Y</b> = Course &nbsp;'
             '<b style="color:#aaa">Z</b> = Avg GPA</div>',
@@ -797,7 +797,7 @@ sc.addEventListener('mouseleave',()=>{{cd.style.transform='rotateY(0) rotateX(0)
         st.markdown(
             f'<div style="margin:10px 0 20px;">'
             f'<div style="font-family:Orbitron,sans-serif;font-size:.68em;color:#FFD700;'
-            f'letter-spacing:2px;margin-bottom:10px;">( ◐ω◑ ) COURSES</div>'
+            f'letter-spacing:2px;margin-bottom:10px;">COURSES</div>'
             f'<div style="display:flex;flex-wrap:wrap;gap:8px;">{legend_items}</div>'
             f'</div>',
             unsafe_allow_html=True,
@@ -975,7 +975,7 @@ def main():
 
     render_hero()
 
-    tab_home, tab_search, tab_quarter = st.tabs(["⸂⸂⸜(രᴗര๑)⸝⸃⸃  HOME", "彡໒(⊙ᴗ⊙)७彡  SEARCH TOOL", "꒰✩‿✩꒱  MY QUARTER"])
+    tab_home, tab_search, tab_quarter = st.tabs(["HOME", "SEARCH TOOL", "MY QUARTER"])
 
     # ── HOME ────────────────────────────────
     with tab_home:
@@ -991,7 +991,7 @@ def main():
             border-radius:18px;padding:22px 24px;margin-top:16px;
             font-family:'Rajdhani',sans-serif;">
   <div style="font-family:'Orbitron',sans-serif;font-size:.78em;color:#FFD700;
-              margin-bottom:14px;letter-spacing:1px;">╰(● ⋏ ●)╯ GRADING LEGEND</div>
+              margin-bottom:14px;letter-spacing:1px;">GRADING LEGEND</div>
   <div style="margin-bottom:10px">
     <span style="background:#2ECC40;color:#000;padding:3px 12px;border-radius:20px;
                  font-weight:700;font-size:.85em;">EASY</span>
@@ -1019,7 +1019,7 @@ def main():
 <div style="font-family:'Orbitron',sans-serif;color:#FFD700;font-size:.82em;
             letter-spacing:2px;padding:10px 0 6px;
             border-bottom:1px solid rgba(255,215,0,.2);margin-bottom:16px;">
-  ꒰(･‿･)꒱ FILTERS
+  FILTERS
 </div>
 """, unsafe_allow_html=True)
             all_depts     = [""] + sorted(full_df["dept"].unique().tolist())
@@ -1035,7 +1035,7 @@ def main():
             st.markdown("---")
             st.markdown("""
 <div style="font-family:'Rajdhani',sans-serif;font-size:.88em;color:#556;line-height:1.7;">
-<b style="color:#FFD700;">꒰✩‿✩꒱ RMP</b> badge = click professor name to view RateMyProfessors data + GPA history.
+<b style="color:#FFD700;">RMP</b> badge = click professor name to view RateMyProfessors data + GPA history.
 </div>
 """, unsafe_allow_html=True)
 
@@ -1108,7 +1108,7 @@ def main():
                         pb_col, _ = st.columns([2, 3])
                         with pb_col:
                             if st.button(
-                                f"꒡ꆚ꒡  {prof_name}",
+                                f"{prof_name}",
                                 key=f"pb_{idx}",
                                 help="Click to view RMP profile + GPA history",
                             ):
@@ -1194,7 +1194,7 @@ def main():
 </style>
 <div class="sc" id="sc">
   <div class="cd" id="cd">
-    <div class="icon">⸂⸂⸜(രᴗര๑)⸝⸃⸃</div>
+    <div class="icon">꒰✩‿✩꒱</div>
     <div>
       <div class="title">MY QUARTER — INSTANT SCHEDULE INSIGHTS</div>
       <div class="desc">Upload a screenshot of your UCSB GOLD schedule. Claude reads it automatically
@@ -1216,7 +1216,7 @@ sc.addEventListener('mouseleave',()=>{cd.style.transform='';});
             border-radius:14px;padding:16px 20px;margin-bottom:18px;
             font-family:'Rajdhani',sans-serif;font-size:.92em;color:#8ab;line-height:1.9;">
   <span style="font-family:'Orbitron',sans-serif;font-size:.75em;color:#5bb8ff;
-               letter-spacing:1px;">꒡ꆚ꒡ HOW TO USE</span><br>
+               letter-spacing:1px;">HOW TO USE</span><br>
   1. Go to <b style="color:#fff">UCSB GOLD</b> → <b style="color:#fff">My Class Schedule</b><br>
   2. Take a <b style="color:#fff">screenshot</b> of the schedule table (the whole page or just the class list)<br>
   3. Upload it below — Claude reads the image and pulls insights for every class ꒰✩‿✩꒱
@@ -1232,7 +1232,7 @@ sc.addEventListener('mouseleave',()=>{cd.style.transform='';});
 
         col_analyze, col_clear = st.columns([2, 1])
         with col_analyze:
-            run_vision = st.button("彡໒(⊙ᴗ⊙)७彡  Analyze Schedule Image",
+            run_vision = st.button("Analyze Schedule Image",
                                    use_container_width=True,
                                    disabled=(uploaded_img is None))
         with col_clear:
@@ -1299,7 +1299,7 @@ sc.addEventListener('mouseleave',()=>{cd.style.transform='';});
         st.markdown(
             f'<div style="font-family:Orbitron,sans-serif;font-size:.75em;'
             f'color:rgba(255,215,0,.5);letter-spacing:2px;margin-bottom:18px;">'
-            f'彡໒(⊙ᴗ⊙)७彡 YOUR {n_courses} CLASSES THIS QUARTER</div>',
+            f'YOUR {n_courses} CLASSES THIS QUARTER</div>',
             unsafe_allow_html=True
         )
 
