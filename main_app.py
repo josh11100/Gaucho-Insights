@@ -1242,33 +1242,33 @@ sc.addEventListener('mouseleave',()=>{cd.style.transform='';});
 """, unsafe_allow_html=True)
 
         # ── API key input (if not set via secrets/env) ──────────────────────
-        has_key = False
+        # ── Always show key input as override option ────────────────────────
+        stored_key = ""
         try:
-            has_key = bool(st.secrets.get("ANTHROPIC_API_KEY", ""))
+            stored_key = st.secrets.get("ANTHROPIC_API_KEY", "")
         except Exception:
             pass
-        if not has_key:
-            has_key = bool(os.environ.get("ANTHROPIC_API_KEY", ""))
+        if not stored_key:
+            stored_key = os.environ.get("ANTHROPIC_API_KEY", "")
 
-        if not has_key:
-            st.markdown("""
-<div style="background:rgba(255,215,0,0.06);border:1px solid rgba(255,215,0,0.2);
-            border-radius:12px;padding:14px 18px;margin-bottom:14px;
-            font-family:'Rajdhani',sans-serif;font-size:.88em;color:#aab;line-height:1.7;">
-  <span style="font-family:'Orbitron',sans-serif;font-size:.72em;color:#FFD700;letter-spacing:1px;">
-  API KEY REQUIRED</span><br>
-  Enter your Anthropic API key below to enable AI schedule reading.
-  Get one free at <a href="https://console.anthropic.com" target="_blank" style="color:#5bb8ff;">console.anthropic.com</a>
+        with st.expander("🔑  API Key Settings" + (" ✓ Key configured via secrets" if stored_key else " ⚠ No key found — enter below"), expanded=not bool(stored_key)):
+            st.markdown("""<div style="font-family:'Rajdhani',sans-serif;font-size:.85em;color:#8ab;line-height:1.7;margin-bottom:8px;">
+Enter your <b style="color:#fff">Anthropic API key</b> here (overrides Streamlit secrets).
+Get one at <a href="https://console.anthropic.com/settings/keys" target="_blank" style="color:#5bb8ff;">console.anthropic.com</a>
 </div>""", unsafe_allow_html=True)
             api_key_val = st.text_input(
-                "Anthropic API Key",
+                "API Key",
                 type="password",
-                placeholder="sk-ant-...",
+                placeholder="sk-ant-api03-...",
                 key="api_key_input",
                 label_visibility="collapsed",
             )
             if api_key_val:
                 os.environ["ANTHROPIC_API_KEY"] = api_key_val
+                st.success("Key set for this session!")
+            elif stored_key:
+                key_preview = stored_key[:12] + "..." + stored_key[-4:]
+                st.markdown(f'<div style="font-family:Rajdhani,sans-serif;font-size:.8em;color:#2ECC40;">✓ Using stored key: {key_preview}</div>', unsafe_allow_html=True)
 
         # ── Image uploader ───────────────────────────────────────────────────
         uploaded_img = st.file_uploader(
