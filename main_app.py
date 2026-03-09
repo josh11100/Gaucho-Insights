@@ -718,56 +718,78 @@ sc.addEventListener('mouseleave',()=>{{cd.style.transform='rotateY(0) rotateX(0)
                     f'letter-spacing:0;font-weight:400;">'
                     f'— click to show/hide</span></div>', unsafe_allow_html=True)
 
-        # ── Render one Streamlit button per course, always in its course color ─
-        num_cols = min(len(courses), 4)
-        btn_cols = st.columns(num_cols)
+        # Build pill data for HTML rendering
+        pill_data = []
         for ci, course in enumerate(courses):
             color = palette[ci % len(palette)]
             r, g, b = int(color[1:3], 16), int(color[3:5], 16), int(color[5:7], 16)
             is_active = course in active_courses
-            col = btn_cols[ci % num_cols]
-            with col:
-                dot = "●" if is_active else "○"
-                # Always use the course color; just reduce opacity when inactive
-                if is_active:
-                    bg      = f"rgba({r},{g},{b},0.22)"
-                    border  = f"2px solid {color}"
-                    txt_clr = color
-                    opacity = "1.0"
-                else:
-                    bg      = f"rgba({r},{g},{b},0.06)"
-                    border  = f"2px solid rgba({r},{g},{b},0.35)"
-                    txt_clr = f"rgba({r},{g},{b},0.55)"
-                    opacity = "0.65"
+            pill_data.append({"course": course, "color": color, "r": r, "g": g, "b": b, "active": is_active, "ci": ci})
 
-                # Inject per-button CSS keyed on the unique button key
-                btn_key = f"course_btn_{prof_key}_{ci}"
-                st.markdown(f"""
-<style>
-div[data-testid="column"]:nth-child({(ci % num_cols) + 1}) div[data-testid="stButton"] button {{
-    background: {bg} !important;
-    border: {border} !important;
-    color: {txt_clr} !important;
-    opacity: {opacity} !important;
-    font-weight: 700 !important;
+        # Render pills as pure HTML — colors always match the graph exactly
+        pills_html_parts = []
+        for p in pill_data:
+            r, g, b, color, course, is_active = p["r"], p["g"], p["b"], p["color"], p["course"], p["active"]
+            if is_active:
+                bg     = f"rgba({r},{g},{b},0.20)"
+                border = f"2px solid {color}"
+                clr    = color
+                shadow = f"0 0 10px rgba({r},{g},{b},0.45)"
+                dot    = "●"
+            else:
+                bg     = f"rgba({r},{g},{b},0.05)"
+                border = f"2px solid rgba({r},{g},{b},0.30)"
+                clr    = f"rgba({r},{g},{b},0.50)"
+                shadow = "none"
+                dot    = "○"
+
+            pills_html_parts.append(
+                f'<div style="display:flex;align-items:center;gap:8px;padding:9px 18px;'
+                f'background:{bg};border:{border};border-radius:12px;cursor:default;'
+                f'box-shadow:{shadow};transition:all 0.15s;min-width:130px;justify-content:center;">'
+                f'<span style="color:{clr};font-size:1.1em;line-height:1;">{dot}</span>'
+                f'<span style="font-family:Rajdhani,sans-serif;font-weight:700;font-size:.92em;'
+                f'color:{clr};white-space:nowrap;">{course}</span></div>'
+            )
+
+        pills_html = "".join(pills_html_parts)
+        st.markdown(
+            f'<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;">{pills_html}</div>',
+            unsafe_allow_html=True
+        )
+
+        # Real Streamlit buttons hidden visually — one per course for click handling
+        # Lay them out in a tight row matching the pills above
+        btn_cols = st.columns(len(courses))
+        for ci, course in enumerate(courses):
+            color = palette[ci % len(palette)]
+            r, g, b = int(color[1:3], 16), int(color[3:5], 16), int(color[5:7], 16)
+            is_active = course in active_courses
+            with btn_cols[ci]:
+                # Make the real button tiny and styled to match the pill color
+                st.markdown(f"""<style>
+div[data-testid="column"]:nth-child({ci+1}) > div > div > div > div > button {{
+    background: rgba({r},{g},{b},{'0.20' if is_active else '0.06'}) !important;
+    border: 1px solid rgba({r},{g},{b},{'0.7' if is_active else '0.3'}) !important;
+    color: {color if is_active else f'rgba({r},{g},{b},0.55)'} !important;
     font-family: 'Rajdhani', sans-serif !important;
-    font-size: 0.95em !important;
-    transition: opacity 0.15s, box-shadow 0.15s !important;
-    box-shadow: {'0 0 10px rgba(' + str(r) + ',' + str(g) + ',' + str(b) + ',0.3)' if is_active else 'none'} !important;
+    font-weight: 700 !important;
+    font-size: 0.78em !important;
+    padding: 4px 6px !important;
+    box-shadow: {'0 0 8px rgba(' + str(r) + ',' + str(g) + ',' + str(b) + ',0.4)' if is_active else 'none'} !important;
 }}
-div[data-testid="column"]:nth-child({(ci % num_cols) + 1}) div[data-testid="stButton"] button:hover {{
-    opacity: 1.0 !important;
-    box-shadow: 0 0 14px rgba({r},{g},{b},0.5) !important;
-    border: 2px solid {color} !important;
+div[data-testid="column"]:nth-child({ci+1}) > div > div > div > div > button:hover {{
+    background: rgba({r},{g},{b},0.28) !important;
+    border: 1px solid {color} !important;
     color: {color} !important;
+    box-shadow: 0 0 12px rgba({r},{g},{b},0.6) !important;
 }}
 </style>""", unsafe_allow_html=True)
-
                 clicked = st.button(
-                    f"{dot} {course}",
-                    key=btn_key,
+                    f"{'▣' if is_active else '□'} {course}",
+                    key=f"course_btn_{prof_key}_{ci}",
                     use_container_width=True,
-                    help=f"{'Hide' if is_active else 'Show'} {course} on the 3D chart"
+                    help=f"{'Hide' if is_active else 'Show'} {course}"
                 )
                 if clicked:
                     new_active = set(st.session_state[state_key])
