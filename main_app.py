@@ -869,40 +869,48 @@ def clean_instructor_name(raw: str) -> str:
     """
     Robustly clean an instructor name extracted from OCR or copy-paste.
     Handles: junk characters, bracket noise, extra spaces, missing initials,
-    OCR artifacts like }] or |, numbers leaking in, etc.
+    OCR artifacts like }] or |, numbers leaking in, hyphenated names like Y-D, etc.
     Returns cleaned LASTNAME F M style string, or "" if invalid.
+
+    GOLD format examples:
+        WANG Y-D        → WANG Y D
+        GARFIELD P M    → GARFIELD P M
+        MOEHLIS J M     → MOEHLIS J M
+        NAKAYAMA M T    → NAKAYAMA M T
+        GARFIELD P M ]  → GARFIELD P M
+        }SMITH A        → SMITH A
     """
     if not raw:
         return ""
 
     s = raw.upper().strip()
 
-    # Remove anything that isn't a letter, space, period, hyphen, or apostrophe
-    s = re.sub(r"[^A-Z\s.\-']", "", s)
+    # Replace hyphens BETWEEN single letters with a space (e.g. Y-D → Y D)
+    # This handles hyphenated initials like "Y-D" or "M-T"
+    s = re.sub(r'\b([A-Z])-([A-Z])\b', r'\1 \2', s)
+
+    # Remove anything that isn't a letter or space (strips }, ], |, digits, punctuation)
+    s = re.sub(r"[^A-Z\s]", " ", s)
 
     # Collapse multiple spaces
     s = re.sub(r"\s+", " ", s).strip()
 
-    # Split into tokens
-    tokens = s.split()
-
-    # Filter out pure-noise tokens (single non-alpha chars, empty, etc.)
-    tokens = [t for t in tokens if re.search(r"[A-Z]", t)]
+    # Split into tokens, drop any that have no letters
+    tokens = [t for t in s.split() if t.isalpha()]
 
     if not tokens:
         return ""
 
-    # Heuristic: GOLD format is "LASTNAME F M" (last name + up to 2 initials)
-    # Initials are 1-2 chars (possibly with a dot), last name is longer
-    # Keep at most: one last name token + up to 2 initial tokens
+    # GOLD name format: first token = last name (can be long), rest = initials (1 char each)
+    # Anything after the last name that is 1 character is an initial
     last = tokens[0]
     initials = []
     for t in tokens[1:]:
-        # An initial is 1 letter, optionally followed by a dot
-        clean_t = t.rstrip(".")
-        if len(clean_t) <= 2 and clean_t.isalpha():
-            initials.append(clean_t[0])  # keep just the letter
-        # If it's longer, it might be a second last-name word (hyphenated names) — skip
+        if len(t) == 1:
+            initials.append(t)
+        # Longer token after last name = probably noise or second last-name word — stop
+        else:
+            break
         if len(initials) >= 2:
             break
 
@@ -1307,28 +1315,48 @@ sc.addEventListener('mouseleave',()=>{cd.style.transform='';});
             course_color = palette[pi % len(palette)]
 
             # ── Fuzzy instructor match fallback ──────────────────────────────
-            # If exact join key not found, try matching by last name only
+            # If exact join key not found, try matching by last name + initials
             def best_jk_match(instructor_str, df):
                 exact = make_join_key(instructor_str)
                 if exact in df["join_key"].values:
                     return exact
-                # Try last-name-only match
+
                 last, first = parse_name(instructor_str)
                 if not last:
                     return exact
+
+                # Find all DB entries with the same last name
                 candidates = df[df["join_key"].str.startswith(last + "||")]
                 if candidates.empty:
                     return exact
-                if len(candidates["join_key"].unique()) == 1:
-                    return candidates["join_key"].iloc[0]
-                # If multiple matches, pick the one whose first initial best matches
+
+                unique_jks = candidates["join_key"].unique()
+                if len(unique_jks) == 1:
+                    return unique_jks[0]
+
+                # Multiple people share the last name — use first initial to disambiguate
+                # Score each candidate: exact first-initial match wins
+                first_initial = first[0] if first else ""
                 best, best_score = exact, -1
-                for jk_cand in candidates["join_key"].unique():
-                    _, cand_first = parse_name(jk_cand.replace("||", " "))
-                    score = name_similarity(first, cand_first)
+                for jk_cand in unique_jks:
+                    _, cand_first = jk_cand.split("||", 1)[0], jk_cand.split("||", 1)[1]
+                    cand_initial  = cand_first[0] if cand_first else ""
+                    # Exact first-initial match is a strong signal
+                    if first_initial and cand_initial == first_initial:
+                        score = name_similarity(first, cand_first) + 1.0  # boost
+                    elif not first_initial:
+                        score = 0.5  # no info, neutral
+                    else:
+                        score = name_similarity(first, cand_first)
                     if score > best_score:
                         best_score = score
                         best = jk_cand
+
+                # Only return a fuzzy match if it's meaningfully better than nothing
+                # If first initial was provided but no candidate matched it, return exact
+                # (no match) rather than returning the wrong person
+                if first_initial and best_score < 0.5:
+                    return exact
                 return best
 
             jk = best_jk_match(instructor, full_df)
