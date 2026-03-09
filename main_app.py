@@ -277,6 +277,10 @@ for key in ["sel_prof_key", "sel_prof_name"]:
 for key in ["dept_q", "course_q", "prof_q"]:
     if key not in st.session_state:
         st.session_state[key] = ""
+if "schedule_text" not in st.session_state:
+    st.session_state.schedule_text = ""
+if "parsed_schedule" not in st.session_state:
+    st.session_state.parsed_schedule = []
 
 
 def clear_filters():
@@ -322,7 +326,7 @@ def render_hero():
 <div class="hero" id="hero">
   <div class="wrap">
     <div class="title" id="title">⬡ GAUCHO INSIGHTS ⬡</div>
-    <div class="sub">( ˇ෴ˇ ) UCSB GRADE ANALYTICS DASHBOARD</div>
+    <div class="sub">UCSB GRADE ANALYTICS DASHBOARD</div>
   </div>
 </div>
 <script>
@@ -371,19 +375,19 @@ p{font-family:'Rajdhani',sans-serif;font-size:1.15em;line-height:1.75;color:#c8d
          <strong style="color:#FFD700">Search by department, course number, or professor name.</strong></p>
       <div class="grid">
         <div class="box" style="border-left:4px solid #FFD700;padding-left:18px">
-          <div class="bt" style="color:#FFD700">໒(⊙ᴗ⊙)७ MISSION</div>
+          <div class="bt" style="color:#FFD700">꒡ꆚ꒡ MISSION</div>
           <div class="bb">Help UCSB students make smarter scheduling decisions with real data.</div>
         </div>
         <div class="box" style="border-left:4px solid #5bb8ff;padding-left:18px">
-          <div class="bt" style="color:#5bb8ff">(✌ﾟ∀ﾟ)☞ SEARCH TOOL</div>
+          <div class="bt" style="color:#5bb8ff">⸂⸂⸜(രᴗര๑)⸝⸃⸃ SEARCH TOOL</div>
           <div class="bb">Filter classes and click any professor name to see their full RMP profile + GPA history.</div>
         </div>
         <div class="box" style="border-left:4px solid #2ECC40;padding-left:18px">
-          <div class="bt" style="color:#2ECC40">ƪ( ` ▿▿▿▿ ´ ƪ) EASY  › 3.5 avg GPA</div>
+          <div class="bt" style="color:#2ECC40">꒡ꆚ꒡ EASY  › 3.5 avg GPA</div>
           <div class="bb">Class is known to be manageable. High average grades historically.</div>
         </div>
         <div class="box" style="border-left:4px solid #FF4136;padding-left:18px">
-          <div class="bt" style="color:#FF4136">(ノಠ益ಠ)ノ彡 STRESSFUL ‹ 3.0 avg GPA</div>
+          <div class="bt" style="color:#FF4136">(ᗒᗣᗕ)՞ STRESSFUL ‹ 3.0 avg GPA</div>
           <div class="bb">Historically tough. Prepare carefully or choose a different section.</div>
         </div>
       </div>
@@ -445,7 +449,7 @@ def render_info_card():
 </style>
 <div class="sc" id="sc">
   <div class="cd" id="cd">
-    <div><div class="t">◝(๑꒪່౪̮꒪່๑)◜ DATA INFO</div>
+    <div><div class="t">꒰✩‿✩꒱ DATA INFO</div>
     <div class="b"><b>Coverage:</b> Through Summer 2025<br><b>Source:</b> UCSB Registrar + RMP<br><b>Built by:</b> Joshua Chung</div></div>
     <div class="h">Hover to tilt ↗</div>
   </div>
@@ -574,7 +578,7 @@ body{{background:transparent;overflow:hidden}}
 </style>
 <div class="scene" id="sc">
   <div class="pcard" id="cd">
-    <div class="pname">( ˘▽˘) {prof_name}</div>
+    <div class="pname">{prof_name}</div>
     {dept_badge}
     <div class="stats">
       <div class="stat"><div class="v" style="color:{r_color}">{r_str}</div><div class="l">Rating</div></div>
@@ -600,7 +604,7 @@ sc.addEventListener('mouseleave',()=>{{cd.style.transform='rotateY(0) rotateX(0)
     if not prof_history_df.empty and gpa_col in prof_history_df.columns:
         st.markdown(
             '<div style="font-family:Orbitron,sans-serif;font-size:.78em;'
-            'color:#FFD700;letter-spacing:2px;margin:24px 0 4px;">ᕙ(⇀‸↼‶)ᕗ GPA HISTORY — INTERACTIVE 3D</div>',
+            'color:#FFD700;letter-spacing:2px;margin:24px 0 4px;">彡໒(⊙ᴗ⊙)७彡 GPA HISTORY — INTERACTIVE 3D</div>',
             unsafe_allow_html=True,
         )
         st.markdown(
@@ -808,7 +812,7 @@ sc.addEventListener('mouseleave',()=>{{cd.style.transform='rotateY(0) rotateX(0)
         summary["Avg GPA"] = summary["Avg GPA"].map("{:.2f}".format)
         st.markdown(
             '<div style="font-family:Orbitron,sans-serif;font-size:.72em;'
-            'color:#FFD700;letter-spacing:2px;margin:14px 0 8px;">໒(⊙ᴗ⊙)७✎▤ COURSE SUMMARY</div>',
+            'color:#FFD700;letter-spacing:2px;margin:14px 0 8px;">꒰✩‿✩꒱ COURSE SUMMARY</div>',
             unsafe_allow_html=True,
         )
         st.dataframe(
@@ -819,6 +823,72 @@ sc.addEventListener('mouseleave',()=>{{cd.style.transform='rotateY(0) rotateX(0)
 
 
 # ─────────────────────────────────────────────
+#  SCHEDULE PARSER
+# ─────────────────────────────────────────────
+def parse_gold_schedule(text: str) -> list[dict]:
+    """
+    Parse pasted UCSB GOLD schedule text.
+    Returns list of dicts: {course, dept, num, instructor, raw_line}
+
+    Handles formats like:
+      PSTAT 122 - DESIGN OF EXPERMNTS
+      40220  Grading: L  4.0 Units  ABUZAID A H  M W  8:00 AM-9:15 AM  ILP, 1101
+    """
+    results = []
+    lines = [l.strip() for l in text.strip().splitlines() if l.strip()]
+
+    course_pat  = re.compile(r'^([A-Z][A-Z &]+?)\s+(\d+[A-Z]*)\s*[-–]\s*(.+)$')
+    section_pat = re.compile(r'^\d{5}\s+Grading')
+
+    current_course = None
+    current_dept   = None
+    current_num    = None
+
+    for line in lines:
+        m = course_pat.match(line)
+        if m:
+            current_dept   = m.group(1).strip()
+            current_num    = m.group(2).strip()
+            current_course = f"{current_dept} {current_num}"
+            continue
+
+        if section_pat.match(line) and current_course:
+            # Extract instructor: after "Units" token, grab the name before day codes
+            day_pat = re.compile(r'([MTWRF]{1,5}|T\.B\.A)')
+            units_idx = line.find("Units")
+            instructor = ""
+            if units_idx != -1:
+                after = line[units_idx + 5:].strip()
+                # instructor is everything before the first day-of-week pattern
+                dm = day_pat.search(after)
+                if dm:
+                    raw_inst = after[:dm.start()].strip().rstrip(",").strip()
+                    # clean up: remove leading/trailing punctuation
+                    instructor = raw_inst.strip()
+                else:
+                    instructor = after.split()[0] if after else ""
+
+            if instructor and instructor.upper() not in ("T.B.A", "TBA", ""):
+                results.append({
+                    "course":     current_course,
+                    "dept":       current_dept,
+                    "num":        current_num,
+                    "instructor": instructor.upper(),
+                })
+
+    # Deduplicate by course+instructor
+    seen = set()
+    unique = []
+    for r in results:
+        key = (r["course"], r["instructor"])
+        if key not in seen:
+            seen.add(key)
+            unique.append(r)
+    return unique
+
+
+
+# ─────────────────────────────────────────────
 #  MAIN
 # ─────────────────────────────────────────────
 def main():
@@ -826,7 +896,7 @@ def main():
 
     render_hero()
 
-    tab_home, tab_search = st.tabs(["( ˘▽˘)っ♨  HOME", "(✌ﾟ∀ﾟ)☞  SEARCH TOOL"])
+    tab_home, tab_search, tab_quarter = st.tabs(["⸂⸂⸜(രᴗര๑)⸝⸃⸃  HOME", "彡໒(⊙ᴗ⊙)७彡  SEARCH TOOL", "꒰✩‿✩꒱  MY QUARTER"])
 
     # ── HOME ────────────────────────────────
     with tab_home:
@@ -842,7 +912,7 @@ def main():
             border-radius:18px;padding:22px 24px;margin-top:16px;
             font-family:'Rajdhani',sans-serif;">
   <div style="font-family:'Orbitron',sans-serif;font-size:.78em;color:#FFD700;
-              margin-bottom:14px;letter-spacing:1px;">ƪ(=ｘωｘ=ƪ) GRADING LEGEND</div>
+              margin-bottom:14px;letter-spacing:1px;">╰(● ⋏ ●)╯ GRADING LEGEND</div>
   <div style="margin-bottom:10px">
     <span style="background:#2ECC40;color:#000;padding:3px 12px;border-radius:20px;
                  font-weight:700;font-size:.85em;">EASY</span>
@@ -870,7 +940,7 @@ def main():
 <div style="font-family:'Orbitron',sans-serif;color:#FFD700;font-size:.82em;
             letter-spacing:2px;padding:10px 0 6px;
             border-bottom:1px solid rgba(255,215,0,.2);margin-bottom:16px;">
-  ( ͡° ͜ʖ ͡°) FILTERS
+  ꒰(･‿･)꒱ FILTERS
 </div>
 """, unsafe_allow_html=True)
             all_depts     = [""] + sorted(full_df["dept"].unique().tolist())
@@ -886,7 +956,7 @@ def main():
             st.markdown("---")
             st.markdown("""
 <div style="font-family:'Rajdhani',sans-serif;font-size:.88em;color:#556;line-height:1.7;">
-<b style="color:#FFD700;">(✦ ‿ ✦) RMP</b> badge = click professor name to view RateMyProfessors data + GPA history.
+<b style="color:#FFD700;">꒰✩‿✩꒱ RMP</b> badge = click professor name to view RateMyProfessors data + GPA history.
 </div>
 """, unsafe_allow_html=True)
 
@@ -959,7 +1029,7 @@ def main():
                         pb_col, _ = st.columns([2, 3])
                         with pb_col:
                             if st.button(
-                                f"(✦ ‿ ✦)  {prof_name}",
+                                f"꒡ꆚ꒡  {prof_name}",
                                 key=f"pb_{idx}",
                                 help="Click to view RMP profile + GPA history",
                             ):
@@ -969,14 +1039,14 @@ def main():
                     else:
                         st.markdown(
                             f'<div style="font-family:Rajdhani,sans-serif;font-size:1em;'
-                            f'color:#667;margin:4px 0 6px;">( ˘▽˘) {prof_name}</div>',
+                            f'color:#667;margin:4px 0 6px;">{prof_name}</div>',
                             unsafe_allow_html=True
                         )
 
                     rmp_pill = (
                         '<span style="font-size:.7em;color:#FFD700;'
                         'background:rgba(255,215,0,.08);border:1px solid rgba(255,215,0,.22);'
-                        'padding:2px 10px;border-radius:12px;margin-left:8px;">(✦ ‿ ✦) RMP</span>'
+                        'padding:2px 10px;border-radius:12px;margin-left:8px;">꒰✩‿✩꒱ RMP</span>'
                         if has_rmp else ""
                     )
                     txt_col = "#000" if status == "EASY" else "#fff"
@@ -1021,6 +1091,287 @@ def main():
                         key=f"fig_{idx}",
                         config={"displayModeBar": False},
                     )
+
+
+    # ── MY QUARTER ──────────────────────────────────────────────────────────
+    with tab_quarter:
+
+        # ── Intro card ──────────────────────────────────────────────────────
+        components.html("""
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;600&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}body{background:transparent;overflow:hidden}
+.sc{perspective:900px;width:100%;height:165px;display:flex;justify-content:center;align-items:center}
+.cd{width:96%;height:140px;
+    background:linear-gradient(135deg,#001428 0%,#001e4a 60%,#002255 100%);
+    border-radius:18px;border:1.5px solid rgba(255,215,0,.4);
+    box-shadow:0 16px 40px rgba(0,0,0,.5),inset 0 0 30px rgba(0,116,217,.06);
+    transform-style:preserve-3d;transition:transform .1s ease;
+    padding:20px 26px;color:white;display:flex;align-items:center;gap:24px}
+.icon{font-size:2.4em;flex-shrink:0}
+.title{font-family:'Orbitron',sans-serif;font-size:.95em;font-weight:900;
+       color:#FFD700;margin-bottom:6px;text-shadow:0 0 10px rgba(255,215,0,.3)}
+.desc{font-family:'Rajdhani',sans-serif;font-size:.95em;color:#8ab;line-height:1.55}
+</style>
+<div class="sc" id="sc">
+  <div class="cd" id="cd">
+    <div class="icon">⸂⸂⸜(രᴗര๑)⸝⸃⸃</div>
+    <div>
+      <div class="title">MY QUARTER — INSTANT SCHEDULE INSIGHTS</div>
+      <div class="desc">Paste your UCSB GOLD schedule below. The app will auto-detect your courses
+      and professors and show you GPA history + RMP data for each one instantly.</div>
+    </div>
+  </div>
+</div>
+<script>
+const sc=document.getElementById('sc'),cd=document.getElementById('cd');
+sc.addEventListener('mousemove',e=>{const r=sc.getBoundingClientRect();
+  cd.style.transform=`rotateY(${(e.clientX-r.left-r.width/2)/30}deg) rotateX(${-(e.clientY-r.top-r.height/2)/20}deg)`;});
+sc.addEventListener('mouseleave',()=>{cd.style.transform='';});
+</script>
+""", height=185)
+
+        # ── How to copy instructions ─────────────────────────────────────────
+        st.markdown("""
+<div style="background:rgba(0,116,217,0.07);border:1px solid rgba(0,116,217,0.25);
+            border-radius:14px;padding:16px 20px;margin-bottom:18px;
+            font-family:'Rajdhani',sans-serif;font-size:.92em;color:#8ab;line-height:1.8;">
+  <span style="font-family:'Orbitron',sans-serif;font-size:.75em;color:#5bb8ff;
+               letter-spacing:1px;">꒡ꆚ꒡ HOW TO COPY YOUR SCHEDULE</span><br>
+  1. Go to <b style="color:#fff">UCSB GOLD</b> → <b style="color:#fff">My Class Schedule</b><br>
+  2. Select all the text on the page <b style="color:#fff">(Ctrl+A / Cmd+A)</b> and copy it<br>
+  3. Paste it into the box below — the app handles the rest ꒰✩‿✩꒱
+</div>
+""", unsafe_allow_html=True)
+
+        # ── Paste box ────────────────────────────────────────────────────────
+        schedule_input = st.text_area(
+            "Paste your GOLD schedule here",
+            value=st.session_state.schedule_text,
+            height=180,
+            placeholder="PSTAT 122 - DESIGN OF EXPERMNTS\n40220  Grading: L  4.0 Units  ABUZAID A H  M W  8:00 AM...",
+            label_visibility="collapsed",
+        )
+
+        col_parse, col_clear = st.columns([2, 1])
+        with col_parse:
+            run_parse = st.button("彡໒(⊙ᴗ⊙)७彡  Analyze My Schedule", use_container_width=True)
+        with col_clear:
+            if st.button("(シ_ _)シ  Clear", use_container_width=True):
+                st.session_state.schedule_text  = ""
+                st.session_state.parsed_schedule = []
+                st.rerun()
+
+        if run_parse and schedule_input.strip():
+            st.session_state.schedule_text   = schedule_input
+            st.session_state.parsed_schedule = parse_gold_schedule(schedule_input)
+            st.rerun()
+
+        parsed = st.session_state.parsed_schedule
+
+        if not parsed:
+            if st.session_state.schedule_text:
+                st.warning("Couldn't detect any courses. Make sure you pasted the full GOLD schedule page text.")
+            st.stop()
+
+        # ── Quarter summary strip ────────────────────────────────────────────
+        n_courses  = len(parsed)
+        n_with_rmp = sum(1 for p in parsed if make_join_key(p["instructor"]) in rmp_lookup)
+        avg_gpas   = []
+        for p in parsed:
+            jk  = make_join_key(p["instructor"])
+            sub = full_df[full_df["join_key"] == jk]
+            if not sub.empty:
+                avg_gpas.append(sub[gpa_col].mean())
+        overall_avg = sum(avg_gpas) / len(avg_gpas) if avg_gpas else None
+        ov_status, ov_clr, _ = gpa_badge(overall_avg) if overall_avg else ("N/A", "#666", "")
+
+        st.markdown(f"""
+<div style="display:flex;gap:14px;margin:18px 0 24px;flex-wrap:wrap;">
+  <div style="flex:1;min-width:130px;background:rgba(255,215,0,.07);border:1px solid rgba(255,215,0,.2);
+              border-radius:14px;padding:16px;text-align:center;">
+    <div style="font-family:'Orbitron',sans-serif;font-size:1.8em;font-weight:900;color:#FFD700">{n_courses}</div>
+    <div style="font-family:'Rajdhani',sans-serif;font-size:.8em;color:#556;letter-spacing:1px;margin-top:4px;">CLASSES DETECTED</div>
+  </div>
+  <div style="flex:1;min-width:130px;background:rgba(0,116,217,.07);border:1px solid rgba(0,116,217,.2);
+              border-radius:14px;padding:16px;text-align:center;">
+    <div style="font-family:'Orbitron',sans-serif;font-size:1.8em;font-weight:900;color:#5bb8ff">{n_with_rmp}</div>
+    <div style="font-family:'Rajdhani',sans-serif;font-size:.8em;color:#556;letter-spacing:1px;margin-top:4px;">PROFS WITH RMP</div>
+  </div>
+  <div style="flex:1;min-width:130px;background:rgba(46,204,64,.06);border:1px solid rgba(46,204,64,.15);
+              border-radius:14px;padding:16px;text-align:center;">
+    <div style="font-family:'Orbitron',sans-serif;font-size:1.8em;font-weight:900;color:{ov_clr}">{f"{overall_avg:.2f}" if overall_avg else "N/A"}</div>
+    <div style="font-family:'Rajdhani',sans-serif;font-size:.8em;color:#556;letter-spacing:1px;margin-top:4px;">PROJECTED AVG GPA</div>
+  </div>
+  <div style="flex:1;min-width:130px;background:rgba(255,65,54,.06);border:1px solid rgba(255,65,54,.12);
+              border-radius:14px;padding:16px;text-align:center;">
+    <div style="font-family:'Orbitron',sans-serif;font-size:1.4em;font-weight:900;color:{ov_clr};margin-top:4px">{ov_status}</div>
+    <div style="font-family:'Rajdhani',sans-serif;font-size:.8em;color:#556;letter-spacing:1px;margin-top:4px;">QUARTER VIBE</div>
+  </div>
+</div>
+""", unsafe_allow_html=True)
+
+        st.markdown(
+            f'<div style="font-family:Orbitron,sans-serif;font-size:.75em;'
+            f'color:rgba(255,215,0,.5);letter-spacing:2px;margin-bottom:18px;">'
+            f'彡໒(⊙ᴗ⊙)७彡 YOUR {n_courses} CLASSES THIS QUARTER</div>',
+            unsafe_allow_html=True
+        )
+
+        # ── One card per detected class ──────────────────────────────────────
+        for pi, entry in enumerate(parsed):
+            course_name = entry["course"]
+            instructor  = entry["instructor"]
+            dept        = entry["dept"]
+            jk          = make_join_key(instructor)
+
+            # Get GPA data for this specific course+instructor combo
+            course_hist = full_df[
+                (full_df["join_key"] == jk) &
+                (full_df["course"].str.contains(entry["num"], na=False))
+            ].copy()
+
+            # Fallback: all courses by this instructor
+            if course_hist.empty:
+                course_hist = full_df[full_df["join_key"] == jk].copy()
+
+            # Compute avg gpa for this course
+            avg_gpa = course_hist[gpa_col].mean() if not course_hist.empty else None
+            status, clr, shd = gpa_badge(avg_gpa) if avg_gpa else ("N/A", "#666", "rgba(0,0,0,0)")
+            txt_col = "#000" if status == "EASY" else "#fff"
+
+            # RMP info
+            rmp_info    = rmp_lookup.get(jk, {})
+            has_rmp     = bool(rmp_info)
+            rmp_rating  = rmp_info.get("rating", "N/A")
+            rmp_diff    = rmp_info.get("difficulty", "N/A")
+            rmp_url     = rmp_info.get("url", "")
+            try:
+                rv = float(rmp_rating)
+                r_clr = "#2ECC40" if rv >= 4.0 else ("#FFDC00" if rv >= 3.0 else "#FF4136")
+            except Exception:
+                r_clr = "#888"
+
+            with st.container(border=True):
+                # Course header
+                st.markdown(
+                    f'<div style="font-family:Orbitron,sans-serif;font-size:1.1em;font-weight:900;'
+                    f'color:#FFD700;margin-bottom:4px;">{course_name}</div>'
+                    f'<div style="font-family:Rajdhani,sans-serif;font-size:.95em;color:#8ab;margin-bottom:10px;">'
+                    f'Instructor: <b style="color:#ddd">{instructor}</b></div>',
+                    unsafe_allow_html=True
+                )
+
+                col_stats, col_chart = st.columns([2, 3])
+
+                with col_stats:
+                    # GPA badge
+                    gpa_display = f"{avg_gpa:.2f}" if avg_gpa else "No Data"
+                    st.markdown(
+                        f'<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">'
+                        f'<span style="font-family:Orbitron,sans-serif;font-size:1.1em;font-weight:700;color:#cde;">Avg GPA: {gpa_display}</span>'
+                        f'<span style="background:{clr};color:{txt_col};padding:3px 12px;border-radius:20px;'
+                        f'font-size:.72em;font-weight:900;box-shadow:0 0 12px {shd};letter-spacing:1px;">{status}</span>'
+                        f'</div>',
+                        unsafe_allow_html=True
+                    )
+
+                    # RMP mini stats
+                    if has_rmp:
+                        rmp_ta = rmp_info.get("take_again", "N/A")
+                        ta_str = f"{rmp_ta}%" if rmp_ta and str(rmp_ta) != "nan" and "%" not in str(rmp_ta) else str(rmp_ta)
+                        st.markdown(
+                            f'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">'
+                            f'<div style="background:rgba(255,255,255,.05);border-radius:10px;padding:8px 14px;text-align:center;border:1px solid rgba(255,255,255,.07);">'
+                            f'<div style="font-family:Orbitron,sans-serif;font-size:1.1em;font-weight:900;color:{r_clr}">{rmp_rating}</div>'
+                            f'<div style="font-size:.6em;color:#445;margin-top:3px;">RATING</div></div>'
+                            f'<div style="background:rgba(255,255,255,.05);border-radius:10px;padding:8px 14px;text-align:center;border:1px solid rgba(255,255,255,.07);">'
+                            f'<div style="font-family:Orbitron,sans-serif;font-size:1.1em;font-weight:900;color:#FF851B">{rmp_diff}</div>'
+                            f'<div style="font-size:.6em;color:#445;margin-top:3px;">DIFFICULTY</div></div>'
+                            f'<div style="background:rgba(255,255,255,.05);border-radius:10px;padding:8px 14px;text-align:center;border:1px solid rgba(255,255,255,.07);">'
+                            f'<div style="font-family:Orbitron,sans-serif;font-size:1.0em;font-weight:900;color:#2ECC40">{ta_str}</div>'
+                            f'<div style="font-size:.6em;color:#445;margin-top:3px;">RETAKE</div></div>'
+                            f'</div>',
+                            unsafe_allow_html=True
+                        )
+                        if rmp_url and str(rmp_url) != "nan":
+                            st.markdown(
+                                f'<a href="{rmp_url}" target="_blank" style="font-family:Rajdhani,sans-serif;'
+                                f'font-size:.82em;color:#5bb8ff;text-decoration:none;">'
+                                f'(づ ◕‿◕ )づ View RMP Profile →</a>',
+                                unsafe_allow_html=True
+                            )
+
+                        # Tags
+                        tags_raw = rmp_info.get("tags", "")
+                        if tags_raw and str(tags_raw) != "nan":
+                            raw  = str(tags_raw).strip('"[]').strip("'")
+                            tags = [t.strip().strip("\"'") for t in raw.split(",") if t.strip()][:5]
+                            pills = "".join(
+                                f'<span style="background:rgba(0,204,255,.1);color:#00CCFF;'
+                                f'border:1px solid rgba(0,204,255,.3);padding:3px 10px;'
+                                f'border-radius:20px;display:inline-block;margin:3px 3px 0 0;'
+                                f'font-size:.72em;font-weight:600;">{t}</span>'
+                                for t in tags
+                            )
+                            st.markdown(
+                                f'<div style="margin-top:8px;">{pills}</div>',
+                                unsafe_allow_html=True
+                            )
+                    else:
+                        st.markdown(
+                            '<div style="font-family:Rajdhani,sans-serif;font-size:.85em;'
+                            'color:#445;margin-top:4px;">No RMP data available</div>',
+                            unsafe_allow_html=True
+                        )
+
+                with col_chart:
+                    if not course_hist.empty:
+                        # Mini GPA trend line for this course
+                        quarter_order_map = {"WINTER": 0, "SPRING": 1, "SUMMER": 2, "FALL": 3}
+                        ch = course_hist.copy()
+                        ch["term"] = ch["quarter"].astype(str) + " " + ch["year"].astype(str)
+                        ch["_qord"] = ch["quarter"].map(quarter_order_map).fillna(9)
+                        ch = ch.sort_values(["year", "_qord"])
+
+                        trend_fig = go.Figure()
+                        trend_fig.add_trace(go.Scatter(
+                            x=ch["term"], y=ch[gpa_col],
+                            mode="lines+markers",
+                            line=dict(color=clr, width=2),
+                            marker=dict(size=6, color=clr,
+                                        line=dict(color="rgba(255,255,255,0.4)", width=1)),
+                            fill="tozeroy",
+                            fillcolor=f"rgba({int(clr[1:3],16) if clr.startswith('#') else 0},"
+                                      f"{int(clr[3:5],16) if clr.startswith('#') else 116},"
+                                      f"{int(clr[5:7],16) if clr.startswith('#') else 217},0.08)",
+                            hovertemplate="<b>%{x}</b><br>Avg GPA: <b>%{y:.2f}</b><extra></extra>",
+                        ))
+                        trend_fig.add_hline(y=3.5, line_dash="dot",
+                                            line_color="rgba(46,204,64,0.3)", line_width=1)
+                        trend_fig.add_hline(y=3.0, line_dash="dot",
+                                            line_color="rgba(255,65,54,0.3)", line_width=1)
+                        trend_fig.update_layout(
+                            template="plotly_dark", height=130,
+                            margin=dict(l=0, r=0, t=4, b=0),
+                            paper_bgcolor="rgba(0,0,0,0)",
+                            plot_bgcolor="rgba(0,8,22,0.5)",
+                            showlegend=False,
+                            xaxis=dict(tickfont=dict(size=8, color="#556"),
+                                       showgrid=False, tickangle=-30),
+                            yaxis=dict(tickfont=dict(size=8, color="#445"),
+                                       gridcolor="rgba(255,255,255,0.04)",
+                                       range=[max(0, ch[gpa_col].min()-0.3), 4.2]),
+                        )
+                        st.plotly_chart(trend_fig, use_container_width=True,
+                                        key=f"qtrend_{pi}",
+                                        config={"displayModeBar": False})
+                    else:
+                        st.markdown(
+                            '<div style="font-family:Rajdhani,sans-serif;font-size:.85em;'
+                            'color:#334;text-align:center;padding:30px 0;">No grade history found</div>',
+                            unsafe_allow_html=True
+                        )
 
 
 if __name__ == "__main__":
