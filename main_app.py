@@ -897,14 +897,14 @@ def parse_gold_schedule(text: str) -> list[dict]:
 # ─────────────────────────────────────────────
 def parse_schedule_from_image(image_bytes: bytes, mime_type: str = "image/png") -> list[dict]:
     """
-    Send a screenshot to Claude claude-sonnet-4-20250514 and extract
+    Send a screenshot to Claude claude-sonnet-4-5 and extract
     course + instructor pairs from the UCSB GOLD schedule image.
     Returns list of dicts: {course, dept, num, instructor}
     """
     b64 = base64.b64encode(image_bytes).decode()
 
     payload = {
-        "model": "claude-sonnet-4-20250514",
+        "model": "claude-sonnet-4-5",
         "max_tokens": 1000,
         "messages": [{
             "role": "user",
