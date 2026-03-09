@@ -2,6 +2,8 @@ import streamlit as st
 import pandas as pd
 import os
 import re
+import base64
+import requests
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit.components.v1 as components
@@ -889,6 +891,83 @@ def parse_gold_schedule(text: str) -> list[dict]:
 
 
 # ─────────────────────────────────────────────
+#  VISION SCHEDULE PARSER (Claude API)
+# ─────────────────────────────────────────────
+def parse_schedule_from_image(image_bytes: bytes, mime_type: str = "image/png") -> list[dict]:
+    """
+    Send a screenshot to Claude claude-sonnet-4-20250514 and extract
+    course + instructor pairs from the UCSB GOLD schedule image.
+    Returns list of dicts: {course, dept, num, instructor}
+    """
+    b64 = base64.b64encode(image_bytes).decode()
+
+    payload = {
+        "model": "claude-sonnet-4-20250514",
+        "max_tokens": 1000,
+        "messages": [{
+            "role": "user",
+            "content": [
+                {
+                    "type": "image",
+                    "source": {
+                        "type": "base64",
+                        "media_type": mime_type,
+                        "data": b64,
+                    }
+                },
+                {
+                    "type": "text",
+                    "text": (
+                        "This is a UCSB GOLD 'My Class Schedule' screenshot. "
+                        "Extract every course and its instructor. "
+                        "Return ONLY valid JSON — an array of objects, each with exactly these keys: "
+                        "course (e.g. 'PSTAT 122'), dept (e.g. 'PSTAT'), num (e.g. '122'), instructor (e.g. 'ABUZAID A H'). "
+                        "If a section shows 'T.B.A' as instructor, skip it. "
+                        "Deduplicate: if the same course+instructor appears more than once, include it only once. "
+                        "Return ONLY the JSON array, no explanation, no markdown fences."
+                    )
+                }
+            ]
+        }]
+    }
+
+    try:
+        resp = requests.post(
+            "https://api.anthropic.com/v1/messages",
+            headers={"Content-Type": "application/json"},
+            json=payload,
+            timeout=30,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        text = "".join(
+            block.get("text", "")
+            for block in data.get("content", [])
+            if block.get("type") == "text"
+        ).strip()
+
+        # Strip possible markdown fences
+        text = re.sub(r"^```[a-z]*\n?", "", text).rstrip("`").strip()
+
+        import json
+        entries = json.loads(text)
+        results = []
+        for e in entries:
+            course = str(e.get("course", "")).upper().strip()
+            dept   = str(e.get("dept",   "")).upper().strip()
+            num    = str(e.get("num",    "")).upper().strip()
+            inst   = str(e.get("instructor", "")).upper().strip()
+            if course and inst and inst not in ("T.B.A", "TBA", ""):
+                results.append({"course": course, "dept": dept,
+                                 "num": num, "instructor": inst})
+        return results
+
+    except Exception as ex:
+        st.error(f"Vision API error: {ex}")
+        return []
+
+
+# ─────────────────────────────────────────────
 #  MAIN
 # ─────────────────────────────────────────────
 def main():
@@ -1118,8 +1197,8 @@ def main():
     <div class="icon">⸂⸂⸜(രᴗര๑)⸝⸃⸃</div>
     <div>
       <div class="title">MY QUARTER — INSTANT SCHEDULE INSIGHTS</div>
-      <div class="desc">Paste your UCSB GOLD schedule below. The app will auto-detect your courses
-      and professors and show you GPA history + RMP data for each one instantly.</div>
+      <div class="desc">Upload a screenshot of your UCSB GOLD schedule. Claude reads it automatically
+      and shows GPA history + RMP data for every class instantly.</div>
     </div>
   </div>
 </div>
@@ -1131,47 +1210,53 @@ sc.addEventListener('mouseleave',()=>{cd.style.transform='';});
 </script>
 """, height=185)
 
-        # ── How to copy instructions ─────────────────────────────────────────
+        # ── How-to instructions ──────────────────────────────────────────────
         st.markdown("""
 <div style="background:rgba(0,116,217,0.07);border:1px solid rgba(0,116,217,0.25);
             border-radius:14px;padding:16px 20px;margin-bottom:18px;
-            font-family:'Rajdhani',sans-serif;font-size:.92em;color:#8ab;line-height:1.8;">
+            font-family:'Rajdhani',sans-serif;font-size:.92em;color:#8ab;line-height:1.9;">
   <span style="font-family:'Orbitron',sans-serif;font-size:.75em;color:#5bb8ff;
-               letter-spacing:1px;">꒡ꆚ꒡ HOW TO COPY YOUR SCHEDULE</span><br>
+               letter-spacing:1px;">꒡ꆚ꒡ HOW TO USE</span><br>
   1. Go to <b style="color:#fff">UCSB GOLD</b> → <b style="color:#fff">My Class Schedule</b><br>
-  2. Select all the text on the page <b style="color:#fff">(Ctrl+A / Cmd+A)</b> and copy it<br>
-  3. Paste it into the box below — the app handles the rest ꒰✩‿✩꒱
+  2. Take a <b style="color:#fff">screenshot</b> of the schedule table (the whole page or just the class list)<br>
+  3. Upload it below — Claude reads the image and pulls insights for every class ꒰✩‿✩꒱
 </div>
 """, unsafe_allow_html=True)
 
-        # ── Paste box ────────────────────────────────────────────────────────
-        schedule_input = st.text_area(
-            "Paste your GOLD schedule here",
-            value=st.session_state.schedule_text,
-            height=180,
-            placeholder="PSTAT 122 - DESIGN OF EXPERMNTS\n40220  Grading: L  4.0 Units  ABUZAID A H  M W  8:00 AM...",
+        # ── Image uploader ───────────────────────────────────────────────────
+        uploaded_img = st.file_uploader(
+            "Upload your GOLD schedule screenshot",
+            type=["png", "jpg", "jpeg", "webp"],
             label_visibility="collapsed",
         )
 
-        col_parse, col_clear = st.columns([2, 1])
-        with col_parse:
-            run_parse = st.button("彡໒(⊙ᴗ⊙)७彡  Analyze My Schedule", use_container_width=True)
+        col_analyze, col_clear = st.columns([2, 1])
+        with col_analyze:
+            run_vision = st.button("彡໒(⊙ᴗ⊙)७彡  Analyze Schedule Image",
+                                   use_container_width=True,
+                                   disabled=(uploaded_img is None))
         with col_clear:
             if st.button("(シ_ _)シ  Clear", use_container_width=True):
-                st.session_state.schedule_text  = ""
                 st.session_state.parsed_schedule = []
                 st.rerun()
 
-        if run_parse and schedule_input.strip():
-            st.session_state.schedule_text   = schedule_input
-            st.session_state.parsed_schedule = parse_gold_schedule(schedule_input)
-            st.rerun()
+        # Show the uploaded image preview
+        if uploaded_img is not None:
+            st.image(uploaded_img, caption="Your uploaded schedule", use_column_width=True)
+
+        if run_vision and uploaded_img is not None:
+            mime = uploaded_img.type or "image/png"
+            img_bytes = uploaded_img.read()
+            with st.spinner("꒰(･‿･)꒱ Claude is reading your schedule..."):
+                st.session_state.parsed_schedule = parse_schedule_from_image(img_bytes, mime)
+            if not st.session_state.parsed_schedule:
+                st.warning("No courses detected. Make sure the screenshot shows the class list clearly.")
+            else:
+                st.rerun()
 
         parsed = st.session_state.parsed_schedule
 
         if not parsed:
-            if st.session_state.schedule_text:
-                st.warning("Couldn't detect any courses. Make sure you pasted the full GOLD schedule page text.")
             st.stop()
 
         # ── Quarter summary strip ────────────────────────────────────────────
