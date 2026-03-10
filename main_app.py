@@ -1040,12 +1040,11 @@ def parse_gold_schedule(text: str) -> list[dict]:
             # but only if we haven't already captured an instructor for this course
             pass
 
-    # Deduplicate — keep first occurrence of each (course, instructor) pair
-    seen, unique = set(), []
+    # Deduplicate — keep only ONE entry per course (the first/primary instructor)
+    seen_course, unique = set(), []
     for r in results:
-        key = (r["course"], r["instructor"])
-        if key not in seen:
-            seen.add(key)
+        if r["course"] not in seen_course:
+            seen_course.add(r["course"])
             unique.append(r)
     return unique
 
@@ -1347,26 +1346,26 @@ let f = 0;
 </div>""", unsafe_allow_html=True)
 
     # ── SEARCH TOOL ─────────────────────────────────────────────────────────
-    with tab_search:
-        with st.sidebar:
-            st.markdown("""
+    # ── SIDEBAR (always rendered regardless of active tab) ───────────────────
+    with st.sidebar:
+        st.markdown("""
 <div style="font-family:'Orbitron',sans-serif;color:#FFD700;font-size:.82em;letter-spacing:2px;
             padding:10px 0 6px;border-bottom:1px solid rgba(255,215,0,.2);margin-bottom:16px;">
   FILTERS</div>""", unsafe_allow_html=True)
-            all_depts     = [""] + sorted(full_df["dept"].unique().tolist())
-            selected_dept = st.selectbox("Department", options=all_depts, index=0,
-                                         key="dept_q", on_change=filter_changed,
-                                         format_func=lambda x: "All Departments" if x == "" else x)
-            course_q = st.text_input("Course Number (e.g. 120A, 5A, 10)",
-                                     key="course_q", on_change=filter_changed).strip().upper()
-            prof_q   = st.text_input("Professor Name",
-                                     key="prof_q", on_change=filter_changed).strip().upper()
-            st.button("(シ_ _)シ  Clear Filters", on_click=clear_filters, use_container_width=True)
-            st.markdown("---")
-            st.markdown('<div style="font-family:Rajdhani,sans-serif;font-size:.88em;color:#556;line-height:1.7;">'
-                        '<b style="color:#FFD700;">RMP</b> badge = click professor name to view '
-                        'RateMyProfessors data + GPA history.</div>', unsafe_allow_html=True)
-            st.markdown("""
+        all_depts     = [""] + sorted(full_df["dept"].unique().tolist())
+        selected_dept = st.selectbox("Department", options=all_depts, index=0,
+                                     key="dept_q", on_change=filter_changed,
+                                     format_func=lambda x: "All Departments" if x == "" else x)
+        course_q = st.text_input("Course Number (e.g. 120A, 5A, 10)",
+                                 key="course_q", on_change=filter_changed).strip().upper()
+        prof_q   = st.text_input("Professor Name",
+                                 key="prof_q", on_change=filter_changed).strip().upper()
+        st.button("(シ_ _)シ  Clear Filters", on_click=clear_filters, use_container_width=True)
+        st.markdown("---")
+        st.markdown('<div style="font-family:Rajdhani,sans-serif;font-size:.88em;color:#556;line-height:1.7;">'
+                    '<b style="color:#FFD700;">RMP</b> badge = click professor name to view '
+                    'RateMyProfessors data + GPA history.</div>', unsafe_allow_html=True)
+        st.markdown("""
 <div style="margin-top:16px;background:rgba(255,215,0,0.05);border:1px solid rgba(255,215,0,0.15);
             border-radius:12px;padding:12px 14px;font-family:'Rajdhani',sans-serif;">
   <div style="font-size:.78em;color:#FFD700;font-weight:700;letter-spacing:1px;margin-bottom:4px;">
@@ -1378,6 +1377,7 @@ let f = 0;
   </div>
 </div>""", unsafe_allow_html=True)
 
+    with tab_search:
         if st.session_state.sel_prof_key:
             lk        = st.session_state.sel_prof_key
             info      = rmp_lookup.get(lk, {})
