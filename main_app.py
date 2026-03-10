@@ -7,7 +7,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Gaucho Insights", layout="wide", page_icon="🎓", menu_items={})
+st.set_page_config(page_title="Gaucho Insights", layout="wide", page_icon="🎓", menu_items={}, initial_sidebar_state="expanded")
 
 # ─────────────────────────────────────────────
 #  GLOBAL CSS
@@ -20,8 +20,8 @@ st.markdown("""
 .stApp { background: #000814 !important; color: #fff !important; }
 html, body { background: #000814 !important; }
 
-/* Hide the app filename shown in sidebar header and top bar */
-[data-testid="stSidebarHeader"],
+/* Hide app filename text in sidebar header but keep the collapse/expand toggle button */
+[data-testid="stSidebarHeader"] > div:first-child,
 header[data-testid="stHeader"],
 #MainMenu,
 .stDeployButton,
@@ -29,6 +29,13 @@ header[data-testid="stHeader"],
 [data-testid="stDecoration"],
 [data-testid="stStatusWidget"],
 footer { display: none !important; }
+
+/* Keep stSidebarHeader itself visible (it holds the collapse button) but make it minimal */
+[data-testid="stSidebarHeader"] {
+    min-height: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+}
 .stApp > * { position: relative; z-index: 1; }
 [data-testid="stAppViewContainer"],
 [data-testid="stMain"],
@@ -263,23 +270,14 @@ def load_data():
                 return p
         return None
 
-    # Support split CSV files, single CSV, or parquet
-    rmp_path = find("rmp_final_data.csv")
+    grades_path = find("courseGrades.csv")
+    rmp_path    = find("rmp_final_data.csv")
 
-    part1 = find("courseGrades_part1.csv")
-    part2 = find("courseGrades_part2.csv")
-    single_parquet = find("courseGrades.parquet")
-    single_csv = find("courseGrades.csv")
-
-    if part1 and part2:
-        df = pd.concat([pd.read_csv(part1), pd.read_csv(part2)], ignore_index=True)
-    elif single_parquet:
-        df = pd.read_parquet(single_parquet)
-    elif single_csv:
-        df = pd.read_csv(single_csv)
-    else:
-        st.error("Cannot find grade data files — put courseGrades_part1.csv + courseGrades_part2.csv in the same folder.")
+    if not grades_path:
+        st.error("Cannot find courseGrades.csv — put it in the same folder or a 'data/' subfolder.")
         st.stop()
+
+    df = pd.read_csv(grades_path)
     df.columns = [c.strip().lower() for c in df.columns]
 
     def extract_num(s):
@@ -1175,8 +1173,9 @@ def main():
     function tryHide() {
         try {
             const parent = window.parent.document;
-            // Only hide stSidebarHeader (the filename bar at the very top)
-            parent.querySelectorAll('[data-testid="stSidebarHeader"]')
+            // Hide only the filename text inside the sidebar header, not the header itself
+            // (the header contains the collapse/expand toggle button)
+            parent.querySelectorAll('[data-testid="stSidebarHeader"] > div:first-child')
                   .forEach(el => el.style.display = 'none');
             // Hide the top header bar (share/github icons row)
             parent.querySelectorAll('header[data-testid="stHeader"]')
