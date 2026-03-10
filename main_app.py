@@ -1057,7 +1057,42 @@ def main():
     full_df, gpa_col, rmp_lookup = load_data()
     render_hero()
 
-    # Hide the sidebar app name via JS — targets it by hunting the DOM
+    # ── Mobile warning banner ─────────────────────────────────────────────
+    components.html("""
+<script>
+(function() {
+    if (window.parent.innerWidth < 768) {
+        const banner = window.parent.document.createElement('div');
+        banner.id = 'mobile-warn';
+        banner.innerHTML = `
+            <span style="font-size:1.3em;">💻</span>
+            <span style="flex:1">
+                <strong style="color:#FFD700;font-family:'Orbitron',sans-serif;font-size:.8em;letter-spacing:1px;">
+                BEST ON DESKTOP
+                </strong><br>
+                <span style="font-size:.85em;color:#aac;">
+                Gaucho Insights is optimized for laptop/desktop. Some features may look off on mobile.
+                </span>
+            </span>
+            <span id="close-warn" style="cursor:pointer;font-size:1.2em;color:#556;padding-left:8px;">✕</span>
+        `;
+        banner.style.cssText = `
+            position: fixed; top: 0; left: 0; right: 0; z-index: 9999;
+            background: rgba(0,10,30,0.97);
+            border-bottom: 1px solid rgba(255,215,0,0.3);
+            padding: 12px 18px;
+            display: flex; align-items: center; gap: 12px;
+            font-family: 'Rajdhani', sans-serif; color: #cde;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        `;
+        window.parent.document.body.appendChild(banner);
+        window.parent.document.getElementById('close-warn').onclick = () => {
+            banner.style.display = 'none';
+        };
+    }
+})();
+</script>
+""", height=0)
     components.html("""
 <script>
 (function hideAppName() {
