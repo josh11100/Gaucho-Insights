@@ -255,7 +255,7 @@ def make_join_key(name: str) -> str:
 # ─────────────────────────────────────────────
 #  DATA LOADING
 # ─────────────────────────────────────────────
-@st.cache_data
+@st.cache_data(show_spinner=False)
 def load_data():
     def find(fname):
         for p in [fname, os.path.join("data", fname)]:
@@ -263,15 +263,23 @@ def load_data():
                 return p
         return None
 
-    # Prefer parquet (smaller, faster) — fall back to CSV if not found
-    grades_path = find("courseGrades.parquet") or find("courseGrades.csv")
-    rmp_path    = find("rmp_final_data.csv")
+    # Support split CSV files, single CSV, or parquet
+    rmp_path = find("rmp_final_data.csv")
 
-    if not grades_path:
-        st.error("Cannot find courseGrades.parquet or courseGrades.csv — put it in the same folder or a 'data/' subfolder.")
+    part1 = find("courseGrades_part1.csv")
+    part2 = find("courseGrades_part2.csv")
+    single_parquet = find("courseGrades.parquet")
+    single_csv = find("courseGrades.csv")
+
+    if part1 and part2:
+        df = pd.concat([pd.read_csv(part1), pd.read_csv(part2)], ignore_index=True)
+    elif single_parquet:
+        df = pd.read_parquet(single_parquet)
+    elif single_csv:
+        df = pd.read_csv(single_csv)
+    else:
+        st.error("Cannot find grade data files — put courseGrades_part1.csv + courseGrades_part2.csv in the same folder.")
         st.stop()
-
-    df = pd.read_parquet(grades_path) if grades_path.endswith(".parquet") else pd.read_csv(grades_path)
     df.columns = [c.strip().lower() for c in df.columns]
 
     def extract_num(s):
@@ -964,19 +972,6 @@ def clean_instructor_name(raw: str) -> str:
     if not tokens:
         return ""
 
-    # Special case: if we have exactly 2 tokens and BOTH are short (≤3 chars each),
-    # they're likely OCR-split pieces of one short last name — join them.
-    # e.g. "YU G" → "YUG", "LI A" is ambiguous but "YU G" has no real initial sense
-    # Heuristic: if first token ≤ 3 chars AND second token is 1 char, could be split name.
-    # We join them only if the combined result looks like a real last name (≥ 3 chars).
-    if len(tokens) == 2 and len(tokens[0]) <= 3 and len(tokens[1]) == 1:
-        joined = tokens[0] + tokens[1]
-        if len(joined) >= 3:
-            # Ambiguous: could be LASTNAME INITIAL (e.g. "LI A") or split name (e.g. "YU G")
-            # Keep both possibilities — return the joined form since short last names
-            # with single initials are rare in UCSB data
-            tokens = [joined]
-
     last = tokens[0]
     initials = []
     for t in tokens[1:]:
@@ -1653,16 +1648,17 @@ sc.addEventListener('mouseleave',()=>{cd.style.transform='';});
 
                 unique_jks = candidates["join_key"].unique()
 
-                # Only one candidate with this last name — use it regardless of initials
+                # Only one candidate — always use it
                 if len(unique_jks) == 1:
                     return unique_jks[0]
 
-                # Multiple people share the last name — use first initial to disambiguate
+                # Multiple candidates — score by first name similarity
                 first_initial = first[0] if first else ""
                 best, best_score = exact, -1
                 for jk_cand in unique_jks:
-                    _, cand_first = jk_cand.split("||", 1)[0], jk_cand.split("||", 1)[1]
-                    cand_initial  = cand_first[0] if cand_first else ""
+                    cand_first = jk_cand.split("||", 1)[1]
+                    cand_initial = cand_first[0] if cand_first else ""
+                    # Initial match: "T" matches "TING", "G" matches "GEORGE" etc.
                     if first_initial and cand_initial == first_initial:
                         score = name_similarity(first, cand_first) + 1.0
                     elif not first_initial:
@@ -1673,11 +1669,16 @@ sc.addEventListener('mouseleave',()=>{cd.style.transform='';});
                         best_score = score
                         best = jk_cand
 
-                # If no good match found via initials, return the single best candidate
-                # rather than an exact miss (handles "XIAO T" → "XIAO" in DB)
-                if best_score < 0.3 and len(unique_jks) == 1:
-                    return unique_jks[0]
-                return best
+                # Return best match as long as we found a reasonable one
+                if best_score >= 0.3:
+                    return best
+                # Last resort: if only initials and no good match, try first-initial only
+                if first_initial:
+                    for jk_cand in unique_jks:
+                        cand_first = jk_cand.split("||", 1)[1]
+                        if cand_first.startswith(first_initial):
+                            return jk_cand
+                return exact
 
             jk = best_jk_match(instructor, full_df)
 
