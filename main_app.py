@@ -170,6 +170,26 @@ section[data-testid="stMain"] > div:first-child {
     border-color: rgba(255,215,0,0.6) !important;
     color: #FFD700 !important;
 }
+/* Hide invisible trigger buttons (label_visibility=collapsed) used for postMessage prof clicks */
+[data-testid="stButton"]:has(button[data-testid="baseButton-secondary"]) {
+    /* Only hide ones with no visible label — use margin collapse */
+}
+/* Directly target the hidden prof trigger buttons by making their container invisible */
+div.prof-trigger-btn > div[data-testid="stButton"],
+div.prof-trigger-btn [data-testid="stButton"] {
+    position: absolute !important;
+    width: 0 !important; height: 0 !important;
+    overflow: hidden !important; opacity: 0 !important;
+    pointer-events: none !important;
+}
+/* Hide ALL label_visibility=collapsed buttons (empty span label) */
+[data-testid="stButton"] button > div > p:empty,
+[data-testid="stButton"]:has(> div > button > div > p:empty) {
+    display: none !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
 /* Remove white focus outline / tooltip box on buttons */
 .stButton > button:focus,
 .stButton > button:focus-visible,
@@ -1566,11 +1586,11 @@ let f = 0;
             jk               = row.get("join_key","")
             has_rmp          = jk in rmp_lookup
             txt_col          = "#000" if status == "EASY" else "#fff"
-            rmp_pill         = ('<span style="font-size:.7em;color:#FFD700;background:rgba(255,215,0,.08);'
-                                'border:1px solid rgba(255,215,0,.22);padding:2px 10px;border-radius:12px;'
-                                'margin-left:4px;vertical-align:middle;">RMP</span>' if has_rmp else "")
+            rmp_pill         = (f'<span style="font-size:.7em;color:#FFD700;background:rgba(255,215,0,.08);'
+                                f'border:1px solid rgba(255,215,0,.22);padding:2px 8px;border-radius:12px;'
+                                f'margin-left:4px;vertical-align:middle;">RMP</span>' if has_rmp else "")
 
-            # Build chart as standalone HTML (no iframe, no st.columns)
+            # Build Plotly chart JSON for inline rendering
             grades_df = pd.DataFrame({
                 "Grade": ["A","B","C","D","F"],
                 "Count": [row.get("a",0), row.get("b",0), row.get("c",0),
@@ -1585,82 +1605,81 @@ let f = 0;
                 xaxis_title=None, yaxis_title=None,
                 paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
                 xaxis=dict(tickfont=dict(size=10, color="#aaa")),
-                yaxis=dict(tickfont=dict(size=9,  color="#555")))
-            chart_div = pio.to_html(fig, full_html=False, include_plotlyjs=False,
-                                    config={"displayModeBar": False})
+                yaxis=dict(tickfont=dict(size=9, color="#555")))
+            fig_json = fig.to_json()
 
-            # Prof name display — clickable button style if has RMP, plain text otherwise
-            if has_rmp:
-                prof_html = (
-                    f'<button class="prof-btn" id="profbtn_{idx}" '
-                    f'style="background:rgba(0,116,217,.15);border:1px solid rgba(0,116,217,.5);'
-                    f'color:#5bb8ff;border-radius:10px;font-family:Rajdhani,sans-serif;font-weight:700;'
-                    f'font-size:.9em;padding:4px 12px;cursor:pointer;margin:4px 0 6px;white-space:nowrap;"'
-                    f'onclick="document.getElementById(\'stbtn_{idx}\').click()">'
-                    f'{prof_name}</button>'
-                )
-            else:
-                prof_html = (f'<div style="font-family:Rajdhani,sans-serif;font-size:.9em;'
-                             f'color:#667;margin:4px 0 6px;">{prof_name}</div>')
+            # Render card in components.html — real browser DOM, CSS flex works perfectly
+            prof_btn_html = (
+                f'<button onclick="window.parent.postMessage({{\'type\':\'prof_click\',\'key\':\'{jk}\',\'name\':\'{prof_name}\',\'course\':\'{row["course"]}\',\'idx\':{idx}}},\'*\')" '
+                f'style="background:rgba(0,116,217,.15);border:1px solid rgba(0,116,217,.5);'
+                f'color:#5bb8ff;border-radius:10px;font-family:Rajdhani,sans-serif;font-weight:700;'
+                f'font-size:.9em;padding:4px 12px;cursor:pointer;margin:4px 0 4px;white-space:nowrap;">'
+                f'{prof_name}</button>'
+            ) if has_rmp else (
+                f'<div style="font-family:Rajdhani,sans-serif;font-size:.9em;color:#667;margin:4px 0 6px;">'
+                f'{prof_name}</div>'
+            )
 
-            st.markdown(f"""
-<div style="background:rgba(10,20,40,.6);border:1px solid rgba(255,255,255,.08);
-            border-radius:12px;padding:14px 16px;margin-bottom:12px;
-            display:flex;flex-direction:row;align-items:center;
-            gap:12px;width:100%;box-sizing:border-box;">
-  <!-- LEFT: course info -->
-  <div style="flex:3;min-width:0;overflow:hidden;">
-    <div style="font-family:Orbitron,sans-serif;font-size:clamp(.78em,1.4vw,1em);
-                font-weight:700;color:#e8f4ff;margin-bottom:2px;word-break:break-word;">
-      {row["course"]}
-      <span style="color:#445;font-size:.76em;margin-left:6px;">
-        {row["quarter"]} {row["year"]}
-      </span>
-    </div>
-    {prof_html}
-    <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:2px;">
-      <span style="font-family:Orbitron,sans-serif;font-size:clamp(.7em,1.1vw,.85em);
-                   font-weight:700;color:#cde;white-space:nowrap;">GPA {gpa_val:.2f}</span>
-      <span style="background:{clr};color:{txt_col};padding:2px 7px;border-radius:20px;
-                   font-size:clamp(.62em,.95vw,.72em);font-weight:900;letter-spacing:1px;
-                   white-space:nowrap;">{status}</span>
+            components.html(f"""
+<!DOCTYPE html><html><head>
+<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+<style>
+  *{{margin:0;padding:0;box-sizing:border-box}}
+  body{{background:transparent;font-family:sans-serif;overflow:hidden}}
+  .card{{display:flex;flex-direction:row;align-items:center;gap:12px;width:100%;
+         background:rgba(10,20,40,.6);border:1px solid rgba(255,255,255,.1);
+         border-radius:12px;padding:12px 14px;}}
+  .info{{flex:3;min-width:0;overflow:hidden;}}
+  .chart{{flex:2;min-width:130px;max-width:44%;flex-shrink:0;}}
+  .course{{font-family:Orbitron,monospace;font-size:clamp(.78em,1.4vw,1em);
+           font-weight:700;color:#e8f4ff;word-break:break-word;margin-bottom:4px;}}
+  .quarter{{color:#445;font-size:.76em;margin-left:6px;}}
+  .gpa-row{{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:4px;}}
+  .gpa{{font-family:Orbitron,monospace;font-size:clamp(.7em,1.1vw,.85em);font-weight:700;color:#cde;white-space:nowrap;}}
+  .badge{{padding:2px 7px;border-radius:20px;font-size:clamp(.62em,.95vw,.72em);font-weight:900;
+          letter-spacing:1px;white-space:nowrap;background:{clr};color:{txt_col};}}
+</style>
+</head><body>
+<div class="card">
+  <div class="info">
+    <div class="course">{row["course"]}<span class="quarter">{row["quarter"]} {row["year"]}</span></div>
+    {prof_btn_html}
+    <div class="gpa-row">
+      <span class="gpa">GPA {gpa_val:.2f}</span>
+      <span class="badge">{status}</span>
       {rmp_pill}
     </div>
   </div>
-  <!-- RIGHT: chart — flex-shrink:0 so it NEVER drops below -->
-  <div style="flex:2;min-width:140px;max-width:42%;flex-shrink:0;overflow:hidden;">
-    {chart_div}
-  </div>
-</div>""", unsafe_allow_html=True)
+  <div class="chart" id="chart_{idx}"></div>
+</div>
+<script>
+  var fig = {fig_json};
+  Plotly.newPlot('chart_{idx}', fig.data, fig.layout, {{displayModeBar:false, responsive:true}});
+</script>
+</body></html>""", height=155, scrolling=False)
 
-            # Hidden real Streamlit button — triggered by the HTML button above
+            # Hidden real Streamlit button — triggered by postMessage listener below
             if has_rmp:
-                btn_style = """
-<style>
-div[data-testid="stButton"]:has(button[id^="stbtn_"]) {
-    position:absolute !important;
-    width:1px !important; height:1px !important;
-    overflow:hidden !important; opacity:0 !important;
-    pointer-events:none !important;
-}
-</style>"""
-                st.markdown(btn_style, unsafe_allow_html=True)
-                if st.button(prof_name, key=f"pb_{idx}"):
+                if st.button(prof_name, key=f"pb_{idx}", label_visibility="collapsed"):
                     st.session_state.sel_prof_key    = jk
                     st.session_state.sel_prof_name   = prof_name
                     st.session_state.sel_prof_course = row["course"]
                     st.rerun()
-                # Give the hidden button its ID so onclick can find it
-                components.html(f"""
+
+        # One postMessage listener that clicks the correct hidden Streamlit button
+        components.html("""
 <script>
-(function() {{
-    var btns = window.parent.document.querySelectorAll('button[kind="secondary"]');
-    btns.forEach(function(b) {{
-        if (b.innerText.trim() === {repr(prof_name)}) {{
-            b.id = 'stbtn_{idx}';
-        }}
-    }});
-}})();
+window.addEventListener('message', function(e) {
+    if (!e.data || e.data.type !== 'prof_click') return;
+    var name = e.data.name;
+    var btns = window.parent.document.querySelectorAll('[data-testid="stButton"] > button');
+    for (var i = 0; i < btns.length; i++) {
+        if (btns[i].innerText.trim() === name) {
+            btns[i].click();
+            break;
+        }
+    }
+});
 </script>""", height=0)
 
     # ── MY QUARTER ──────────────────────────────────────────────────────────
