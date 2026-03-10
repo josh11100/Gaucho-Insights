@@ -998,8 +998,13 @@ def parse_gold_schedule(text: str) -> list[dict]:
     results = []
     lines = [l.strip() for l in text.strip().splitlines() if l.strip()]
 
-    # Course header: "DEPT NUM - TITLE"  e.g. "MATH 3A - CALC WITH APPLI 1"
-    course_pat  = re.compile(r'^([A-Z][A-Z\s&]+?)\s+(\d+[A-Z]*)\s*[-–]\s*(.+)$')
+    # Course header variations from OCR:
+    # Normal:      "PSTAT 126 - REGRESSION ANALYSIS"
+    # Yellow row:  "PSTAT 100 DS_CONC&ANLS"  or  "PSTAT 100- DS_CONC&ANLS"  (dash may be missing/mangled)
+    # So we match: DEPT NUM optionally followed by dash/space and title
+    course_pat  = re.compile(
+        r'^([A-Z][A-Z\s&_]+?)\s+(\d+[A-Z0-9]*)\s*[-–]?\s*(.*)$'
+    )
     # Section line starts with a 5-digit enrollment code
     section_pat = re.compile(r'^\d{5}\b')
     # Days pattern — used to find where instructor name ends
@@ -1074,10 +1079,24 @@ def parse_schedule_from_image(image_bytes: bytes) -> list[dict]:
         return []
 
     try:
-        image    = Image.open(io.BytesIO(image_bytes))
-        # Upscale for better OCR accuracy on small/retina screenshots
-        w, h     = image.size
-        image    = image.resize((w * 2, h * 2), Image.LANCZOS)
+        from PIL import Image, ImageEnhance, ImageFilter
+        import pytesseract
+    except ImportError:
+        st.error("Missing packages. Add 'pytesseract' and 'Pillow' to requirements.txt, "
+                 "and 'tesseract-ocr' to packages.txt (Streamlit Cloud).")
+        return []
+
+    try:
+        image = Image.open(io.BytesIO(image_bytes))
+        # Upscale for better OCR accuracy
+        w, h  = image.size
+        image = image.resize((w * 2, h * 2), Image.LANCZOS)
+        # Convert to grayscale — removes yellow background bias that causes tesseract
+        # to skip or mangle highlighted rows
+        image = image.convert("L")
+        # Boost contrast so text on yellow/colored backgrounds is as clear as on white
+        image = ImageEnhance.Contrast(image).enhance(2.0)
+        image = ImageEnhance.Sharpness(image).enhance(1.5)
         raw_text = pytesseract.image_to_string(image, config="--psm 6")
         return parse_gold_schedule(raw_text)
     except Exception as ex:
@@ -1286,9 +1305,11 @@ let f = 0;
         components.html("""
 <script>
 (function() {
+    var attempts = 0;
+    var maxAttempts = 20;
     function clickSearchTab() {
         try {
-            const tabs = window.parent.document.querySelectorAll('[data-baseweb="tab"]');
+            var tabs = window.parent.document.querySelectorAll('[data-baseweb="tab"]');
             if (tabs.length >= 2) {
                 tabs[1].click();
                 return true;
@@ -1296,19 +1317,19 @@ let f = 0;
         } catch(e) {}
         return false;
     }
-    // Try immediately, then with delays, then observe DOM if tabs not ready yet
-    if (!clickSearchTab()) {
-        const attempts = [50, 150, 300, 600];
-        attempts.forEach(ms => setTimeout(clickSearchTab, ms));
-        // MutationObserver as final fallback — fires when tabs render
-        try {
-            const observer = new MutationObserver(() => {
-                if (clickSearchTab()) observer.disconnect();
-            });
-            observer.observe(window.parent.document.body, { childList: true, subtree: true });
-            setTimeout(() => observer.disconnect(), 2000);
-        } catch(e) {}
+    function tryClick() {
+        if (attempts >= maxAttempts) return;
+        attempts++;
+        if (!clickSearchTab()) {
+            setTimeout(tryClick, 100);
+        }
     }
+    // Start immediately and keep retrying every 100ms until it works
+    tryClick();
+    // Also fire at fixed intervals as backup
+    [50, 200, 400, 800, 1200].forEach(function(ms) {
+        setTimeout(clickSearchTab, ms);
+    });
 })();
 </script>
 """, height=0)
