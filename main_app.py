@@ -474,6 +474,10 @@ p{font-family:'Rajdhani',sans-serif;font-size:clamp(.95em,2vw,1.15em);line-heigh
           <div class="bt" style="color:#FF4136">STRESSFUL ‹ 3.0 avg GPA</div>
           <div class="bb">Historically tough. Prepare carefully or choose a different section.</div>
         </div>
+        <div class="box" style="border-left:4px solid rgba(255,215,0,.4);padding-left:18px;background:rgba(255,215,0,.04)">
+          <div class="bt" style="color:rgba(255,215,0,.7)">💻 BEST ON DESKTOP</div>
+          <div class="bb" style="color:#778;">For the full experience, open on a <b style="color:#99a">computer or laptop</b>. Mobile layout may vary.</div>
+        </div>
       </div>
     </div>
   </div>
@@ -1315,6 +1319,17 @@ let f = 0;
             st.markdown('<div style="font-family:Rajdhani,sans-serif;font-size:.88em;color:#556;line-height:1.7;">'
                         '<b style="color:#FFD700;">RMP</b> badge = click professor name to view '
                         'RateMyProfessors data + GPA history.</div>', unsafe_allow_html=True)
+            st.markdown("""
+<div style="margin-top:16px;background:rgba(255,215,0,0.05);border:1px solid rgba(255,215,0,0.15);
+            border-radius:12px;padding:12px 14px;font-family:'Rajdhani',sans-serif;">
+  <div style="font-size:.78em;color:#FFD700;font-weight:700;letter-spacing:1px;margin-bottom:4px;">
+    💻 BEST ON DESKTOP
+  </div>
+  <div style="font-size:.82em;color:#445;line-height:1.6;">
+    For the best experience, use a <b style="color:#556;">computer or laptop</b>.
+    Mobile layout may vary.
+  </div>
+</div>""", unsafe_allow_html=True)
 
         if st.session_state.sel_prof_key:
             lk        = st.session_state.sel_prof_key
