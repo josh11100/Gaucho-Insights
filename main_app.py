@@ -545,7 +545,7 @@ def render_info_card():
    background:rgba(255,255,255,.04);border-radius:8px;padding:6px 10px;text-align:center}
 </style>
 <div class="sc" id="sc"><div class="cd" id="cd">
-  <div><div class="t">꒰✩‿✩꒱ DATA INFO</div>
+  <div><div class="t">(⌐■_■) DATA INFO</div>
   <div class="b"><b>Coverage:</b> Through Summer 2025<br><b>Source:</b> UCSB Registrar + RMP<br><b>Built by:</b> Joshua Chung</div></div>
   <div class="h">Hover to tilt ↗</div>
 </div></div>
@@ -899,7 +899,7 @@ sc.addEventListener('mouseleave',()=>{{cd.style.transform='rotateY(0) rotateX(0)
                    .sort_values("Avg GPA", ascending=False))
         summary["Avg GPA"] = summary["Avg GPA"].map("{:.2f}".format)
         st.markdown('<div style="font-family:Orbitron,sans-serif;font-size:.72em;color:#FFD700;'
-                    'letter-spacing:2px;margin:14px 0 8px;">꒰✩‿✩꒱ COURSE SUMMARY</div>',
+                    'letter-spacing:2px;margin:14px 0 8px;">(⌐■_■) COURSE SUMMARY</div>',
                     unsafe_allow_html=True)
         st.dataframe(summary, hide_index=True, use_container_width=True)
 
@@ -1330,7 +1330,7 @@ let f = 0;
 
                     rmp_pill = ('<span style="font-size:.7em;color:#FFD700;background:rgba(255,215,0,.08);'
                                 'border:1px solid rgba(255,215,0,.22);padding:2px 10px;border-radius:12px;'
-                                'margin-left:8px;">꒰✩‿✩꒱ RMP</span>' if has_rmp else "")
+                                'margin-left:8px;">(⌐■_■) RMP</span>' if has_rmp else "")
                     txt_col = "#000" if status == "EASY" else "#fff"
                     st.markdown(
                         f'<div style="display:flex;align-items:center;gap:8px;margin-top:6px;">'
@@ -1377,7 +1377,7 @@ let f = 0;
 .desc{font-family:'Rajdhani',sans-serif;font-size:.95em;color:#8ab;line-height:1.55}
 </style>
 <div class="sc" id="sc"><div class="cd" id="cd">
-  <div class="icon">꒰✩‿✩꒱</div>
+  <div class="icon">(⌐■_■)</div>
   <div>
     <div class="title">MY QUARTER — INSTANT SCHEDULE INSIGHTS</div>
     <div class="desc">Upload a screenshot of your UCSB GOLD schedule.
@@ -1399,7 +1399,7 @@ sc.addEventListener('mouseleave',()=>{cd.style.transform='';});
   <span style="font-family:'Orbitron',sans-serif;font-size:.75em;color:#5bb8ff;letter-spacing:1px;">HOW TO USE</span><br>
   1. Go to <b style="color:#fff">UCSB GOLD</b> → <b style="color:#fff">My Class Schedule</b><br>
   2. Take a <b style="color:#fff">screenshot</b> of the full schedule table<br>
-  3. Upload it below — OCR scans it instantly, no API key needed ꒰✩‿✩꒱<br>
+  3. Upload it below — OCR scans it instantly, no API key needed (⌐■_■)<br>
   <span style="font-size:.85em;color:#445;">
     Deployment note: add <code>pytesseract</code> + <code>Pillow</code> to requirements.txt
     and <code>tesseract-ocr</code> to packages.txt
