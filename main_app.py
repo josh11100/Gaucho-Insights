@@ -121,67 +121,27 @@ section[data-testid="stMain"] > div:first-child {
    MOBILE / NARROW SCREEN FIXES
    ════════════════════════════════════ */
 
-/* Stack home page columns on small screens */
-@media (max-width: 768px) {
-    /* Force Streamlit columns to stack vertically */
+@media (max-width: 640px) {
+    /* Stack search result info+chart columns on mobile */
     [data-testid="stHorizontalBlock"] {
         flex-direction: column !important;
+        flex-wrap: wrap !important;
     }
     [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {
         width: 100% !important;
         flex: 1 1 100% !important;
         min-width: 0 !important;
     }
-
     /* Shrink tab font on very small screens */
     .stTabs [data-baseweb="tab"] {
-        font-size: 11px !important;
-        padding: 0 8px !important;
-        height: 40px !important;
+        font-size: 10px !important;
+        padding: 0 6px !important;
+        height: 38px !important;
     }
     .stTabs [data-baseweb="tab-list"] {
-        gap: 6px !important;
-        padding: 6px 8px !important;
+        gap: 4px !important;
+        padding: 4px 6px !important;
     }
-
-    /* Make course filter buttons wrap tighter */
-    div[data-testid="stHorizontalBlock"] {
-        flex-wrap: wrap !important;
-    }
-
-    /* Shrink hero title on mobile */
-    .hero-title { font-size: 1.4rem !important; }
-
-    /* Ensure images don't overflow */
-    img { max-width: 100% !important; height: auto !important; }
-
-    /* Stat boxes in quarter tab — wrap on mobile */
-    .quarter-stats { flex-direction: column !important; }
-
-    /* Reduce padding on containers */
-    [data-testid="stVerticalBlockBorderWrapper"] {
-        border-radius: 12px !important;
-        margin-bottom: 8px !important;
-    }
-
-    /* Plotly charts — don't let them overflow */
-    .js-plotly-plot { max-width: 100% !important; overflow: hidden !important; }
-
-    /* Welcome card grid — single column on mobile */
-    .grid { grid-template-columns: 1fr !important; }
-
-    /* Info / linkedin cards full width */
-    .sc { width: 100% !important; }
-    .cd { width: 100% !important; }
-}
-
-/* Medium screens (tablet) */
-@media (max-width: 1024px) and (min-width: 769px) {
-    .stTabs [data-baseweb="tab"] {
-        font-size: 14px !important;
-        padding: 0 14px !important;
-    }
-    .stTabs [data-baseweb="tab-list"] { gap: 12px !important; }
 }
 
 /* Prevent column overflow at any screen size */
@@ -1362,14 +1322,19 @@ let f = 0;
             prof_name        = row["instructor"]
             jk               = row.get("join_key","")
             has_rmp          = jk in rmp_lookup
+            txt_col          = "#000" if status == "EASY" else "#fff"
+            rmp_pill         = ('<span style="font-size:.7em;color:#FFD700;background:rgba(255,215,0,.08);'
+                                'border:1px solid rgba(255,215,0,.22);padding:2px 10px;border-radius:12px;'
+                                'margin-left:8px;">RMP</span>' if has_rmp else "")
 
             with st.container(border=True):
                 col_info, col_chart = st.columns([3, 2])
                 with col_info:
                     st.markdown(
-                        f'<div style="font-family:Orbitron,sans-serif;font-size:1.05em;font-weight:700;'
-                        f'color:#e8f4ff;margin-bottom:4px;">{row["course"]}'
-                        f'<span style="color:#445;font-size:.78em;margin-left:10px;">'
+                        f'<div style="font-family:Orbitron,sans-serif;font-size:clamp(.85em,2vw,1.05em);'
+                        f'font-weight:700;color:#e8f4ff;margin-bottom:4px;word-break:break-word;">'
+                        f'{row["course"]}'
+                        f'<span style="color:#445;font-size:.78em;margin-left:8px;">'
                         f'{row["quarter"]} {row["year"]}</span></div>', unsafe_allow_html=True)
 
                     if has_rmp:
@@ -1381,20 +1346,16 @@ let f = 0;
                                 st.session_state.sel_prof_name = prof_name
                                 st.rerun()
                     else:
-                        st.markdown(f'<div style="font-family:Rajdhani,sans-serif;font-size:1em;'
+                        st.markdown(f'<div style="font-family:Rajdhani,sans-serif;font-size:.95em;'
                                     f'color:#667;margin:4px 0 6px;">{prof_name}</div>',
                                     unsafe_allow_html=True)
 
-                    rmp_pill = ('<span style="font-size:.7em;color:#FFD700;background:rgba(255,215,0,.08);'
-                                'border:1px solid rgba(255,215,0,.22);padding:2px 10px;border-radius:12px;'
-                                'margin-left:8px;">RMP</span>' if has_rmp else "")
-                    txt_col = "#000" if status == "EASY" else "#fff"
                     st.markdown(
-                        f'<div style="display:flex;align-items:center;gap:8px;margin-top:6px;">'
-                        f'<span style="font-family:Orbitron,sans-serif;font-size:.88em;font-weight:700;'
-                        f'color:#cde;">GPA {gpa_val:.2f}</span>'
-                        f'<span style="background:{clr};color:{txt_col};padding:4px 14px;border-radius:20px;'
-                        f'font-size:.76em;font-weight:900;box-shadow:0 0 14px {shd};letter-spacing:1px;">'
+                        f'<div style="display:flex;align-items:center;gap:6px;margin-top:6px;flex-wrap:wrap;">'
+                        f'<span style="font-family:Orbitron,sans-serif;font-size:clamp(.75em,2vw,.88em);'
+                        f'font-weight:700;color:#cde;">GPA {gpa_val:.2f}</span>'
+                        f'<span style="background:{clr};color:{txt_col};padding:3px 10px;border-radius:20px;'
+                        f'font-size:.74em;font-weight:900;box-shadow:0 0 14px {shd};letter-spacing:1px;white-space:nowrap;">'
                         f'{status}</span>{rmp_pill}</div>', unsafe_allow_html=True)
 
                 with col_chart:
@@ -1422,20 +1383,22 @@ let f = 0;
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;600&display=swap');
 *{margin:0;padding:0;box-sizing:border-box}body{background:transparent;overflow:hidden}
-.sc{perspective:900px;width:100%;height:165px;display:flex;justify-content:center;align-items:center}
-.cd{width:96%;height:140px;background:linear-gradient(135deg,#001428 0%,#001e4a 60%,#002255 100%);
+.sc{perspective:900px;width:100%;display:flex;justify-content:center;align-items:center;padding:8px 0}
+.cd{width:96%;background:linear-gradient(135deg,#001428 0%,#001e4a 60%,#002255 100%);
     border-radius:18px;border:1.5px solid rgba(255,215,0,.4);
     box-shadow:0 16px 40px rgba(0,0,0,.5),inset 0 0 30px rgba(0,116,217,.06);
     transform-style:preserve-3d;transition:transform .1s ease;
-    padding:20px 26px;color:white;display:flex;align-items:center;gap:24px}
-.icon{font-size:2.4em;flex-shrink:0}
-.title{font-family:'Orbitron',sans-serif;font-size:.95em;font-weight:900;
-       color:#FFD700;margin-bottom:6px;text-shadow:0 0 10px rgba(255,215,0,.3)}
-.desc{font-family:'Rajdhani',sans-serif;font-size:.95em;color:#8ab;line-height:1.55}
+    padding:18px 20px;color:white;display:flex;align-items:flex-start;gap:16px;
+    overflow:hidden;word-break:break-word}
+.icon{font-size:clamp(1.4em,4vw,2.4em);flex-shrink:0;padding-top:2px}
+.title{font-family:'Orbitron',sans-serif;font-size:clamp(.7em,2vw,.95em);font-weight:900;
+       color:#FFD700;margin-bottom:6px;text-shadow:0 0 10px rgba(255,215,0,.3);
+       line-height:1.3}
+.desc{font-family:'Rajdhani',sans-serif;font-size:clamp(.82em,2vw,.95em);color:#8ab;line-height:1.55}
 </style>
 <div class="sc" id="sc"><div class="cd" id="cd">
   <div class="icon">( ˘▽˘)っ♨</div>
-  <div>
+  <div style="min-width:0;flex:1">
     <div class="title">MY QUARTER — INSTANT SCHEDULE INSIGHTS</div>
     <div class="desc">Upload a screenshot of your UCSB GOLD schedule.
     Local OCR reads it automatically — no API key, no cost.</div>
@@ -1447,7 +1410,7 @@ sc.addEventListener('mousemove',e=>{const r=sc.getBoundingClientRect();
   cd.style.transform=`rotateY(${(e.clientX-r.left-r.width/2)/30}deg) rotateX(${-(e.clientY-r.top-r.height/2)/20}deg)`;});
 sc.addEventListener('mouseleave',()=>{cd.style.transform='';});
 </script>
-""", height=185)
+""", height=160)
 
         st.markdown("""
 <div style="background:rgba(0,116,217,0.07);border:1px solid rgba(0,116,217,0.25);
