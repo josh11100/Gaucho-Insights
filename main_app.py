@@ -20,8 +20,10 @@ st.markdown("""
 .stApp { background: #000814 !important; color: #fff !important; }
 html, body { background: #000814 !important; }
 
-/* Hide app filename text in sidebar header but keep the collapse/expand toggle button */
+/* Hide app filename text + collapse button icon text, keep button clickable */
 [data-testid="stSidebarHeader"] > div:first-child,
+[data-testid="stSidebarHeader"] span,
+[data-testid="stSidebarHeader"] p,
 header[data-testid="stHeader"],
 #MainMenu,
 .stDeployButton,
@@ -30,12 +32,27 @@ header[data-testid="stHeader"],
 [data-testid="stStatusWidget"],
 footer { display: none !important; }
 
-/* Keep stSidebarHeader itself visible (it holds the collapse button) but make it minimal */
+/* Keep stSidebarHeader itself visible (holds collapse button) but minimal */
 [data-testid="stSidebarHeader"] {
     min-height: 0 !important;
-    padding: 0 !important;
+    padding: 2px 4px !important;
     background: transparent !important;
 }
+/* Keep the actual collapse button visible and clickable */
+[data-testid="stSidebarHeader"] button {
+    display: flex !important;
+    opacity: 0.5 !important;
+    color: rgba(255,215,0,0.4) !important;
+}
+[data-testid="stSidebarHeader"] button:hover {
+    opacity: 1 !important;
+    color: rgba(255,215,0,0.8) !important;
+}
+/* Hide the material icon text inside the button but keep button itself */
+[data-testid="stSidebarHeader"] button span {
+    display: none !important;
+}
+
 .stApp > * { position: relative; z-index: 1; }
 [data-testid="stAppViewContainer"],
 [data-testid="stMain"],
@@ -45,6 +62,44 @@ section[data-testid="stMain"] > div:first-child {
     position: relative !important;
     z-index: 1 !important;
 }
+
+/* ════════════════════════════════════
+   RESPONSIVE — half-screen / medium
+   ════════════════════════════════════ */
+
+/* Stack home page columns at medium widths */
+@media (max-width: 1100px) {
+    /* Make home columns stack */
+    section[data-testid="stMain"] [data-testid="stHorizontalBlock"]:first-of-type {
+        flex-direction: column !important;
+    }
+    section[data-testid="stMain"] [data-testid="stHorizontalBlock"]:first-of-type > [data-testid="stColumn"] {
+        width: 100% !important;
+        flex: 1 1 100% !important;
+        min-width: 0 !important;
+    }
+}
+
+/* Search result cards — shrink gracefully */
+@media (max-width: 900px) {
+    /* Professor button text shouldn't wrap */
+    .stButton > button {
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        font-size: 0.82em !important;
+        padding: 4px 8px !important;
+    }
+    /* Stack search result columns */
+    [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stHorizontalBlock"] {
+        flex-direction: column !important;
+    }
+    [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {
+        width: 100% !important;
+        flex: 1 1 100% !important;
+    }
+}
+
 
 /* ── Tabs ── */
 .stTabs [data-baseweb="tab-list"] {
@@ -563,16 +618,16 @@ def render_info_card():
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Rajdhani:wght@500;700&display=swap');
 *{margin:0;padding:0;box-sizing:border-box}body{background:transparent;overflow:hidden}
-.sc{perspective:900px;width:100%;height:auto;min-height:200px;display:flex;justify-content:center;align-items:center;padding:8px 0}
-.cd{width:90%;background:linear-gradient(140deg,#001428 0%,#002255 60%,#001e4a 100%);
+.sc{perspective:900px;width:100%;height:auto;min-height:180px;display:flex;justify-content:center;align-items:center;padding:8px 0}
+.cd{width:100%;background:linear-gradient(140deg,#001428 0%,#002255 60%,#001e4a 100%);
     border-radius:22px;border:1.5px solid rgba(255,215,0,.5);
     box-shadow:0 20px 50px rgba(0,0,0,.6),inset 0 0 40px rgba(0,116,217,.07);
     transform-style:preserve-3d;transition:transform .1s ease;
     display:flex;flex-direction:column;justify-content:space-between;
-    padding:20px 22px;color:white;word-break:break-word;overflow:hidden}
-.t{font-family:'Orbitron',sans-serif;font-size:clamp(.75em,.9vw,.95em);font-weight:700;
-   color:#FFD700;margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.b{font-family:'Rajdhani',sans-serif;font-size:clamp(.88em,1.2vw,1.02em);line-height:1.8;color:#8ab}
+    padding:16px 18px;color:white;word-break:break-word;overflow:hidden}
+.t{font-family:'Orbitron',sans-serif;font-size:clamp(.65em,.9vw,.9em);font-weight:700;
+   color:#FFD700;margin-bottom:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.b{font-family:'Rajdhani',sans-serif;font-size:clamp(.8em,1vw,.98em);line-height:1.8;color:#8ab}
 .h{font-family:'Rajdhani',sans-serif;font-size:.78em;color:rgba(255,255,255,.2);
    background:rgba(255,255,255,.04);border-radius:8px;padding:5px 10px;
    text-align:center;margin-top:12px}
@@ -594,7 +649,7 @@ sc.addEventListener('mousemove',e=>{const r=sc.getBoundingClientRect();
   cd.style.transform=`rotateY(${(e.clientX-r.left-r.width/2)/10}deg) rotateX(${-(e.clientY-r.top-r.height/2)/8}deg)`;});
 sc.addEventListener('mouseleave',()=>{cd.style.transform='';});
 </script>
-""", height=240)
+""", height=220)
 
 
 def render_linkedin_card():
@@ -1384,21 +1439,20 @@ let f = 0;
 <div style="background:rgba(0,18,40,.7);border:1px solid rgba(255,215,0,.2);
             border-radius:18px;padding:16px;margin-top:16px;
             font-family:'Rajdhani',sans-serif;overflow:hidden;word-break:break-word;">
-  <div style="font-family:'Orbitron',sans-serif;font-size:.72em;color:#FFD700;
-              margin-bottom:12px;letter-spacing:1px;white-space:nowrap;
-              overflow:hidden;text-overflow:ellipsis;">GRADING LEGEND</div>
-  <div style="margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-    <span style="background:#2ECC40;color:#000;padding:3px 8px;border-radius:20px;
-                 font-weight:700;font-size:.78em;white-space:nowrap;flex-shrink:0;">EASY</span>
-    <span style="color:#8ab;font-size:.82em;">Avg GPA &gt; 3.5</span></div>
-  <div style="margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-    <span style="background:#0074D9;color:#fff;padding:3px 8px;border-radius:20px;
-                 font-weight:700;font-size:.78em;white-space:nowrap;flex-shrink:0;">CHILL</span>
-    <span style="color:#8ab;font-size:.82em;">Avg GPA 3.1 – 3.5</span></div>
-  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-    <span style="background:#FF4136;color:#fff;padding:3px 8px;border-radius:20px;
-                 font-weight:700;font-size:.78em;white-space:nowrap;flex-shrink:0;">STRESSFUL</span>
-    <span style="color:#8ab;font-size:.82em;">Avg GPA &lt; 3.0</span></div>
+  <div style="font-family:'Orbitron',sans-serif;font-size:clamp(.6em,.9vw,.72em);color:#FFD700;
+              margin-bottom:12px;letter-spacing:1px;overflow:hidden;text-overflow:ellipsis;">GRADING LEGEND</div>
+  <div style="margin-bottom:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+    <span style="background:#2ECC40;color:#000;padding:2px 8px;border-radius:20px;
+                 font-weight:700;font-size:clamp(.65em,.9vw,.78em);white-space:nowrap;flex-shrink:0;">EASY</span>
+    <span style="color:#8ab;font-size:clamp(.72em,.9vw,.82em);">Avg GPA &gt; 3.5</span></div>
+  <div style="margin-bottom:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+    <span style="background:#0074D9;color:#fff;padding:2px 8px;border-radius:20px;
+                 font-weight:700;font-size:clamp(.65em,.9vw,.78em);white-space:nowrap;flex-shrink:0;">CHILL</span>
+    <span style="color:#8ab;font-size:clamp(.72em,.9vw,.82em);">Avg GPA 3.1 – 3.5</span></div>
+  <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+    <span style="background:#FF4136;color:#fff;padding:2px 8px;border-radius:20px;
+                 font-weight:700;font-size:clamp(.65em,.9vw,.78em);white-space:nowrap;flex-shrink:0;">STRESSFUL</span>
+    <span style="color:#8ab;font-size:clamp(.72em,.9vw,.82em);">Avg GPA &lt; 3.0</span></div>
 </div>""", unsafe_allow_html=True)
 
     # ── SEARCH TOOL ─────────────────────────────────────────────────────────
