@@ -938,15 +938,13 @@ def clean_instructor_name(raw: str) -> str:
     """
     Robustly clean an instructor name extracted from OCR or copy-paste.
     Handles: junk characters, bracket noise, extra spaces, missing initials,
-    OCR artifacts like }] or |, numbers leaking in, hyphenated names like Y-D, etc.
-    Returns cleaned LASTNAME F M style string, or "" if invalid.
+    OCR artifacts like }] or |, numbers leaking in, hyphenated names like Y-D,
+    and split names like "YU G" (should be joined as "YUG").
 
     GOLD format examples:
         WANG Y-D        → WANG Y D
         GARFIELD P M    → GARFIELD P M
-        MOEHLIS J M     → MOEHLIS J M
-        NAKAYAMA M T    → NAKAYAMA M T
-        GARFIELD P M ]  → GARFIELD P M
+        YU G            → YUG  (OCR split a short last name)
         }SMITH A        → SMITH A
     """
     if not raw:
@@ -955,29 +953,34 @@ def clean_instructor_name(raw: str) -> str:
     s = raw.upper().strip()
 
     # Replace hyphens BETWEEN single letters with a space (e.g. Y-D → Y D)
-    # This handles hyphenated initials like "Y-D" or "M-T"
     s = re.sub(r'\b([A-Z])-([A-Z])\b', r'\1 \2', s)
 
-    # Remove anything that isn't a letter or space (strips }, ], |, digits, punctuation)
+    # Remove anything that isn't a letter or space
     s = re.sub(r"[^A-Z\s]", " ", s)
-
-    # Collapse multiple spaces
     s = re.sub(r"\s+", " ", s).strip()
 
-    # Split into tokens, drop any that have no letters
     tokens = [t for t in s.split() if t.isalpha()]
-
     if not tokens:
         return ""
 
-    # GOLD name format: first token = last name (can be long), rest = initials (1 char each)
-    # Anything after the last name that is 1 character is an initial
+    # Special case: if we have exactly 2 tokens and BOTH are short (≤3 chars each),
+    # they're likely OCR-split pieces of one short last name — join them.
+    # e.g. "YU G" → "YUG", "LI A" is ambiguous but "YU G" has no real initial sense
+    # Heuristic: if first token ≤ 3 chars AND second token is 1 char, could be split name.
+    # We join them only if the combined result looks like a real last name (≥ 3 chars).
+    if len(tokens) == 2 and len(tokens[0]) <= 3 and len(tokens[1]) == 1:
+        joined = tokens[0] + tokens[1]
+        if len(joined) >= 3:
+            # Ambiguous: could be LASTNAME INITIAL (e.g. "LI A") or split name (e.g. "YU G")
+            # Keep both possibilities — return the joined form since short last names
+            # with single initials are rare in UCSB data
+            tokens = [joined]
+
     last = tokens[0]
     initials = []
     for t in tokens[1:]:
         if len(t) == 1:
             initials.append(t)
-        # Longer token after last name = probably noise or second last-name word — stop
         else:
             break
         if len(initials) >= 2:
@@ -1284,15 +1287,29 @@ let f = 0;
         components.html("""
 <script>
 (function() {
-    function clickTab() {
-        const tabs = window.parent.document.querySelectorAll('[data-baseweb="tab"]');
-        if (tabs.length >= 2) {
-            tabs[1].click();
-        }
+    function clickSearchTab() {
+        try {
+            const tabs = window.parent.document.querySelectorAll('[data-baseweb="tab"]');
+            if (tabs.length >= 2) {
+                tabs[1].click();
+                return true;
+            }
+        } catch(e) {}
+        return false;
     }
-    setTimeout(clickTab, 50);
-    setTimeout(clickTab, 200);
-    setTimeout(clickTab, 500);
+    // Try immediately, then with delays, then observe DOM if tabs not ready yet
+    if (!clickSearchTab()) {
+        const attempts = [50, 150, 300, 600];
+        attempts.forEach(ms => setTimeout(clickSearchTab, ms));
+        // MutationObserver as final fallback — fires when tabs render
+        try {
+            const observer = new MutationObserver(() => {
+                if (clickSearchTab()) observer.disconnect();
+            });
+            observer.observe(window.parent.document.body, { childList: true, subtree: true });
+            setTimeout(() => observer.disconnect(), 2000);
+        } catch(e) {}
+    }
 })();
 </script>
 """, height=0)
