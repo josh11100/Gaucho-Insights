@@ -263,23 +263,14 @@ def load_data():
                 return p
         return None
 
-    # Support split CSV files, single CSV, or parquet
-    rmp_path = find("rmp_final_data.csv")
+    grades_path = find("courseGrades.csv")
+    rmp_path    = find("rmp_final_data.csv")
 
-    part1 = find("courseGrades_part1.csv")
-    part2 = find("courseGrades_part2.csv")
-    single_parquet = find("courseGrades.parquet")
-    single_csv = find("courseGrades.csv")
-
-    if part1 and part2:
-        df = pd.concat([pd.read_csv(part1), pd.read_csv(part2)], ignore_index=True)
-    elif single_parquet:
-        df = pd.read_parquet(single_parquet)
-    elif single_csv:
-        df = pd.read_csv(single_csv)
-    else:
-        st.error("Cannot find grade data files — put courseGrades_part1.csv + courseGrades_part2.csv in the same folder.")
+    if not grades_path:
+        st.error("Cannot find courseGrades.csv — put it in the same folder or a 'data/' subfolder.")
         st.stop()
+
+    df = pd.read_csv(grades_path)
     df.columns = [c.strip().lower() for c in df.columns]
 
     def extract_num(s):
@@ -292,6 +283,9 @@ def load_data():
     for col in ["instructor", "quarter", "course", "dept"]:
         if col in df.columns:
             df[col] = df[col].astype(str).str.upper().str.strip()
+
+    # Normalize internal whitespace in course names (e.g. "PSTAT   100" → "PSTAT 100")
+    df["course"] = df["course"].str.replace(r'\s+', ' ', regex=True).str.strip()
 
     df["join_key"] = df["instructor"].apply(make_join_key)
 
