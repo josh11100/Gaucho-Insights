@@ -206,24 +206,24 @@ div[data-baseweb="tooltip"],
    MOBILE / NARROW SCREEN FIXES
    ════════════════════════════════════ */
 
-/* Hide bar chart column when stacked — prevents overlap with info text */
-@media (max-width: 860px) {
-    [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:last-child:not(:first-child) {
-        display: none !important;
-    }
-}
+/* ════════════════════════════════════
+   RESPONSIVE — narrow / half-screen
+   ════════════════════════════════════ */
 
-/* Stack ALL horizontal blocks when narrow (covers home + search cards) */
+/* Stack home page columns at narrow widths */
 @media (max-width: 860px) {
-    [data-testid="stHorizontalBlock"] {
+    .home-cols [data-testid="stHorizontalBlock"] {
         flex-direction: column !important;
-        flex-wrap: wrap !important;
     }
-    [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {
+    .home-cols [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {
         width: 100% !important;
         flex: 1 1 100% !important;
         min-width: 0 !important;
     }
+}
+
+/* Keep search result cards side-by-side but shrink text */
+@media (max-width: 860px) {
     /* Shrink tab font */
     .stTabs [data-baseweb="tab"] {
         font-size: clamp(10px, 2vw, 14px) !important;
@@ -234,8 +234,14 @@ div[data-baseweb="tooltip"],
         gap: 6px !important;
         padding: 4px 8px !important;
     }
+    /* Prevent any column from overflowing */
+    [data-testid="stColumn"] {
+        min-width: 0 !important;
+        overflow: hidden !important;
+    }
 }
 
+/* Only stack home page columns (not search cards) at very narrow */
 @media (max-width: 640px) {
     .stTabs [data-baseweb="tab"] {
         font-size: 10px !important;
@@ -246,7 +252,12 @@ div[data-baseweb="tooltip"],
         gap: 4px !important;
         padding: 4px 6px !important;
     }
+    /* On truly tiny screens hide the bar chart to save space */
+    [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stColumn"]:last-child {
+        display: none !important;
+    }
 }
+
 
 /* Prevent column overflow at any screen size */
 [data-testid="stColumn"] {
@@ -1447,6 +1458,7 @@ let f = 0;
 
     # ── HOME ────────────────────────────────────────────────────────────────
     with tab_home:
+        st.markdown('<div class="home-cols">', unsafe_allow_html=True)
         col_main, col_side = st.columns([5, 2], gap="large")
         with col_main:
             render_welcome_card()
@@ -1476,6 +1488,7 @@ let f = 0;
     <span style="color:#8ab;font-size:.85em;">Avg GPA &lt; 3.0</span>
   </div>
 </div>""", unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
     # ── SEARCH TOOL ─────────────────────────────────────────────────────────
     # ── SIDEBAR (always rendered regardless of active tab) ───────────────────
