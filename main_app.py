@@ -1168,39 +1168,7 @@ const geo3 = wire(THREE.TetrahedronGeometry, [5, 0], 0xff4488,  10, 18,-20, 0.09
 const geo4 = wire(THREE.IcosahedronGeometry, [4, 1], 0x00ccff, -30,-18,-35, 0.07);
 scene.add(geo1, geo2, geo3, geo4);
 
-// ── 4. Meteor tracers — horizontal streak with glowing tail ──
-const shoots = [];
-let shootClock = 0;
-function spawnShoot() {
-    const y   = (Math.random() - .5) * 30;   // random vertical position
-    const z   = -10 - Math.random() * 15;
-    const spd = Math.random() * 0.35 + 0.25; // horizontal speed
-    const trailLen = Math.floor(Math.random() * 6 + 6); // number of segments
 
-    // Build a multi-segment line: head bright, tail fades
-    // Each segment is a short horizontal dash
-    const segSize = 1.8 + Math.random() * 1.5;
-    const segments = [];
-    for (let s = 0; s < trailLen; s++) {
-        const geo = new THREE.BufferGeometry();
-        const sx = 60 + Math.random() * 10; // start off right edge
-        geo.setAttribute('position', new THREE.BufferAttribute(
-            new Float32Array([sx - s*segSize, y, z,
-                              sx - s*segSize - segSize*0.85, y, z]), 3
-        ));
-        // Head = bright white, tail = blue-white fading
-        const headFrac = 1 - s / trailLen;
-        const col = s === 0 ? 0xffffff : (s < 3 ? 0xaaddff : 0x4488cc);
-        const mat = new THREE.LineBasicMaterial({
-            color: col, transparent: true,
-            opacity: headFrac * (s === 0 ? 1.0 : 0.7)
-        });
-        const line = new THREE.Line(geo, mat);
-        scene.add(line);
-        segments.push({ line, baseOpacity: mat.opacity });
-    }
-    shoots.push({ segments, vx: -spd, life: 1.0, maxLife: 1.0 });
-}
 
 // ── 5. Mouse parallax ──
 let mx=0, my=0;
@@ -1241,23 +1209,7 @@ let f = 0;
     camera.position.y += (-my * 3 - camera.position.y) * 0.025;
     camera.lookAt(0, 0, 0);
 
-    shootClock++;
-    if (shootClock > 120 + Math.random()*180) { spawnShoot(); shootClock=0; }
-    for (let i = shoots.length-1; i >= 0; i--) {
-        const s = shoots[i];
-        s.life -= 0.018;
-        // Move all segments horizontally together
-        for (let j = 0; j < s.segments.length; j++) {
-            s.segments[j].line.position.x += s.vx * 2.5;
-            // Fade entire tracer as life drops
-            s.segments[j].line.material.opacity =
-                Math.max(0, s.segments[j].baseOpacity * s.life);
-        }
-        if (s.life <= 0) {
-            s.segments.forEach(sg => scene.remove(sg.line));
-            shoots.splice(i, 1);
-        }
-    }
+
 
     renderer.render(scene, camera);
 })();
