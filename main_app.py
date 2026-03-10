@@ -1123,27 +1123,12 @@ function makeStars(n, spread, size, color, opacity) {
     const pos = new Float32Array(n * 3);
     for (let i = 0; i < n * 3; i++) pos[i] = (Math.random() - .5) * spread;
     geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-    const mat = new THREE.PointsMaterial({
-        color, size, sizeAttenuation:true, transparent:true, opacity,
-        alphaTest: 0.01
-    });
-    // Make points circular using a canvas texture
-    const canvas2d = document.createElement('canvas');
-    canvas2d.width = canvas2d.height = 32;
-    const ctx = canvas2d.getContext('2d');
-    const grad = ctx.createRadialGradient(16,16,0, 16,16,16);
-    grad.addColorStop(0, 'rgba(255,255,255,1)');
-    grad.addColorStop(0.4, 'rgba(255,255,255,0.8)');
-    grad.addColorStop(1, 'rgba(255,255,255,0)');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0,0,32,32);
-    mat.map = new THREE.CanvasTexture(canvas2d);
-    mat.alphaMap = mat.map;
+    const mat = new THREE.PointsMaterial({ color, size, sizeAttenuation:true, transparent:true, opacity });
     return new THREE.Points(geo, mat);
 }
 const s1 = makeStars(4000, 2000, 0.18, 0xffffff, 0.8);
-const s2 = makeStars(1500, 1200, 0.28, 0xc8dcff, 0.7);
-const s3 = makeStars(500,  600,  0.45, 0xffe8a0, 0.9);
+const s2 = makeStars(1500, 1200, 0.22, 0xc8dcff, 0.7);
+const s3 = makeStars(500,  600,  0.28, 0xffe8a0, 0.9);
 scene.add(s1, s2, s3);
 
 // ── 2. Nebula blobs (additive blended spheres) ──
