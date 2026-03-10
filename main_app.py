@@ -350,7 +350,7 @@ def load_data():
 # ─────────────────────────────────────────────
 #  SESSION STATE
 # ─────────────────────────────────────────────
-for key in ["sel_prof_key", "sel_prof_name"]:
+for key in ["sel_prof_key", "sel_prof_name", "sel_prof_course"]:
     if key not in st.session_state:
         st.session_state[key] = None
 for key in ["dept_q", "course_q", "prof_q"]:
@@ -887,6 +887,9 @@ sc.addEventListener('mouseleave',()=>{{cd.style.transform='rotateY(0) rotateX(0)
                     st.rerun()
 
         # Show/hide all controls
+        searched_course = st.session_state.get("sel_prof_course", "")
+        # Pin the searched course — fall back to first course if not found in this prof's history
+        pin_course = searched_course if searched_course in courses else courses[0]
         ctrl_col1, ctrl_col2, _ = st.columns([1, 1, 4])
         with ctrl_col1:
             if st.button("◉ Show All", key=f"show_all_{prof_key}", use_container_width=True):
@@ -894,7 +897,7 @@ sc.addEventListener('mouseleave',()=>{{cd.style.transform='rotateY(0) rotateX(0)
                 st.rerun()
         with ctrl_col2:
             if st.button("○ Hide All", key=f"hide_all_{prof_key}", use_container_width=True):
-                st.session_state[state_key] = {courses[0]}
+                st.session_state[state_key] = {pin_course}
                 st.rerun()
 
         summary = (hist.groupby("course")[gpa_col].agg(["mean","count"]).reset_index()
@@ -1397,8 +1400,9 @@ let f = 0;
                         with pb_col:
                             if st.button(f"{prof_name}", key=f"pb_{idx}",
                                          help="Click to view RMP profile + GPA history"):
-                                st.session_state.sel_prof_key  = jk
-                                st.session_state.sel_prof_name = prof_name
+                                st.session_state.sel_prof_key    = jk
+                                st.session_state.sel_prof_name   = prof_name
+                                st.session_state.sel_prof_course = row["course"]
                                 st.rerun()
                     else:
                         st.markdown(f'<div style="font-family:Rajdhani,sans-serif;font-size:.95em;'
