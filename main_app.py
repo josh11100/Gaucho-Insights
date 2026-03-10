@@ -188,6 +188,34 @@ def name_similarity(first_a: str, first_b: str) -> float:
     toks_b = first_b.upper().split()
     if not toks_a or not toks_b:
         return 0.5
+
+    # ── Initials-vs-full-name matching ──────────────────────────────────────
+    # e.g. "Y D" (initials from Y-D) vs "YUEDONG" (full name in RMP)
+    # Check if one side looks like initials (all single chars) and the other is a full name
+    a_is_initials = all(len(t) == 1 for t in toks_a)
+    b_is_initials = all(len(t) == 1 for t in toks_b)
+
+    if a_is_initials and not b_is_initials:
+        # toks_a = ['Y','D'], toks_b = ['YUEDONG']
+        # Try: does the full name start with the first initial?
+        full_name = "".join(toks_b)  # e.g. YUEDONG
+        initials  = toks_a           # e.g. ['Y','D']
+        # Check first initial matches first letter of full name
+        if full_name and initials[0] == full_name[0]:
+            # Check second initial (if present) appears somewhere in the name after position 0
+            if len(initials) > 1:
+                if initials[1] in full_name[1:]:
+                    return 0.95  # strong match: Y-D → YUEDONG (Y start, D inside)
+                else:
+                    return 0.7   # first initial matches
+            return 0.85  # single initial matches first letter
+        return 0.1  # first initial doesn't match — very unlikely same person
+
+    if b_is_initials and not a_is_initials:
+        # Flip and recurse
+        return name_similarity(first_b, first_a)
+
+    # ── Standard token-by-token similarity (both full names or both initials) ──
     matches = 0
     for ta, tb in zip(toks_a, toks_b):
         if ta == tb:
