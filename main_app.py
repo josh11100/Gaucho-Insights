@@ -16,8 +16,88 @@ st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&display=swap');
 
-.stApp { background: #000 !important; color: #fff !important; }
-html, body { background: #000 !important; }
+/* ── Animated deep space background ── */
+.stApp {
+    background: #000 !important;
+    color: #fff !important;
+}
+.stApp::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background:
+        /* nebula glow top-left — blue/teal */
+        radial-gradient(ellipse 60% 40% at 10% 15%,
+            rgba(0, 80, 180, 0.18) 0%, transparent 70%),
+        /* nebula glow bottom-right — purple */
+        radial-gradient(ellipse 55% 45% at 90% 85%,
+            rgba(100, 0, 180, 0.15) 0%, transparent 65%),
+        /* subtle gold center pulse */
+        radial-gradient(ellipse 40% 30% at 50% 50%,
+            rgba(255, 200, 0, 0.04) 0%, transparent 70%),
+        /* deep space base */
+        linear-gradient(160deg, #00050f 0%, #000814 40%, #010010 100%);
+}
+
+/* Star layers — CSS only, three depths */
+.stApp::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-image:
+        /* small distant stars */
+        radial-gradient(1px 1px at 10% 8%, rgba(255,255,255,0.7) 0%, transparent 100%),
+        radial-gradient(1px 1px at 23% 45%, rgba(255,255,255,0.5) 0%, transparent 100%),
+        radial-gradient(1px 1px at 37% 12%, rgba(255,255,255,0.6) 0%, transparent 100%),
+        radial-gradient(1px 1px at 52% 67%, rgba(255,255,255,0.4) 0%, transparent 100%),
+        radial-gradient(1px 1px at 64% 30%, rgba(255,255,255,0.7) 0%, transparent 100%),
+        radial-gradient(1px 1px at 78% 55%, rgba(255,255,255,0.5) 0%, transparent 100%),
+        radial-gradient(1px 1px at 88% 18%, rgba(255,255,255,0.6) 0%, transparent 100%),
+        radial-gradient(1px 1px at 95% 80%, rgba(255,255,255,0.4) 0%, transparent 100%),
+        radial-gradient(1px 1px at 5%  72%, rgba(255,255,255,0.5) 0%, transparent 100%),
+        radial-gradient(1px 1px at 42% 88%, rgba(255,255,255,0.6) 0%, transparent 100%),
+        radial-gradient(1px 1px at 17% 92%, rgba(255,255,255,0.4) 0%, transparent 100%),
+        radial-gradient(1px 1px at 71% 6%,  rgba(255,255,255,0.7) 0%, transparent 100%),
+        radial-gradient(1px 1px at 83% 40%, rgba(255,255,255,0.5) 0%, transparent 100%),
+        radial-gradient(1px 1px at 29% 60%, rgba(255,255,255,0.6) 0%, transparent 100%),
+        radial-gradient(1px 1px at 56% 22%, rgba(255,255,255,0.4) 0%, transparent 100%),
+        /* medium stars */
+        radial-gradient(1.5px 1.5px at 15% 35%, rgba(255,255,255,0.8) 0%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 45% 5%,  rgba(200,220,255,0.7) 0%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 70% 75%, rgba(255,255,255,0.8) 0%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 90% 50%, rgba(200,220,255,0.6) 0%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 33% 78%, rgba(255,255,255,0.7) 0%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 60% 48%, rgba(255,220,150,0.6) 0%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 8%  55%, rgba(255,255,255,0.8) 0%, transparent 100%),
+        /* bright close stars with glow */
+        radial-gradient(2px 2px at 20% 20%, rgba(255,255,255,1.0) 0%, rgba(255,255,255,0.1) 60%, transparent 100%),
+        radial-gradient(2px 2px at 75% 15%, rgba(200,230,255,1.0) 0%, rgba(200,230,255,0.1) 60%, transparent 100%),
+        radial-gradient(2px 2px at 55% 90%, rgba(255,255,255,1.0) 0%, rgba(255,255,255,0.1) 60%, transparent 100%),
+        radial-gradient(2px 2px at 92% 35%, rgba(255,240,200,1.0) 0%, rgba(255,240,200,0.1) 60%, transparent 100%),
+        radial-gradient(2px 2px at 3%  90%, rgba(255,255,255,1.0) 0%, rgba(255,255,255,0.1) 60%, transparent 100%),
+        radial-gradient(3px 3px at 48% 38%, rgba(255,255,255,1.0) 0%, rgba(180,210,255,0.2) 70%, transparent 100%);
+    animation: twinkle 8s ease-in-out infinite alternate;
+}
+
+@keyframes twinkle {
+    0%   { opacity: 0.7; }
+    25%  { opacity: 1.0; }
+    50%  { opacity: 0.6; }
+    75%  { opacity: 0.95; }
+    100% { opacity: 0.75; }
+}
+
+/* Make sure all Streamlit content sits above the background */
+.stApp > * { position: relative; z-index: 1; }
+[data-testid="stAppViewContainer"] { background: transparent !important; }
+[data-testid="stMain"] { background: transparent !important; }
+[data-testid="block-container"] { background: transparent !important; }
+
+html, body { background: #000814 !important; }
 
 /* ── Tabs ── */
 .stTabs [data-baseweb="tab-list"] {
