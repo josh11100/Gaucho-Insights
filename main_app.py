@@ -5,6 +5,7 @@ import re
 import io
 import plotly.express as px
 import plotly.graph_objects as go
+import plotly.io as pio
 import streamlit.components.v1 as components
 
 st.set_page_config(page_title="Gaucho Insights", layout="wide", page_icon="🎓", menu_items={}, initial_sidebar_state="expanded")
@@ -1516,6 +1517,9 @@ let f = 0;
 </div>""", unsafe_allow_html=True)
 
     with tab_search:
+        # Load Plotly JS once for inline chart rendering
+        st.markdown('<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>',
+                    unsafe_allow_html=True)
         if st.session_state.sel_prof_key:
             lk        = st.session_state.sel_prof_key
             info      = rmp_lookup.get(lk, {})
@@ -1564,57 +1568,100 @@ let f = 0;
             txt_col          = "#000" if status == "EASY" else "#fff"
             rmp_pill         = ('<span style="font-size:.7em;color:#FFD700;background:rgba(255,215,0,.08);'
                                 'border:1px solid rgba(255,215,0,.22);padding:2px 10px;border-radius:12px;'
-                                'margin-left:8px;">RMP</span>' if has_rmp else "")
+                                'margin-left:4px;vertical-align:middle;">RMP</span>' if has_rmp else "")
 
-            # Build grade chart as inline Plotly HTML
-            grades = pd.DataFrame({
+            # Build chart as standalone HTML (no iframe, no st.columns)
+            grades_df = pd.DataFrame({
                 "Grade": ["A","B","C","D","F"],
-                "Count": [row.get("a",0),row.get("b",0),row.get("c",0),
-                          row.get("d",0),row.get("f",0)],
+                "Count": [row.get("a",0), row.get("b",0), row.get("c",0),
+                          row.get("d",0), row.get("f",0)]
             })
-            fig = px.bar(grades, x="Grade", y="Count", color="Grade",
-                         color_discrete_map={"A":"#2ECC40","B":"#0074D9",
-                                             "C":"#FFDC00","D":"#FF851B","F":"#FF4136"},
-                         template="plotly_dark", height=110)
-            fig.update_layout(margin=dict(l=0,r=0,t=2,b=0), showlegend=False,
-                              xaxis_title=None, yaxis_title=None,
-                              paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                              xaxis=dict(tickfont=dict(size=10,color="#aaa")),
-                              yaxis=dict(tickfont=dict(size=9,color="#555")))
-
-            with st.container(border=True):
-                # Info row
-                st.markdown(
-                    f'<div style="font-family:Orbitron,sans-serif;font-size:clamp(.8em,1.5vw,1.05em);'
-                    f'font-weight:700;color:#e8f4ff;margin-bottom:4px;word-break:break-word;">'
-                    f'{row["course"]}'
-                    f'<span style="color:#445;font-size:.78em;margin-left:8px;">'
-                    f'{row["quarter"]} {row["year"]}</span></div>', unsafe_allow_html=True)
-
-                # Professor button or plain name + chart side by side
-                info_col, chart_col = st.columns([3, 2], gap="small")
-                with info_col:
-                    if has_rmp:
-                        if st.button(f"{prof_name}", key=f"pb_{idx}", use_container_width=False):
-                            st.session_state.sel_prof_key    = jk
-                            st.session_state.sel_prof_name   = prof_name
-                            st.session_state.sel_prof_course = row["course"]
-                            st.rerun()
-                    else:
-                        st.markdown(f'<div style="font-family:Rajdhani,sans-serif;font-size:.95em;'
-                                    f'color:#667;margin:4px 0 6px;">{prof_name}</div>',
-                                    unsafe_allow_html=True)
-                    st.markdown(
-                        f'<div style="display:flex;align-items:center;gap:6px;margin-top:4px;flex-wrap:wrap;">'
-                        f'<span style="font-family:Orbitron,sans-serif;font-size:clamp(.72em,1.2vw,.88em);'
-                        f'font-weight:700;color:#cde;white-space:nowrap;">GPA {gpa_val:.2f}</span>'
-                        f'<span style="background:{clr};color:{txt_col};padding:2px 8px;border-radius:20px;'
-                        f'font-size:clamp(.65em,1vw,.74em);font-weight:900;letter-spacing:1px;white-space:nowrap;">'
-                        f'{status}</span>{rmp_pill}</div>', unsafe_allow_html=True)
-
-                with chart_col:
-                    st.plotly_chart(fig, use_container_width=True, key=f"fig_{idx}",
+            fig = px.bar(grades_df, x="Grade", y="Count", color="Grade",
+                         color_discrete_map={"A":"#2ECC40","B":"#0074D9","C":"#FFDC00",
+                                             "D":"#FF851B","F":"#FF4136"},
+                         template="plotly_dark", height=120)
+            fig.update_layout(
+                margin=dict(l=0, r=0, t=2, b=0), showlegend=False,
+                xaxis_title=None, yaxis_title=None,
+                paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                xaxis=dict(tickfont=dict(size=10, color="#aaa")),
+                yaxis=dict(tickfont=dict(size=9,  color="#555")))
+            chart_div = pio.to_html(fig, full_html=False, include_plotlyjs=False,
                                     config={"displayModeBar": False})
+
+            # Prof name display — clickable button style if has RMP, plain text otherwise
+            if has_rmp:
+                prof_html = (
+                    f'<button class="prof-btn" id="profbtn_{idx}" '
+                    f'style="background:rgba(0,116,217,.15);border:1px solid rgba(0,116,217,.5);'
+                    f'color:#5bb8ff;border-radius:10px;font-family:Rajdhani,sans-serif;font-weight:700;'
+                    f'font-size:.9em;padding:4px 12px;cursor:pointer;margin:4px 0 6px;white-space:nowrap;"'
+                    f'onclick="document.getElementById(\'stbtn_{idx}\').click()">'
+                    f'{prof_name}</button>'
+                )
+            else:
+                prof_html = (f'<div style="font-family:Rajdhani,sans-serif;font-size:.9em;'
+                             f'color:#667;margin:4px 0 6px;">{prof_name}</div>')
+
+            st.markdown(f"""
+<div style="background:rgba(10,20,40,.6);border:1px solid rgba(255,255,255,.08);
+            border-radius:12px;padding:14px 16px;margin-bottom:12px;
+            display:flex;flex-direction:row;align-items:center;
+            gap:12px;width:100%;box-sizing:border-box;">
+  <!-- LEFT: course info -->
+  <div style="flex:3;min-width:0;overflow:hidden;">
+    <div style="font-family:Orbitron,sans-serif;font-size:clamp(.78em,1.4vw,1em);
+                font-weight:700;color:#e8f4ff;margin-bottom:2px;word-break:break-word;">
+      {row["course"]}
+      <span style="color:#445;font-size:.76em;margin-left:6px;">
+        {row["quarter"]} {row["year"]}
+      </span>
+    </div>
+    {prof_html}
+    <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:2px;">
+      <span style="font-family:Orbitron,sans-serif;font-size:clamp(.7em,1.1vw,.85em);
+                   font-weight:700;color:#cde;white-space:nowrap;">GPA {gpa_val:.2f}</span>
+      <span style="background:{clr};color:{txt_col};padding:2px 7px;border-radius:20px;
+                   font-size:clamp(.62em,.95vw,.72em);font-weight:900;letter-spacing:1px;
+                   white-space:nowrap;">{status}</span>
+      {rmp_pill}
+    </div>
+  </div>
+  <!-- RIGHT: chart — flex-shrink:0 so it NEVER drops below -->
+  <div style="flex:2;min-width:140px;max-width:42%;flex-shrink:0;overflow:hidden;">
+    {chart_div}
+  </div>
+</div>""", unsafe_allow_html=True)
+
+            # Hidden real Streamlit button — triggered by the HTML button above
+            if has_rmp:
+                btn_style = """
+<style>
+div[data-testid="stButton"]:has(button[id^="stbtn_"]) {
+    position:absolute !important;
+    width:1px !important; height:1px !important;
+    overflow:hidden !important; opacity:0 !important;
+    pointer-events:none !important;
+}
+</style>"""
+                st.markdown(btn_style, unsafe_allow_html=True)
+                if st.button(prof_name, key=f"pb_{idx}"):
+                    st.session_state.sel_prof_key    = jk
+                    st.session_state.sel_prof_name   = prof_name
+                    st.session_state.sel_prof_course = row["course"]
+                    st.rerun()
+                # Give the hidden button its ID so onclick can find it
+                components.html(f"""
+<script>
+(function() {{
+    var btns = window.parent.document.querySelectorAll('button[kind="secondary"]');
+    btns.forEach(function(b) {{
+        if (b.innerText.trim() === {repr(prof_name)}) {{
+            b.id = 'stbtn_{idx}';
+        }}
+    }});
+}})();
+</script>""", height=0)
 
     # ── MY QUARTER ──────────────────────────────────────────────────────────
     with tab_quarter:
