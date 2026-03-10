@@ -222,9 +222,8 @@ div[data-baseweb="tooltip"],
     }
 }
 
-/* Keep search result cards side-by-side but shrink text */
+/* Search cards: always side-by-side, just compress */
 @media (max-width: 860px) {
-    /* Shrink tab font */
     .stTabs [data-baseweb="tab"] {
         font-size: clamp(10px, 2vw, 14px) !important;
         padding: 0 8px !important;
@@ -234,14 +233,12 @@ div[data-baseweb="tooltip"],
         gap: 6px !important;
         padding: 4px 8px !important;
     }
-    /* Prevent any column from overflowing */
     [data-testid="stColumn"] {
         min-width: 0 !important;
         overflow: hidden !important;
     }
 }
 
-/* Only stack home page columns (not search cards) at very narrow */
 @media (max-width: 640px) {
     .stTabs [data-baseweb="tab"] {
         font-size: 10px !important;
@@ -251,10 +248,6 @@ div[data-baseweb="tooltip"],
     .stTabs [data-baseweb="tab-list"] {
         gap: 4px !important;
         padding: 4px 6px !important;
-    }
-    /* On truly tiny screens hide the bar chart to save space */
-    [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stColumn"]:last-child {
-        display: none !important;
     }
 }
 
@@ -1573,16 +1566,34 @@ let f = 0;
                                 'border:1px solid rgba(255,215,0,.22);padding:2px 10px;border-radius:12px;'
                                 'margin-left:8px;">RMP</span>' if has_rmp else "")
 
-            with st.container(border=True):
-                col_info, col_chart = st.columns([3, 2])
-                with col_info:
-                    st.markdown(
-                        f'<div style="font-family:Orbitron,sans-serif;font-size:clamp(.8em,1.5vw,1.05em);'
-                        f'font-weight:700;color:#e8f4ff;margin-bottom:4px;word-break:break-word;">'
-                        f'{row["course"]}'
-                        f'<span style="color:#445;font-size:.78em;margin-left:8px;">'
-                        f'{row["quarter"]} {row["year"]}</span></div>', unsafe_allow_html=True)
+            # Build grade chart as inline Plotly HTML
+            grades = pd.DataFrame({
+                "Grade": ["A","B","C","D","F"],
+                "Count": [row.get("a",0),row.get("b",0),row.get("c",0),
+                          row.get("d",0),row.get("f",0)],
+            })
+            fig = px.bar(grades, x="Grade", y="Count", color="Grade",
+                         color_discrete_map={"A":"#2ECC40","B":"#0074D9",
+                                             "C":"#FFDC00","D":"#FF851B","F":"#FF4136"},
+                         template="plotly_dark", height=110)
+            fig.update_layout(margin=dict(l=0,r=0,t=2,b=0), showlegend=False,
+                              xaxis_title=None, yaxis_title=None,
+                              paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                              xaxis=dict(tickfont=dict(size=10,color="#aaa")),
+                              yaxis=dict(tickfont=dict(size=9,color="#555")))
 
+            with st.container(border=True):
+                # Info row
+                st.markdown(
+                    f'<div style="font-family:Orbitron,sans-serif;font-size:clamp(.8em,1.5vw,1.05em);'
+                    f'font-weight:700;color:#e8f4ff;margin-bottom:4px;word-break:break-word;">'
+                    f'{row["course"]}'
+                    f'<span style="color:#445;font-size:.78em;margin-left:8px;">'
+                    f'{row["quarter"]} {row["year"]}</span></div>', unsafe_allow_html=True)
+
+                # Professor button or plain name + chart side by side
+                info_col, chart_col = st.columns([3, 2], gap="small")
+                with info_col:
                     if has_rmp:
                         if st.button(f"{prof_name}", key=f"pb_{idx}", use_container_width=False):
                             st.session_state.sel_prof_key    = jk
@@ -1593,31 +1604,15 @@ let f = 0;
                         st.markdown(f'<div style="font-family:Rajdhani,sans-serif;font-size:.95em;'
                                     f'color:#667;margin:4px 0 6px;">{prof_name}</div>',
                                     unsafe_allow_html=True)
-
                     st.markdown(
-                        f'<div style="display:flex;align-items:center;gap:6px;margin-top:4px;'
-                        f'flex-wrap:wrap;min-width:0;">'
+                        f'<div style="display:flex;align-items:center;gap:6px;margin-top:4px;flex-wrap:wrap;">'
                         f'<span style="font-family:Orbitron,sans-serif;font-size:clamp(.72em,1.2vw,.88em);'
                         f'font-weight:700;color:#cde;white-space:nowrap;">GPA {gpa_val:.2f}</span>'
                         f'<span style="background:{clr};color:{txt_col};padding:2px 8px;border-radius:20px;'
                         f'font-size:clamp(.65em,1vw,.74em);font-weight:900;letter-spacing:1px;white-space:nowrap;">'
                         f'{status}</span>{rmp_pill}</div>', unsafe_allow_html=True)
 
-                with col_chart:
-                    grades = pd.DataFrame({
-                        "Grade": ["A","B","C","D","F"],
-                        "Count": [row.get("a",0),row.get("b",0),row.get("c",0),
-                                  row.get("d",0),row.get("f",0)],
-                    })
-                    fig = px.bar(grades, x="Grade", y="Count", color="Grade",
-                                 color_discrete_map={"A":"#2ECC40","B":"#0074D9",
-                                                     "C":"#FFDC00","D":"#FF851B","F":"#FF4136"},
-                                 template="plotly_dark", height=120)
-                    fig.update_layout(margin=dict(l=0,r=0,t=4,b=0), showlegend=False,
-                                      xaxis_title=None, yaxis_title=None,
-                                      paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                                      xaxis=dict(tickfont=dict(size=11,color="#aaa")),
-                                      yaxis=dict(tickfont=dict(size=10,color="#555")))
+                with chart_col:
                     st.plotly_chart(fig, use_container_width=True, key=f"fig_{idx}",
                                     config={"displayModeBar": False})
 
