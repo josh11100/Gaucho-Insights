@@ -206,8 +206,8 @@ div[data-baseweb="tooltip"],
    MOBILE / NARROW SCREEN FIXES
    ════════════════════════════════════ */
 
-@media (max-width: 640px) {
-    /* Stack search result info+chart columns on mobile */
+/* Stack ALL horizontal blocks when narrow (covers home + search cards) */
+@media (max-width: 860px) {
     [data-testid="stHorizontalBlock"] {
         flex-direction: column !important;
         flex-wrap: wrap !important;
@@ -217,7 +217,19 @@ div[data-baseweb="tooltip"],
         flex: 1 1 100% !important;
         min-width: 0 !important;
     }
-    /* Shrink tab font on very small screens */
+    /* Shrink tab font */
+    .stTabs [data-baseweb="tab"] {
+        font-size: clamp(10px, 2vw, 14px) !important;
+        padding: 0 8px !important;
+        height: 40px !important;
+    }
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 6px !important;
+        padding: 4px 8px !important;
+    }
+}
+
+@media (max-width: 640px) {
     .stTabs [data-baseweb="tab"] {
         font-size: 10px !important;
         padding: 0 6px !important;
@@ -1438,21 +1450,24 @@ let f = 0;
             st.markdown("""
 <div style="background:rgba(0,18,40,.7);border:1px solid rgba(255,215,0,.2);
             border-radius:18px;padding:16px;margin-top:16px;
-            font-family:'Rajdhani',sans-serif;overflow:hidden;word-break:break-word;">
-  <div style="font-family:'Orbitron',sans-serif;font-size:clamp(.6em,.9vw,.72em);color:#FFD700;
-              margin-bottom:12px;letter-spacing:1px;overflow:hidden;text-overflow:ellipsis;">GRADING LEGEND</div>
-  <div style="margin-bottom:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-    <span style="background:#2ECC40;color:#000;padding:2px 8px;border-radius:20px;
-                 font-weight:700;font-size:clamp(.65em,.9vw,.78em);white-space:nowrap;flex-shrink:0;">EASY</span>
-    <span style="color:#8ab;font-size:clamp(.72em,.9vw,.82em);">Avg GPA &gt; 3.5</span></div>
-  <div style="margin-bottom:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-    <span style="background:#0074D9;color:#fff;padding:2px 8px;border-radius:20px;
-                 font-weight:700;font-size:clamp(.65em,.9vw,.78em);white-space:nowrap;flex-shrink:0;">CHILL</span>
-    <span style="color:#8ab;font-size:clamp(.72em,.9vw,.82em);">Avg GPA 3.1 – 3.5</span></div>
-  <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-    <span style="background:#FF4136;color:#fff;padding:2px 8px;border-radius:20px;
-                 font-weight:700;font-size:clamp(.65em,.9vw,.78em);white-space:nowrap;flex-shrink:0;">STRESSFUL</span>
-    <span style="color:#8ab;font-size:clamp(.72em,.9vw,.82em);">Avg GPA &lt; 3.0</span></div>
+            font-family:'Rajdhani',sans-serif;word-break:break-word;">
+  <div style="font-family:'Orbitron',sans-serif;font-size:.82em;color:#FFD700;
+              margin-bottom:14px;letter-spacing:1px;">GRADING LEGEND</div>
+  <div style="margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+    <span style="background:#2ECC40;color:#000;padding:3px 10px;border-radius:20px;
+                 font-weight:700;font-size:.8em;white-space:nowrap;">EASY</span>
+    <span style="color:#8ab;font-size:.85em;">Avg GPA &gt; 3.5</span>
+  </div>
+  <div style="margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+    <span style="background:#0074D9;color:#fff;padding:3px 10px;border-radius:20px;
+                 font-weight:700;font-size:.8em;white-space:nowrap;">CHILL</span>
+    <span style="color:#8ab;font-size:.85em;">Avg GPA 3.1 – 3.5</span>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+    <span style="background:#FF4136;color:#fff;padding:3px 10px;border-radius:20px;
+                 font-weight:700;font-size:.8em;white-space:nowrap;">STRESSFUL</span>
+    <span style="color:#8ab;font-size:.85em;">Avg GPA &lt; 3.0</span>
+  </div>
 </div>""", unsafe_allow_html=True)
 
     # ── SEARCH TOOL ─────────────────────────────────────────────────────────
@@ -1542,31 +1557,30 @@ let f = 0;
                 col_info, col_chart = st.columns([3, 2])
                 with col_info:
                     st.markdown(
-                        f'<div style="font-family:Orbitron,sans-serif;font-size:clamp(.85em,2vw,1.05em);'
+                        f'<div style="font-family:Orbitron,sans-serif;font-size:clamp(.8em,1.5vw,1.05em);'
                         f'font-weight:700;color:#e8f4ff;margin-bottom:4px;word-break:break-word;">'
                         f'{row["course"]}'
                         f'<span style="color:#445;font-size:.78em;margin-left:8px;">'
                         f'{row["quarter"]} {row["year"]}</span></div>', unsafe_allow_html=True)
 
                     if has_rmp:
-                        pb_col, _ = st.columns([2, 3])
-                        with pb_col:
-                            if st.button(f"{prof_name}", key=f"pb_{idx}"):
-                                st.session_state.sel_prof_key    = jk
-                                st.session_state.sel_prof_name   = prof_name
-                                st.session_state.sel_prof_course = row["course"]
-                                st.rerun()
+                        if st.button(f"{prof_name}", key=f"pb_{idx}", use_container_width=False):
+                            st.session_state.sel_prof_key    = jk
+                            st.session_state.sel_prof_name   = prof_name
+                            st.session_state.sel_prof_course = row["course"]
+                            st.rerun()
                     else:
                         st.markdown(f'<div style="font-family:Rajdhani,sans-serif;font-size:.95em;'
                                     f'color:#667;margin:4px 0 6px;">{prof_name}</div>',
                                     unsafe_allow_html=True)
 
                     st.markdown(
-                        f'<div style="display:flex;align-items:center;gap:6px;margin-top:6px;flex-wrap:wrap;">'
-                        f'<span style="font-family:Orbitron,sans-serif;font-size:clamp(.75em,2vw,.88em);'
-                        f'font-weight:700;color:#cde;">GPA {gpa_val:.2f}</span>'
-                        f'<span style="background:{clr};color:{txt_col};padding:3px 10px;border-radius:20px;'
-                        f'font-size:.74em;font-weight:900;box-shadow:0 0 14px {shd};letter-spacing:1px;white-space:nowrap;">'
+                        f'<div style="display:flex;align-items:center;gap:6px;margin-top:4px;'
+                        f'flex-wrap:wrap;min-width:0;">'
+                        f'<span style="font-family:Orbitron,sans-serif;font-size:clamp(.72em,1.2vw,.88em);'
+                        f'font-weight:700;color:#cde;white-space:nowrap;">GPA {gpa_val:.2f}</span>'
+                        f'<span style="background:{clr};color:{txt_col};padding:2px 8px;border-radius:20px;'
+                        f'font-size:clamp(.65em,1vw,.74em);font-weight:900;letter-spacing:1px;white-space:nowrap;">'
                         f'{status}</span>{rmp_pill}</div>', unsafe_allow_html=True)
 
                 with col_chart:
