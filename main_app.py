@@ -1168,20 +1168,38 @@ const geo3 = wire(THREE.TetrahedronGeometry, [5, 0], 0xff4488,  10, 18,-20, 0.09
 const geo4 = wire(THREE.IcosahedronGeometry, [4, 1], 0x00ccff, -30,-18,-35, 0.07);
 scene.add(geo1, geo2, geo3, geo4);
 
-// ── 4. Shooting stars ──
+// ── 4. Meteor tracers — horizontal streak with glowing tail ──
 const shoots = [];
 let shootClock = 0;
 function spawnShoot() {
-    const x  = (Math.random()-.5)*80,  y = Math.random()*30+5;
-    const len = Math.random()*8 + 4;
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.BufferAttribute(
-        new Float32Array([x, y, -20,  x+len, y-len*.35, -20]), 3
-    ));
-    const mat = new THREE.LineBasicMaterial({ color:0xffffff, transparent:true, opacity:1 });
-    const line = new THREE.Line(geo, mat);
-    scene.add(line);
-    shoots.push({ line, vx:-(Math.random()*.4+.25), vy:-(Math.random()*.2+.1), life:1 });
+    const y   = (Math.random() - .5) * 30;   // random vertical position
+    const z   = -10 - Math.random() * 15;
+    const spd = Math.random() * 0.35 + 0.25; // horizontal speed
+    const trailLen = Math.floor(Math.random() * 6 + 6); // number of segments
+
+    // Build a multi-segment line: head bright, tail fades
+    // Each segment is a short horizontal dash
+    const segSize = 1.8 + Math.random() * 1.5;
+    const segments = [];
+    for (let s = 0; s < trailLen; s++) {
+        const geo = new THREE.BufferGeometry();
+        const sx = 60 + Math.random() * 10; // start off right edge
+        geo.setAttribute('position', new THREE.BufferAttribute(
+            new Float32Array([sx - s*segSize, y, z,
+                              sx - s*segSize - segSize*0.85, y, z]), 3
+        ));
+        // Head = bright white, tail = blue-white fading
+        const headFrac = 1 - s / trailLen;
+        const col = s === 0 ? 0xffffff : (s < 3 ? 0xaaddff : 0x4488cc);
+        const mat = new THREE.LineBasicMaterial({
+            color: col, transparent: true,
+            opacity: headFrac * (s === 0 ? 1.0 : 0.7)
+        });
+        const line = new THREE.Line(geo, mat);
+        scene.add(line);
+        segments.push({ line, baseOpacity: mat.opacity });
+    }
+    shoots.push({ segments, vx: -spd, life: 1.0, maxLife: 1.0 });
 }
 
 // ── 5. Mouse parallax ──
@@ -1224,14 +1242,21 @@ let f = 0;
     camera.lookAt(0, 0, 0);
 
     shootClock++;
-    if (shootClock > 150 + Math.random()*200) { spawnShoot(); shootClock=0; }
+    if (shootClock > 120 + Math.random()*180) { spawnShoot(); shootClock=0; }
     for (let i = shoots.length-1; i >= 0; i--) {
         const s = shoots[i];
-        s.line.position.x += s.vx * 2;
-        s.line.position.y += s.vy * 2;
-        s.life -= 0.022;
-        s.line.material.opacity = Math.max(0, s.life);
-        if (s.life <= 0) { scene.remove(s.line); shoots.splice(i,1); }
+        s.life -= 0.018;
+        // Move all segments horizontally together
+        for (let j = 0; j < s.segments.length; j++) {
+            s.segments[j].line.position.x += s.vx * 2.5;
+            // Fade entire tracer as life drops
+            s.segments[j].line.material.opacity =
+                Math.max(0, s.segments[j].baseOpacity * s.life);
+        }
+        if (s.life <= 0) {
+            s.segments.forEach(sg => scene.remove(sg.line));
+            shoots.splice(i, 1);
+        }
     }
 
     renderer.render(scene, camera);
