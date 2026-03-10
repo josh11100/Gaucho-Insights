@@ -1520,10 +1520,16 @@ sc.addEventListener('mouseleave',()=>{cd.style.transform='';});
         n_with_rmp = sum(1 for p in parsed if make_join_key(p["instructor"]) in rmp_lookup)
         avg_gpas   = []
         for p in parsed:
-            jk  = make_join_key(p["instructor"])
-            sub = full_df[full_df["join_key"] == jk]
+            jk          = make_join_key(p["instructor"])
+            course_name = p.get("course", "")   # e.g. "MATH 3B"
+            sub         = full_df[full_df["join_key"] == jk]
+            if course_name and not sub.empty:
+                course_sub = sub[sub["course"] == course_name]
+                if not course_sub.empty:
+                    sub = course_sub
             if not sub.empty:
-                avg_gpas.append(sub[gpa_col].mean())
+                # One representative value per course-professor pair (median across all their offerings of that class)
+                avg_gpas.append(sub[gpa_col].median())
         overall_avg             = sum(avg_gpas) / len(avg_gpas) if avg_gpas else None
         ov_status, ov_clr, _    = gpa_badge(overall_avg) if overall_avg else ("N/A","#666","")
 
