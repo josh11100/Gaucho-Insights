@@ -20,12 +20,15 @@ st.markdown("""
 .stApp { background: #000814 !important; color: #fff !important; }
 html, body { background: #000814 !important; }
 
-/* Make Streamlit containers transparent so the 3D canvas shows through */
+/* Make sure all Streamlit content sits above the fixed background iframe */
+.stApp > * { position: relative; z-index: 1; }
 [data-testid="stAppViewContainer"],
 [data-testid="stMain"],
 [data-testid="block-container"],
 section[data-testid="stMain"] > div:first-child {
     background: transparent !important;
+    position: relative !important;
+    z-index: 1 !important;
 }
 
 /* ── Tabs ── */
@@ -431,6 +434,8 @@ hero.addEventListener('mousemove',e=>{
   title.style.transform=`rotateY(${(e.clientX-r.left-r.width/2)/22}deg) rotateX(${-(e.clientY-r.top-r.height/2)/12}deg) translateZ(40px)`;
 });
 hero.addEventListener('mouseleave',()=>{title.style.transform='rotateY(0) rotateX(0) translateZ(0)';});
+try{const el=window.frameElement;if(el){el.style.zIndex='10';el.style.position='relative';}}
+catch(e){}
 </script>
 """, height=170)
 
@@ -1079,12 +1084,24 @@ def main():
 (function positionIframe() {
     const el = window.frameElement;
     if (!el) return;
-    el.style.cssText = [
-        'position:fixed', 'top:0', 'left:0',
-        'width:100vw',    'height:100vh',
-        'z-index:0',      'pointer-events:none',
-        'border:none',    'background:transparent'
-    ].join('!important;') + '!important';
+    el.style.position = 'fixed';
+    el.style.top = '0';
+    el.style.left = '0';
+    el.style.width = '100vw';
+    el.style.height = '100vh';
+    el.style.zIndex = '-10';
+    el.style.pointerEvents = 'none';
+    el.style.border = 'none';
+    el.style.background = 'transparent';
+    // Also ensure all sibling iframes (hero, content) sit above
+    try {
+        const allFrames = window.parent.document.querySelectorAll('iframe');
+        allFrames.forEach(f => {
+            if (f !== el && (!f.style.zIndex || parseInt(f.style.zIndex) < 1)) {
+                f.style.zIndex = '1';
+            }
+        });
+    } catch(e) {}
 })();
 
 // ── Three.js scene ──
