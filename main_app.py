@@ -1131,29 +1131,7 @@ const s2 = makeStars(1500, 1200, 0.22, 0xc8dcff, 0.7);
 const s3 = makeStars(500,  600,  0.28, 0xffe8a0, 0.9);
 scene.add(s1, s2, s3);
 
-// ── 2. Nebula blobs (additive blended spheres) ──
-function nebula(color, x, y, z, sx, sy, sz, op) {
-    const m = new THREE.Mesh(
-        new THREE.SphereGeometry(1, 10, 10),
-        new THREE.MeshBasicMaterial({
-            color, transparent:true, opacity:op,
-            depthWrite:false, blending:THREE.AdditiveBlending
-        })
-    );
-    m.position.set(x,y,z);
-    m.scale.set(sx,sy,sz);
-    return m;
-}
-const neb = [
-    nebula(0x0033ff, -35, 20, -80, 40, 22, 20, 0.07),
-    nebula(0x6600bb,  40,-15, -90, 45, 25, 22, 0.06),
-    nebula(0xffd700,   0,  0,-120, 30, 15, 18, 0.025),
-    nebula(0x003399, -10,-25, -70, 28, 18, 16, 0.05),
-    nebula(0x220044,  20, 30, -60, 20, 12, 14, 0.04),
-];
-neb.forEach(n => scene.add(n));
-
-// ── 3. Wireframe geometry accents ──
+// ── 2. Wireframe geometry accents ──
 function wire(GeoClass, args, color, x, y, z, op) {
     const m = new THREE.Mesh(
         new GeoClass(...args),
@@ -1201,9 +1179,6 @@ let f = 0;
     geo3.rotation.x += 0.006; geo3.rotation.z -= 0.004;
     geo4.rotation.y += 0.003; geo4.rotation.x -= 0.005;
 
-    neb[0].material.opacity = 0.06 + Math.sin(t*1.1) * 0.02;
-    neb[1].material.opacity = 0.05 + Math.sin(t*0.9) * 0.018;
-    neb[2].material.opacity = 0.02 + Math.sin(t*0.7) * 0.008;
 
     camera.position.x += (mx * 4 - camera.position.x) * 0.025;
     camera.position.y += (-my * 3 - camera.position.y) * 0.025;
