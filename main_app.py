@@ -20,8 +20,8 @@ st.markdown("""
 .stApp { background: #000814 !important; color: #fff !important; }
 html, body { background: #000814 !important; }
 
-/* Hide the app filename shown in sidebar header and top bar */
-[data-testid="stSidebarHeader"],
+/* Hide app filename text in sidebar header but keep the collapse/expand toggle button */
+[data-testid="stSidebarHeader"] > div:first-child,
 header[data-testid="stHeader"],
 #MainMenu,
 .stDeployButton,
@@ -29,6 +29,13 @@ header[data-testid="stHeader"],
 [data-testid="stDecoration"],
 [data-testid="stStatusWidget"],
 footer { display: none !important; }
+
+/* Keep stSidebarHeader itself visible (it holds the collapse button) but make it minimal */
+[data-testid="stSidebarHeader"] {
+    min-height: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+}
 .stApp > * { position: relative; z-index: 1; }
 [data-testid="stAppViewContainer"],
 [data-testid="stMain"],
@@ -1166,8 +1173,9 @@ def main():
     function tryHide() {
         try {
             const parent = window.parent.document;
-            // Only hide stSidebarHeader (the filename bar at the very top)
-            parent.querySelectorAll('[data-testid="stSidebarHeader"]')
+            // Hide only the filename text inside the sidebar header, not the header itself
+            // (the header contains the collapse/expand toggle button)
+            parent.querySelectorAll('[data-testid="stSidebarHeader"] > div:first-child')
                   .forEach(el => el.style.display = 'none');
             // Hide the top header bar (share/github icons row)
             parent.querySelectorAll('header[data-testid="stHeader"]')
