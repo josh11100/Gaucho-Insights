@@ -361,7 +361,9 @@ if "parsed_schedule" not in st.session_state:
 if "gpa3d_active_courses" not in st.session_state:
     st.session_state.gpa3d_active_courses = set()
 if "active_tab" not in st.session_state:
-    st.session_state.active_tab = 0  # 0=Home, 1=Search, 2=My Quarter
+    st.session_state.active_tab = 0
+if "force_search_tab" not in st.session_state:
+    st.session_state.force_search_tab = False
 
 
 def clear_filters():
@@ -381,6 +383,7 @@ def dismiss_prof():
 def filter_changed():
     """Called when any sidebar filter changes — jump to Search Tool."""
     st.session_state.active_tab = 1
+    st.session_state.force_search_tab = True
     dismiss_prof()
 
 
@@ -1258,8 +1261,8 @@ let f = 0;
 
     tab_home, tab_search, tab_quarter = st.tabs(["HOME", "SEARCH TOOL", "MY QUARTER"])
 
-    # Auto-switch to the correct tab via JS if filter was changed
-    if st.session_state.active_tab == 1:
+    # Auto-switch to Search Tool tab whenever a filter is changed
+    if st.session_state.get("force_search_tab") or st.session_state.active_tab == 1:
         components.html("""
 <script>
 (function() {
@@ -1269,13 +1272,14 @@ let f = 0;
             tabs[1].click();
         }
     }
-    // Try immediately and after a short delay for reliability
-    setTimeout(clickTab, 80);
-    setTimeout(clickTab, 250);
+    setTimeout(clickTab, 50);
+    setTimeout(clickTab, 200);
+    setTimeout(clickTab, 500);
 })();
 </script>
 """, height=0)
-        st.session_state.active_tab = 0  # reset so it doesn't re-fire
+        st.session_state.active_tab = 0
+        st.session_state.force_search_tab = False
 
     # ── HOME ────────────────────────────────────────────────────────────────
     with tab_home:
@@ -1367,7 +1371,11 @@ let f = 0;
             st.warning("No results found. Try adjusting the filters.")
             return
 
-        df    = df.sort_values(["course","year"], ascending=[True,False])
+        # Sort: most recent first — year desc, then quarter desc (FALL > SUMMER > SPRING > WINTER)
+        q_order = {"FALL": 3, "SUMMER": 2, "SPRING": 1, "WINTER": 0}
+        df = df.copy()
+        df["_qord"] = df["quarter"].str.upper().map(q_order).fillna(0)
+        df = df.sort_values(["year", "_qord"], ascending=[False, False]).drop(columns=["_qord"])
         shown = df.head(25)
 
         st.markdown(f'<div style="font-family:Orbitron,sans-serif;font-size:.75em;'
