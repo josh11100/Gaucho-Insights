@@ -7,7 +7,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Gaucho Insights", layout="wide", page_icon="🎓")
+st.set_page_config(page_title="Gaucho Insights", layout="wide", page_icon="🎓", menu_items={})
 
 # ─────────────────────────────────────────────
 #  GLOBAL CSS
@@ -20,7 +20,15 @@ st.markdown("""
 .stApp { background: #000814 !important; color: #fff !important; }
 html, body { background: #000814 !important; }
 
-/* Make sure all Streamlit content sits above the fixed background iframe */
+/* Hide the app filename shown in sidebar header and top bar */
+[data-testid="stSidebarHeader"],
+header[data-testid="stHeader"],
+#MainMenu,
+.stDeployButton,
+[data-testid="stToolbar"],
+[data-testid="stDecoration"],
+[data-testid="stStatusWidget"],
+footer { display: none !important; }
 .stApp > * { position: relative; z-index: 1; }
 [data-testid="stAppViewContainer"],
 [data-testid="stMain"],
@@ -56,6 +64,14 @@ section[data-testid="stMain"] > div:first-child {
 [data-testid="stSidebar"] { background: #050a14 !important; border-right: 1px solid rgba(255,215,0,0.2) !important; }
 [data-testid="stSidebar"] * { color: #ccc !important; font-family: 'Rajdhani', sans-serif !important; }
 [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 { color: #FFD700 !important; font-family: 'Orbitron', sans-serif !important; font-size: 0.9em !important; }
+
+/* Space out sidebar filter elements evenly */
+[data-testid="stSidebar"] > div > div > div { padding-top: 1.5rem !important; }
+[data-testid="stSidebar"] .stSelectbox { margin-bottom: 1.2rem !important; }
+[data-testid="stSidebar"] .stTextInput { margin-bottom: 1.2rem !important; }
+[data-testid="stSidebar"] .stButton { margin-top: 0.5rem !important; margin-bottom: 1.2rem !important; }
+[data-testid="stSidebar"] label { margin-bottom: 4px !important; }
+[data-testid="stSidebar"] hr { margin: 1.5rem 0 !important; }
 
 /* ── Cards ── */
 [data-testid="stVerticalBlockBorderWrapper"] {
@@ -168,8 +184,16 @@ section[data-testid="stMain"] > div:first-child {
     .stTabs [data-baseweb="tab-list"] { gap: 12px !important; }
 }
 
-/* Prevent horizontal scroll on the whole app */
-[data-testid="stAppViewContainer"] {
+/* Prevent column overflow at any screen size */
+[data-testid="stColumn"] {
+    min-width: 0 !important;
+    overflow: hidden !important;
+}
+[data-testid="stColumn"] > div {
+    min-width: 0 !important;
+    overflow: hidden !important;
+    word-break: break-word !important;
+}
     overflow-x: hidden !important;
 }
 section[data-testid="stMain"] > div {
@@ -533,20 +557,29 @@ def render_info_card():
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Rajdhani:wght@500;700&display=swap');
 *{margin:0;padding:0;box-sizing:border-box}body{background:transparent;overflow:hidden}
-.sc{perspective:900px;width:100%;height:250px;display:flex;justify-content:center;align-items:center}
-.cd{width:90%;height:215px;background:linear-gradient(140deg,#001428 0%,#002255 60%,#001e4a 100%);
+.sc{perspective:900px;width:100%;height:auto;min-height:200px;display:flex;justify-content:center;align-items:center;padding:8px 0}
+.cd{width:90%;background:linear-gradient(140deg,#001428 0%,#002255 60%,#001e4a 100%);
     border-radius:22px;border:1.5px solid rgba(255,215,0,.5);
     box-shadow:0 20px 50px rgba(0,0,0,.6),inset 0 0 40px rgba(0,116,217,.07);
     transform-style:preserve-3d;transition:transform .1s ease;
-    display:flex;flex-direction:column;justify-content:space-between;padding:24px 26px;color:white}
-.t{font-family:'Orbitron',sans-serif;font-size:.95em;font-weight:700;color:#FFD700;margin-bottom:4px}
-.b{font-family:'Rajdhani',sans-serif;font-size:1.02em;line-height:1.7;color:#8ab}
-.h{font-family:'Rajdhani',sans-serif;font-size:.8em;color:rgba(255,255,255,.2);
-   background:rgba(255,255,255,.04);border-radius:8px;padding:6px 10px;text-align:center}
+    display:flex;flex-direction:column;justify-content:space-between;
+    padding:20px 22px;color:white;word-break:break-word;overflow:hidden}
+.t{font-family:'Orbitron',sans-serif;font-size:clamp(.75em,.9vw,.95em);font-weight:700;
+   color:#FFD700;margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.b{font-family:'Rajdhani',sans-serif;font-size:clamp(.88em,1.2vw,1.02em);line-height:1.8;color:#8ab}
+.h{font-family:'Rajdhani',sans-serif;font-size:.78em;color:rgba(255,255,255,.2);
+   background:rgba(255,255,255,.04);border-radius:8px;padding:5px 10px;
+   text-align:center;margin-top:12px}
 </style>
 <div class="sc" id="sc"><div class="cd" id="cd">
-  <div><div class="t">( ˘▽˘)っ♨ DATA INFO</div>
-  <div class="b"><b>Coverage:</b> Through Summer 2025<br><b>Source:</b> UCSB Registrar + RMP<br><b>Built by:</b> Joshua Chung</div></div>
+  <div>
+    <div class="t">( ˘▽˘)っ♨ DATA INFO</div>
+    <div class="b">
+      <b>Coverage:</b> Through Summer 2025<br>
+      <b>Source:</b> UCSB Registrar + RMP<br>
+      <b>Built by:</b> Joshua Chung
+    </div>
+  </div>
   <div class="h">Hover to tilt ↗</div>
 </div></div>
 <script>
@@ -555,7 +588,7 @@ sc.addEventListener('mousemove',e=>{const r=sc.getBoundingClientRect();
   cd.style.transform=`rotateY(${(e.clientX-r.left-r.width/2)/10}deg) rotateX(${-(e.clientY-r.top-r.height/2)/8}deg)`;});
 sc.addEventListener('mouseleave',()=>{cd.style.transform='';});
 </script>
-""", height=270)
+""", height=240)
 
 
 def render_linkedin_card():
@@ -566,9 +599,10 @@ def render_linkedin_card():
 .sc{perspective:800px;width:100%;height:80px;display:flex;justify-content:center;align-items:center}
 a{width:90%;height:58px;display:flex;align-items:center;justify-content:center;
   background:#0077b5;border-radius:14px;border:1.5px solid rgba(255,215,0,.4);
-  font-family:'Rajdhani',sans-serif;font-weight:700;font-size:1.05em;color:white;
+  font-family:'Rajdhani',sans-serif;font-weight:700;
+  font-size:clamp(.85em,1.5vw,1.05em);color:white;white-space:nowrap;
   text-decoration:none;transform-style:preserve-3d;transition:transform .1s,background .2s;
-  box-shadow:0 8px 24px rgba(0,0,0,.4)}
+  box-shadow:0 8px 24px rgba(0,0,0,.4);padding:0 16px;overflow:hidden;text-overflow:ellipsis}
 a:hover{background:#0087cc}
 </style>
 <div class="sc" id="sc">
@@ -1063,6 +1097,28 @@ def main():
     full_df, gpa_col, rmp_lookup = load_data()
     render_hero()
 
+    # Hide the sidebar app name via JS — targets it by hunting the DOM
+    components.html("""
+<script>
+(function hideAppName() {
+    function tryHide() {
+        try {
+            const parent = window.parent.document;
+            // Only hide stSidebarHeader (the filename bar at the very top)
+            parent.querySelectorAll('[data-testid="stSidebarHeader"]')
+                  .forEach(el => el.style.display = 'none');
+            // Hide the top header bar (share/github icons row)
+            parent.querySelectorAll('header[data-testid="stHeader"]')
+                  .forEach(el => el.style.display = 'none');
+        } catch(e) {}
+    }
+    tryHide();
+    setTimeout(tryHide, 300);
+    setTimeout(tryHide, 1000);
+})();
+</script>
+""", height=0)
+
     # ── 3D Animated Space Background ─────────────────────────────────────────
     # Strategy: render Three.js inside the iframe, then use window.parent JS
     # to reposition the iframe itself as a fixed full-screen background layer.
@@ -1216,7 +1272,6 @@ let f = 0;
 
     # ── HOME ────────────────────────────────────────────────────────────────
     with tab_home:
-        # On mobile Streamlit stacks columns automatically via CSS above
         col_main, col_side = st.columns([5, 2], gap="large")
         with col_main:
             render_welcome_card()
@@ -1226,21 +1281,23 @@ let f = 0;
             render_linkedin_card()
             st.markdown("""
 <div style="background:rgba(0,18,40,.7);border:1px solid rgba(255,215,0,.2);
-            border-radius:18px;padding:18px 20px;margin-top:16px;font-family:'Rajdhani',sans-serif;">
-  <div style="font-family:'Orbitron',sans-serif;font-size:.75em;color:#FFD700;
-              margin-bottom:12px;letter-spacing:1px;">GRADING LEGEND</div>
-  <div style="margin-bottom:8px;display:flex;align-items:center;gap:10px;">
-    <span style="background:#2ECC40;color:#000;padding:3px 10px;border-radius:20px;
-                 font-weight:700;font-size:.82em;white-space:nowrap;">EASY</span>
-    <span style="color:#8ab;font-size:.88em;">Avg GPA &gt; 3.5</span></div>
-  <div style="margin-bottom:8px;display:flex;align-items:center;gap:10px;">
-    <span style="background:#0074D9;color:#fff;padding:3px 10px;border-radius:20px;
-                 font-weight:700;font-size:.82em;white-space:nowrap;">CHILL</span>
-    <span style="color:#8ab;font-size:.88em;">Avg GPA 3.1 – 3.5</span></div>
-  <div style="display:flex;align-items:center;gap:10px;">
-    <span style="background:#FF4136;color:#fff;padding:3px 10px;border-radius:20px;
-                 font-weight:700;font-size:.82em;white-space:nowrap;">STRESSFUL</span>
-    <span style="color:#8ab;font-size:.88em;">Avg GPA &lt; 3.0</span></div>
+            border-radius:18px;padding:16px;margin-top:16px;
+            font-family:'Rajdhani',sans-serif;overflow:hidden;word-break:break-word;">
+  <div style="font-family:'Orbitron',sans-serif;font-size:.72em;color:#FFD700;
+              margin-bottom:12px;letter-spacing:1px;white-space:nowrap;
+              overflow:hidden;text-overflow:ellipsis;">GRADING LEGEND</div>
+  <div style="margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+    <span style="background:#2ECC40;color:#000;padding:3px 8px;border-radius:20px;
+                 font-weight:700;font-size:.78em;white-space:nowrap;flex-shrink:0;">EASY</span>
+    <span style="color:#8ab;font-size:.82em;">Avg GPA &gt; 3.5</span></div>
+  <div style="margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+    <span style="background:#0074D9;color:#fff;padding:3px 8px;border-radius:20px;
+                 font-weight:700;font-size:.78em;white-space:nowrap;flex-shrink:0;">CHILL</span>
+    <span style="color:#8ab;font-size:.82em;">Avg GPA 3.1 – 3.5</span></div>
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+    <span style="background:#FF4136;color:#fff;padding:3px 8px;border-radius:20px;
+                 font-weight:700;font-size:.78em;white-space:nowrap;flex-shrink:0;">STRESSFUL</span>
+    <span style="color:#8ab;font-size:.82em;">Avg GPA &lt; 3.0</span></div>
 </div>""", unsafe_allow_html=True)
 
     # ── SEARCH TOOL ─────────────────────────────────────────────────────────
