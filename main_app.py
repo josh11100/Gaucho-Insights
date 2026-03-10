@@ -107,6 +107,24 @@ section[data-testid="stMain"] > div:first-child {
     border-color: rgba(255,215,0,0.6) !important;
     color: #FFD700 !important;
 }
+/* Remove white focus outline / tooltip box on buttons */
+.stButton > button:focus,
+.stButton > button:focus-visible,
+.stButton > button:focus:not(:active) {
+    outline: none !important;
+    box-shadow: none !important;
+    border-color: rgba(0,116,217,0.5) !important;
+}
+/* Hide Streamlit's native tooltip popup */
+[data-testid="tooltipHoverTarget"],
+div[class*="tooltip"],
+div[data-baseweb="tooltip"],
+[role="tooltip"] {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
 
 /* ── Inputs ── */
 .stTextInput > div > div > input, .stSelectbox > div > div {
@@ -1406,8 +1424,7 @@ let f = 0;
                     if has_rmp:
                         pb_col, _ = st.columns([2, 3])
                         with pb_col:
-                            if st.button(f"{prof_name}", key=f"pb_{idx}",
-                                         help="Click to view RMP profile + GPA history"):
+                            if st.button(f"{prof_name}", key=f"pb_{idx}"):
                                 st.session_state.sel_prof_key    = jk
                                 st.session_state.sel_prof_name   = prof_name
                                 st.session_state.sel_prof_course = row["course"]
