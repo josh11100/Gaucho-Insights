@@ -296,9 +296,8 @@ def load_data():
 
     df["join_key"] = df["instructor"].apply(make_join_key)
 
-    # Build known-lastnames set for OCR fused-token detection in clean_instructor_name
-    global _KNOWN_LASTNAMES
-    _KNOWN_LASTNAMES = set(
+    # Build known-lastnames set for OCR fused-token detection
+    known_lastnames = set(
         df["instructor"].astype(str).str.upper().str.strip()
         .str.split().str[0].dropna().unique()
     )
@@ -379,7 +378,7 @@ def load_data():
             agg[ec] = "first"
 
     df = df.groupby(grp_cols).agg(agg).reset_index()
-    return df, gpa_col, rmp_lookup
+    return df, gpa_col, rmp_lookup, known_lastnames
 
 
 # ─────────────────────────────────────────────
@@ -1108,17 +1107,30 @@ def parse_schedule_from_image(image_bytes: bytes) -> list[dict]:
 
     try:
         image = Image.open(io.BytesIO(image_bytes))
-        # Upscale for better OCR accuracy
         w, h  = image.size
         image = image.resize((w * 2, h * 2), Image.LANCZOS)
-        # Convert to grayscale — removes yellow background bias that causes tesseract
-        # to skip or mangle highlighted rows
+        # Convert to grayscale — removes yellow background bias
         image = image.convert("L")
         # Boost contrast so text on yellow/colored backgrounds is as clear as on white
-        image = ImageEnhance.Contrast(image).enhance(2.0)
-        image = ImageEnhance.Sharpness(image).enhance(1.5)
-        raw_text = pytesseract.image_to_string(image, config="--psm 6")
-        return parse_gold_schedule(raw_text)
+        image = ImageEnhance.Contrast(image).enhance(2.5)
+        image = ImageEnhance.Sharpness(image).enhance(2.0)
+
+        # Pass 1: PSM 6 (uniform block of text) — best for full schedule tables
+        raw_text1 = pytesseract.image_to_string(image, config="--psm 6")
+        results1  = parse_gold_schedule(raw_text1)
+
+        # Pass 2: PSM 4 (single column) — catches rows PSM 6 misses
+        raw_text2 = pytesseract.image_to_string(image, config="--psm 4")
+        results2  = parse_gold_schedule(raw_text2)
+
+        # Merge: keep all unique courses across both passes
+        seen, merged = set(), []
+        for r in results1 + results2:
+            if r["course"] not in seen:
+                seen.add(r["course"])
+                merged.append(r)
+
+        return merged
     except Exception as ex:
         st.error(f"OCR error: {ex}")
         return []
@@ -1128,7 +1140,9 @@ def parse_schedule_from_image(image_bytes: bytes) -> list[dict]:
 #  MAIN
 # ─────────────────────────────────────────────
 def main():
-    full_df, gpa_col, rmp_lookup = load_data()
+    full_df, gpa_col, rmp_lookup, known_lastnames = load_data()
+    global _KNOWN_LASTNAMES
+    _KNOWN_LASTNAMES = known_lastnames
     render_hero()
 
     # ── Mobile warning banner ─────────────────────────────────────────────
