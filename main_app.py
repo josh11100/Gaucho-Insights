@@ -171,24 +171,14 @@ section[data-testid="stMain"] > div:first-child {
     color: #FFD700 !important;
 }
 /* Hide invisible trigger buttons (label_visibility=collapsed) used for postMessage prof clicks */
-[data-testid="stButton"]:has(button[data-testid="baseButton-secondary"]) {
-    /* Only hide ones with no visible label — use margin collapse */
+/* These are st.buttons rendered after each components.html card — hide them visually */
+[data-testid="stButton"] button[kind="secondary"] {
+    /* Default — visible for normal buttons */
 }
-/* Directly target the hidden prof trigger buttons by making their container invisible */
-div.prof-trigger-btn > div[data-testid="stButton"],
-div.prof-trigger-btn [data-testid="stButton"] {
-    position: absolute !important;
-    width: 0 !important; height: 0 !important;
-    overflow: hidden !important; opacity: 0 !important;
-    pointer-events: none !important;
-}
-/* Hide ALL label_visibility=collapsed buttons (empty span label) */
-[data-testid="stButton"] button > div > p:empty,
-[data-testid="stButton"]:has(> div > button > div > p:empty) {
-    display: none !important;
-    height: 0 !important;
-    margin: 0 !important;
-    padding: 0 !important;
+/* Target search-card trigger buttons: they appear directly after an iframe element */
+iframe + div [data-testid="stButton"],
+iframe ~ div > [data-testid="stButton"] {
+    /* can't reliably target here without a wrapper class */
 }
 /* Remove white focus outline / tooltip box on buttons */
 .stButton > button:focus,
@@ -1593,8 +1583,11 @@ let f = 0;
             # Build Plotly chart JSON for inline rendering
             grades_df = pd.DataFrame({
                 "Grade": ["A","B","C","D","F"],
-                "Count": [row.get("a",0), row.get("b",0), row.get("c",0),
-                          row.get("d",0), row.get("f",0)]
+                "Count": [max(0, int(row.get("a") or 0)),
+                          max(0, int(row.get("b") or 0)),
+                          max(0, int(row.get("c") or 0)),
+                          max(0, int(row.get("d") or 0)),
+                          max(0, int(row.get("f") or 0))]
             })
             fig = px.bar(grades_df, x="Grade", y="Count", color="Grade",
                          color_discrete_map={"A":"#2ECC40","B":"#0074D9","C":"#FFDC00",
@@ -1660,11 +1653,13 @@ let f = 0;
 
             # Hidden real Streamlit button — triggered by postMessage listener below
             if has_rmp:
-                if st.button(prof_name, key=f"pb_{idx}", label_visibility="collapsed"):
+                st.markdown('<div style="height:0;overflow:hidden;position:absolute;pointer-events:none;">', unsafe_allow_html=True)
+                if st.button(prof_name, key=f"pb_{idx}"):
                     st.session_state.sel_prof_key    = jk
                     st.session_state.sel_prof_name   = prof_name
                     st.session_state.sel_prof_course = row["course"]
                     st.rerun()
+                st.markdown('</div>', unsafe_allow_html=True)
 
         # One postMessage listener that clicks the correct hidden Streamlit button
         components.html("""
