@@ -16,88 +16,17 @@ st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&display=swap');
 
-/* ── Animated deep space background ── */
-.stApp {
-    background: #000 !important;
-    color: #fff !important;
-}
-.stApp::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    z-index: 0;
-    pointer-events: none;
-    background:
-        /* nebula glow top-left — blue/teal */
-        radial-gradient(ellipse 60% 40% at 10% 15%,
-            rgba(0, 80, 180, 0.18) 0%, transparent 70%),
-        /* nebula glow bottom-right — purple */
-        radial-gradient(ellipse 55% 45% at 90% 85%,
-            rgba(100, 0, 180, 0.15) 0%, transparent 65%),
-        /* subtle gold center pulse */
-        radial-gradient(ellipse 40% 30% at 50% 50%,
-            rgba(255, 200, 0, 0.04) 0%, transparent 70%),
-        /* deep space base */
-        linear-gradient(160deg, #00050f 0%, #000814 40%, #010010 100%);
-}
-
-/* Star layers — CSS only, three depths */
-.stApp::after {
-    content: '';
-    position: fixed;
-    inset: 0;
-    z-index: 0;
-    pointer-events: none;
-    background-image:
-        /* small distant stars */
-        radial-gradient(1px 1px at 10% 8%, rgba(255,255,255,0.7) 0%, transparent 100%),
-        radial-gradient(1px 1px at 23% 45%, rgba(255,255,255,0.5) 0%, transparent 100%),
-        radial-gradient(1px 1px at 37% 12%, rgba(255,255,255,0.6) 0%, transparent 100%),
-        radial-gradient(1px 1px at 52% 67%, rgba(255,255,255,0.4) 0%, transparent 100%),
-        radial-gradient(1px 1px at 64% 30%, rgba(255,255,255,0.7) 0%, transparent 100%),
-        radial-gradient(1px 1px at 78% 55%, rgba(255,255,255,0.5) 0%, transparent 100%),
-        radial-gradient(1px 1px at 88% 18%, rgba(255,255,255,0.6) 0%, transparent 100%),
-        radial-gradient(1px 1px at 95% 80%, rgba(255,255,255,0.4) 0%, transparent 100%),
-        radial-gradient(1px 1px at 5%  72%, rgba(255,255,255,0.5) 0%, transparent 100%),
-        radial-gradient(1px 1px at 42% 88%, rgba(255,255,255,0.6) 0%, transparent 100%),
-        radial-gradient(1px 1px at 17% 92%, rgba(255,255,255,0.4) 0%, transparent 100%),
-        radial-gradient(1px 1px at 71% 6%,  rgba(255,255,255,0.7) 0%, transparent 100%),
-        radial-gradient(1px 1px at 83% 40%, rgba(255,255,255,0.5) 0%, transparent 100%),
-        radial-gradient(1px 1px at 29% 60%, rgba(255,255,255,0.6) 0%, transparent 100%),
-        radial-gradient(1px 1px at 56% 22%, rgba(255,255,255,0.4) 0%, transparent 100%),
-        /* medium stars */
-        radial-gradient(1.5px 1.5px at 15% 35%, rgba(255,255,255,0.8) 0%, transparent 100%),
-        radial-gradient(1.5px 1.5px at 45% 5%,  rgba(200,220,255,0.7) 0%, transparent 100%),
-        radial-gradient(1.5px 1.5px at 70% 75%, rgba(255,255,255,0.8) 0%, transparent 100%),
-        radial-gradient(1.5px 1.5px at 90% 50%, rgba(200,220,255,0.6) 0%, transparent 100%),
-        radial-gradient(1.5px 1.5px at 33% 78%, rgba(255,255,255,0.7) 0%, transparent 100%),
-        radial-gradient(1.5px 1.5px at 60% 48%, rgba(255,220,150,0.6) 0%, transparent 100%),
-        radial-gradient(1.5px 1.5px at 8%  55%, rgba(255,255,255,0.8) 0%, transparent 100%),
-        /* bright close stars with glow */
-        radial-gradient(2px 2px at 20% 20%, rgba(255,255,255,1.0) 0%, rgba(255,255,255,0.1) 60%, transparent 100%),
-        radial-gradient(2px 2px at 75% 15%, rgba(200,230,255,1.0) 0%, rgba(200,230,255,0.1) 60%, transparent 100%),
-        radial-gradient(2px 2px at 55% 90%, rgba(255,255,255,1.0) 0%, rgba(255,255,255,0.1) 60%, transparent 100%),
-        radial-gradient(2px 2px at 92% 35%, rgba(255,240,200,1.0) 0%, rgba(255,240,200,0.1) 60%, transparent 100%),
-        radial-gradient(2px 2px at 3%  90%, rgba(255,255,255,1.0) 0%, rgba(255,255,255,0.1) 60%, transparent 100%),
-        radial-gradient(3px 3px at 48% 38%, rgba(255,255,255,1.0) 0%, rgba(180,210,255,0.2) 70%, transparent 100%);
-    animation: twinkle 8s ease-in-out infinite alternate;
-}
-
-@keyframes twinkle {
-    0%   { opacity: 0.7; }
-    25%  { opacity: 1.0; }
-    50%  { opacity: 0.6; }
-    75%  { opacity: 0.95; }
-    100% { opacity: 0.75; }
-}
-
-/* Make sure all Streamlit content sits above the background */
-.stApp > * { position: relative; z-index: 1; }
-[data-testid="stAppViewContainer"] { background: transparent !important; }
-[data-testid="stMain"] { background: transparent !important; }
-[data-testid="block-container"] { background: transparent !important; }
-
+/* ── Base background ── */
+.stApp { background: #000814 !important; color: #fff !important; }
 html, body { background: #000814 !important; }
+
+/* Make Streamlit containers transparent so the 3D canvas shows through */
+[data-testid="stAppViewContainer"],
+[data-testid="stMain"],
+[data-testid="block-container"],
+section[data-testid="stMain"] > div:first-child {
+    background: transparent !important;
+}
 
 /* ── Tabs ── */
 .stTabs [data-baseweb="tab-list"] {
@@ -1128,6 +1057,172 @@ def parse_schedule_from_image(image_bytes: bytes) -> list[dict]:
 def main():
     full_df, gpa_col, rmp_lookup = load_data()
     render_hero()
+
+    # ── 3D Animated Space Background ─────────────────────────────────────────
+    # Strategy: render Three.js inside the iframe, then use window.parent JS
+    # to reposition the iframe itself as a fixed full-screen background layer.
+    components.html("""
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { width:100%; height:100%; background:#000814; overflow:hidden; }
+  canvas { display:block; width:100% !important; height:100% !important; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ── Reposition this iframe as a fixed full-screen background ──
+(function positionIframe() {
+    const el = window.frameElement;
+    if (!el) return;
+    el.style.cssText = [
+        'position:fixed', 'top:0', 'left:0',
+        'width:100vw',    'height:100vh',
+        'z-index:0',      'pointer-events:none',
+        'border:none',    'background:transparent'
+    ].join('!important;') + '!important';
+})();
+
+// ── Three.js scene ──
+const canvas   = document.getElementById('c');
+const W = () => window.innerWidth, H = () => window.innerHeight;
+
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(W(), H());
+renderer.setClearColor(0x000814, 1);
+
+const scene  = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(70, W()/H(), 0.1, 3000);
+camera.position.set(0, 0, 60);
+
+// ── 1. Star field — 3 depth layers ──
+function makeStars(n, spread, size, color, opacity) {
+    const geo = new THREE.BufferGeometry();
+    const pos = new Float32Array(n * 3);
+    for (let i = 0; i < n * 3; i++) pos[i] = (Math.random() - .5) * spread;
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    const mat = new THREE.PointsMaterial({ color, size, sizeAttenuation:true, transparent:true, opacity });
+    return new THREE.Points(geo, mat);
+}
+const s1 = makeStars(4000, 2000, 0.35, 0xffffff, 0.8);
+const s2 = makeStars(1500, 1200, 0.6,  0xc8dcff, 0.7);
+const s3 = makeStars(500,  600,  1.2,  0xffe8a0, 0.9);
+scene.add(s1, s2, s3);
+
+// ── 2. Nebula blobs (additive blended spheres) ──
+function nebula(color, x, y, z, sx, sy, sz, op) {
+    const m = new THREE.Mesh(
+        new THREE.SphereGeometry(1, 10, 10),
+        new THREE.MeshBasicMaterial({
+            color, transparent:true, opacity:op,
+            depthWrite:false, blending:THREE.AdditiveBlending
+        })
+    );
+    m.position.set(x,y,z);
+    m.scale.set(sx,sy,sz);
+    return m;
+}
+const neb = [
+    nebula(0x0033ff, -35, 20, -80, 40, 22, 20, 0.07),
+    nebula(0x6600bb,  40,-15, -90, 45, 25, 22, 0.06),
+    nebula(0xffd700,   0,  0,-120, 30, 15, 18, 0.025),
+    nebula(0x003399, -10,-25, -70, 28, 18, 16, 0.05),
+    nebula(0x220044,  20, 30, -60, 20, 12, 14, 0.04),
+];
+neb.forEach(n => scene.add(n));
+
+// ── 3. Wireframe geometry accents ──
+function wire(GeoClass, args, color, x, y, z, op) {
+    const m = new THREE.Mesh(
+        new GeoClass(...args),
+        new THREE.MeshBasicMaterial({ color, wireframe:true, transparent:true, opacity:op })
+    );
+    m.position.set(x,y,z);
+    return m;
+}
+const geo1 = wire(THREE.IcosahedronGeometry, [8, 0], 0xffd700,  25,-10,-30, 0.10);
+const geo2 = wire(THREE.OctahedronGeometry,  [6, 0], 0x0088ff, -22, 12,-25, 0.12);
+const geo3 = wire(THREE.TetrahedronGeometry, [5, 0], 0xff4488,  10, 18,-20, 0.09);
+const geo4 = wire(THREE.IcosahedronGeometry, [4, 1], 0x00ccff, -30,-18,-35, 0.07);
+scene.add(geo1, geo2, geo3, geo4);
+
+// ── 4. Shooting stars ──
+const shoots = [];
+let shootClock = 0;
+function spawnShoot() {
+    const x  = (Math.random()-.5)*80,  y = Math.random()*30+5;
+    const len = Math.random()*8 + 4;
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(
+        new Float32Array([x, y, -20,  x+len, y-len*.35, -20]), 3
+    ));
+    const mat = new THREE.LineBasicMaterial({ color:0xffffff, transparent:true, opacity:1 });
+    const line = new THREE.Line(geo, mat);
+    scene.add(line);
+    shoots.push({ line, vx:-(Math.random()*.4+.25), vy:-(Math.random()*.2+.1), life:1 });
+}
+
+// ── 5. Mouse parallax ──
+let mx=0, my=0;
+try {
+    window.parent.document.addEventListener('mousemove', e => {
+        mx = (e.clientX/window.parent.innerWidth  - .5) * 2;
+        my = (e.clientY/window.parent.innerHeight - .5) * 2;
+    });
+} catch(e) {}
+
+window.addEventListener('resize', () => {
+    camera.aspect = W()/H();
+    camera.updateProjectionMatrix();
+    renderer.setSize(W(), H());
+});
+
+// ── Animate ──
+let f = 0;
+(function tick() {
+    requestAnimationFrame(tick);
+    f++;
+    const t = f * 0.0008;
+
+    s1.rotation.y = t * 0.05;  s1.rotation.x = t * 0.018;
+    s2.rotation.y = -t * 0.03; s2.rotation.x = t * 0.012;
+    s3.rotation.y = t * 0.08;  s3.rotation.z = t * 0.02;
+
+    geo1.rotation.y += 0.004; geo1.rotation.x += 0.002;
+    geo2.rotation.y -= 0.005; geo2.rotation.z += 0.003;
+    geo3.rotation.x += 0.006; geo3.rotation.z -= 0.004;
+    geo4.rotation.y += 0.003; geo4.rotation.x -= 0.005;
+
+    neb[0].material.opacity = 0.06 + Math.sin(t*1.1) * 0.02;
+    neb[1].material.opacity = 0.05 + Math.sin(t*0.9) * 0.018;
+    neb[2].material.opacity = 0.02 + Math.sin(t*0.7) * 0.008;
+
+    camera.position.x += (mx * 4 - camera.position.x) * 0.025;
+    camera.position.y += (-my * 3 - camera.position.y) * 0.025;
+    camera.lookAt(0, 0, 0);
+
+    shootClock++;
+    if (shootClock > 150 + Math.random()*200) { spawnShoot(); shootClock=0; }
+    for (let i = shoots.length-1; i >= 0; i--) {
+        const s = shoots[i];
+        s.line.position.x += s.vx * 2;
+        s.line.position.y += s.vy * 2;
+        s.life -= 0.022;
+        s.line.material.opacity = Math.max(0, s.life);
+        if (s.life <= 0) { scene.remove(s.line); shoots.splice(i,1); }
+    }
+
+    renderer.render(scene, camera);
+})();
+</script>
+</body>
+</html>
+""", height=1, scrolling=False)
 
     tab_home, tab_search, tab_quarter = st.tabs(["HOME", "SEARCH TOOL", "MY QUARTER"])
 
