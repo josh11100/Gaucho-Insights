@@ -295,6 +295,13 @@ def load_data():
 
     df["join_key"] = df["instructor"].apply(make_join_key)
 
+    # Build known-lastnames set for OCR fused-token detection in clean_instructor_name
+    global _KNOWN_LASTNAMES
+    _KNOWN_LASTNAMES = set(
+        df["instructor"].astype(str).str.upper().str.strip()
+        .str.split().str[0].dropna().unique()
+    )
+
     rmp_lookup = {}
 
     if rmp_path:
@@ -940,20 +947,20 @@ sc.addEventListener('mouseleave',()=>{{cd.style.transform='rotateY(0) rotateX(0)
         st.dataframe(summary, hide_index=True, use_container_width=True)
 
 
-# ─────────────────────────────────────────────
-#  TEXT-BASED SCHEDULE PARSER  (regex)
-# ─────────────────────────────────────────────
+# Built from the grades DB on load — used to detect fused OCR names like "YUG" → "YU G"
+_KNOWN_LASTNAMES: set = set()
+
+
 def clean_instructor_name(raw: str) -> str:
     """
     Robustly clean an instructor name extracted from OCR or copy-paste.
-    Handles: junk characters, bracket noise, extra spaces, missing initials,
-    OCR artifacts like }] or |, numbers leaking in, hyphenated names like Y-D,
-    and split names like "YU G" (should be joined as "YUG").
+    Handles: junk chars, hyphenated initials (Y-D→Y D), fused OCR tokens (YUG→YU G).
 
     GOLD format examples:
         WANG Y-D        → WANG Y D
         GARFIELD P M    → GARFIELD P M
-        YU G            → YUG  (OCR split a short last name)
+        YUG             → YU G  (OCR fused last name + initial on yellow row)
+        XIAOT           → XIAO T
         }SMITH A        → SMITH A
     """
     if not raw:
@@ -961,16 +968,33 @@ def clean_instructor_name(raw: str) -> str:
 
     s = raw.upper().strip()
 
-    # Replace hyphens BETWEEN single letters with a space (e.g. Y-D → Y D)
+    # Replace hyphens BETWEEN single letters (e.g. Y-D → Y D)
     s = re.sub(r'\b([A-Z])-([A-Z])\b', r'\1 \2', s)
 
-    # Remove anything that isn't a letter or space
+    # Remove non-letter/space chars
     s = re.sub(r"[^A-Z\s]", " ", s)
     s = re.sub(r"\s+", " ", s).strip()
 
     tokens = [t for t in s.split() if t.isalpha()]
     if not tokens:
         return ""
+
+    # ── Fused-token fix ───────────────────────────────────────────────────────
+    # OCR on colored/yellow rows sometimes drops spaces: "YU G" → "YUG", "XIAO T" → "XIAOT"
+    # Detect: single token, NOT in known lastnames, but its prefix IS a known lastname
+    # and the suffix is exactly 1 letter → split it back out
+    if len(tokens) == 1 and len(tokens[0]) >= 3 and _KNOWN_LASTNAMES:
+        tok = tokens[0]
+        if tok not in _KNOWN_LASTNAMES:
+            # Try splitting off trailing 1 or 2 chars as initials
+            for split_at in [-1, -2]:
+                prefix = tok[:split_at]
+                suffix = tok[split_at:]
+                if (prefix in _KNOWN_LASTNAMES
+                        and len(suffix) <= 2
+                        and all(len(c) == 1 for c in suffix)):
+                    tokens = [prefix] + list(suffix)
+                    break
 
     last = tokens[0]
     initials = []
@@ -982,8 +1006,7 @@ def clean_instructor_name(raw: str) -> str:
         if len(initials) >= 2:
             break
 
-    parts = [last] + initials
-    return " ".join(parts)
+    return " ".join([last] + initials)
 
 
 def parse_gold_schedule(text: str) -> list[dict]:
