@@ -1651,41 +1651,52 @@ sc.addEventListener('mouseleave',()=>{cd.style.transform='';});
                     return exact
 
                 unique_jks = candidates["join_key"].unique()
+
+                # Only one candidate with this last name — use it regardless of initials
                 if len(unique_jks) == 1:
                     return unique_jks[0]
 
                 # Multiple people share the last name — use first initial to disambiguate
-                # Score each candidate: exact first-initial match wins
                 first_initial = first[0] if first else ""
                 best, best_score = exact, -1
                 for jk_cand in unique_jks:
                     _, cand_first = jk_cand.split("||", 1)[0], jk_cand.split("||", 1)[1]
                     cand_initial  = cand_first[0] if cand_first else ""
-                    # Exact first-initial match is a strong signal
                     if first_initial and cand_initial == first_initial:
-                        score = name_similarity(first, cand_first) + 1.0  # boost
+                        score = name_similarity(first, cand_first) + 1.0
                     elif not first_initial:
-                        score = 0.5  # no info, neutral
+                        score = 0.5
                     else:
                         score = name_similarity(first, cand_first)
                     if score > best_score:
                         best_score = score
                         best = jk_cand
 
-                # Only return a fuzzy match if it's meaningfully better than nothing
-                # If first initial was provided but no candidate matched it, return exact
-                # (no match) rather than returning the wrong person
-                if first_initial and best_score < 0.5:
-                    return exact
+                # If no good match found via initials, return the single best candidate
+                # rather than an exact miss (handles "XIAO T" → "XIAO" in DB)
+                if best_score < 0.3 and len(unique_jks) == 1:
+                    return unique_jks[0]
                 return best
 
             jk = best_jk_match(instructor, full_df)
 
-            specific_hist = full_df[
+            # Match by full course name first (exact), then fall back to num contains
+            course_exact = full_df[
                 (full_df["join_key"] == jk) &
-                (full_df["course"].str.contains(entry["num"], na=False))].copy()
+                (full_df["course"] == course_name)].copy()
+            course_num_match = full_df[
+                (full_df["join_key"] == jk) &
+                (full_df["course"].str.contains(r'\b' + re.escape(entry["num"]) + r'\b', na=False))].copy()
             all_prof_hist = full_df[full_df["join_key"] == jk].copy()
-            hist_for_gpa  = specific_hist if not specific_hist.empty else all_prof_hist
+
+            if not course_exact.empty:
+                specific_hist = course_exact
+            elif not course_num_match.empty:
+                specific_hist = course_num_match
+            else:
+                specific_hist = pd.DataFrame()
+
+            hist_for_gpa = specific_hist if not specific_hist.empty else all_prof_hist
 
             avg_gpa              = hist_for_gpa[gpa_col].mean() if not hist_for_gpa.empty else None
             status, clr, shd     = gpa_badge(avg_gpa) if avg_gpa else ("N/A","#666","rgba(0,0,0,0)")
@@ -1697,8 +1708,8 @@ sc.addEventListener('mouseleave',()=>{cd.style.transform='';});
             rmp_diff   = rmp_info.get("difficulty", "N/A")
             rmp_url    = rmp_info.get("url", "")
             rmp_ta     = rmp_info.get("take_again", "N/A")
-            ta_str     = (f"{rmp_ta}%" if rmp_ta and str(rmp_ta) != "nan"
-                          and "%" not in str(rmp_ta) else str(rmp_ta))
+            ta_str     = "N/A" if not rmp_ta or str(rmp_ta).lower() in ("nan", "n/a", "", "none") \
+                         else (f"{rmp_ta}%" if "%" not in str(rmp_ta) else str(rmp_ta))
             try:
                 r_clr = "#2ECC40" if float(rmp_rating) >= 4.0 else \
                         ("#FFDC00" if float(rmp_rating) >= 3.0 else "#FF4136")
