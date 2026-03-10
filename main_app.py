@@ -7,7 +7,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Gaucho Insights", layout="wide", page_icon="🎓", menu_items={})
+st.set_page_config(page_title="Gaucho Insights", layout="wide", page_icon="🎓", menu_items={}, initial_sidebar_state="expanded")
 
 # ─────────────────────────────────────────────
 #  GLOBAL CSS
