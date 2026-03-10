@@ -263,14 +263,15 @@ def load_data():
                 return p
         return None
 
-    grades_path = find("courseGrades.csv")
+    # Prefer parquet (smaller, faster) — fall back to CSV if not found
+    grades_path = find("courseGrades.parquet") or find("courseGrades.csv")
     rmp_path    = find("rmp_final_data.csv")
 
     if not grades_path:
-        st.error("Cannot find courseGrades.csv — put it in the same folder or a 'data/' subfolder.")
+        st.error("Cannot find courseGrades.parquet or courseGrades.csv — put it in the same folder or a 'data/' subfolder.")
         st.stop()
 
-    df = pd.read_csv(grades_path)
+    df = pd.read_parquet(grades_path) if grades_path.endswith(".parquet") else pd.read_csv(grades_path)
     df.columns = [c.strip().lower() for c in df.columns]
 
     def extract_num(s):
