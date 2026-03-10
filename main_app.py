@@ -206,6 +206,13 @@ div[data-baseweb="tooltip"],
    MOBILE / NARROW SCREEN FIXES
    ════════════════════════════════════ */
 
+/* Hide bar chart column when stacked — prevents overlap with info text */
+@media (max-width: 860px) {
+    [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:last-child:not(:first-child) {
+        display: none !important;
+    }
+}
+
 /* Stack ALL horizontal blocks when narrow (covers home + search cards) */
 @media (max-width: 860px) {
     [data-testid="stHorizontalBlock"] {
