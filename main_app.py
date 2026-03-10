@@ -1598,7 +1598,7 @@ let f = 0;
                 xaxis_title=None, yaxis_title=None,
                 paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
                 xaxis=dict(tickfont=dict(size=10, color="#aaa")),
-                yaxis=dict(tickfont=dict(size=9, color="#555")))
+                yaxis=dict(tickfont=dict(size=9, color="#555"), rangemode="nonnegative"))
             fig_json = fig.to_json()
 
             # Render card in components.html — real browser DOM, CSS flex works perfectly
@@ -1652,28 +1652,27 @@ let f = 0;
 </body></html>""", height=155, scrolling=False)
 
             # Hidden real Streamlit button — triggered by postMessage listener below
-            if has_rmp:
-                st.markdown('<div style="height:0;overflow:hidden;position:absolute;pointer-events:none;">', unsafe_allow_html=True)
-                if st.button(prof_name, key=f"pb_{idx}"):
-                    st.session_state.sel_prof_key    = jk
-                    st.session_state.sel_prof_name   = prof_name
-                    st.session_state.sel_prof_course = row["course"]
-                    st.rerun()
-                st.markdown('</div>', unsafe_allow_html=True)
+            # No per-card st.button needed — handled by shared listener below
 
-        # One postMessage listener that clicks the correct hidden Streamlit button
+        # Shared postMessage listener + single hidden trigger button
+        # JS sets query param, button detects it and triggers rerun
+        qp = st.query_params
+        if qp.get("_prof_jk"):
+            st.session_state.sel_prof_key    = qp.get("_prof_jk","")
+            st.session_state.sel_prof_name   = qp.get("_prof_name","")
+            st.session_state.sel_prof_course = qp.get("_prof_course","")
+            st.query_params.clear()
+            st.rerun()
+
         components.html("""
 <script>
 window.addEventListener('message', function(e) {
     if (!e.data || e.data.type !== 'prof_click') return;
-    var name = e.data.name;
-    var btns = window.parent.document.querySelectorAll('[data-testid="stButton"] > button');
-    for (var i = 0; i < btns.length; i++) {
-        if (btns[i].innerText.trim() === name) {
-            btns[i].click();
-            break;
-        }
-    }
+    var url = new URL(window.parent.location.href);
+    url.searchParams.set('_prof_jk',     e.data.key);
+    url.searchParams.set('_prof_name',   e.data.name);
+    url.searchParams.set('_prof_course', e.data.course);
+    window.parent.location.href = url.toString();
 });
 </script>""", height=0)
 
