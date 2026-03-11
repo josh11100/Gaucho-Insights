@@ -1142,6 +1142,40 @@ let f = 0;
 
     tab_home, tab_search, tab_quarter = st.tabs(["HOME", "SEARCH TOOL", "MY QUARTER"])
 
+    # ── Auto-switch to Search Tool tab whenever a sidebar filter changes ─────
+    if st.session_state.get("force_search_tab") or st.session_state.active_tab == 1:
+        components.html("""
+<script>
+(function() {
+    var attempts = 0;
+    var maxAttempts = 20;
+    function clickSearchTab() {
+        try {
+            var tabs = window.parent.document.querySelectorAll('[data-baseweb="tab"]');
+            if (tabs.length >= 2) {
+                tabs[1].click();
+                return true;
+            }
+        } catch(e) {}
+        return false;
+    }
+    function tryClick() {
+        if (attempts >= maxAttempts) return;
+        attempts++;
+        if (!clickSearchTab()) {
+            setTimeout(tryClick, 100);
+        }
+    }
+    tryClick();
+    [50, 200, 400, 800, 1200].forEach(function(ms) {
+        setTimeout(clickSearchTab, ms);
+    });
+})();
+</script>
+""", height=0)
+        st.session_state.active_tab = 0
+        st.session_state.force_search_tab = False
+
     # ── HOME ────────────────────────────────────────────────────────────────
     with tab_home:
         st.markdown('<div class="home-cols">', unsafe_allow_html=True)
