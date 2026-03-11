@@ -1107,16 +1107,16 @@ function wire(GeoClass, args, color, x, y, z, op) {
         new THREE.MeshBasicMaterial({ color, wireframe:true, transparent:true, opacity:op }));
     m.position.set(x,y,z); return m;
 }
-// Varied shapes, unique sizes, randomly spread across the scene
-const geo1 = wire(THREE.IcosahedronGeometry, [12, 0], 0xffffff,  60, -25, -80, 0.45);
-const geo2 = wire(THREE.OctahedronGeometry,  [5,  0], 0xcccccc, -70,  40, -60, 0.50);
-const geo3 = wire(THREE.TetrahedronGeometry, [9,  0], 0xffffff,  15,  60, -50, 0.42);
-const geo4 = wire(THREE.IcosahedronGeometry, [4,  1], 0xaaaaaa, -45, -55, -90, 0.40);
-const geo5 = wire(THREE.OctahedronGeometry,  [7,  0], 0xdddddd,  80,  30, -70, 0.45);
-const geo6 = wire(THREE.TetrahedronGeometry, [4,  0], 0xbbbbbb, -80, -15, -55, 0.42);
-const geo7 = wire(THREE.IcosahedronGeometry, [6,  0], 0xffffff,  -5, -70, -45, 0.50);
-const geo8 = wire(THREE.OctahedronGeometry,  [10, 0], 0xdddddd,  35,  70, -100,0.38);
-const geo9 = wire(THREE.TetrahedronGeometry, [6,  0], 0xcccccc, -30,  20, -40, 0.44);
+// Colors matching the site vibe — gold, cyan, blue accents
+const geo1 = wire(THREE.IcosahedronGeometry, [12, 0], 0xffd700,  60, -25, -80, 0.45);
+const geo2 = wire(THREE.OctahedronGeometry,  [5,  0], 0x00ccff, -70,  40, -60, 0.50);
+const geo3 = wire(THREE.TetrahedronGeometry, [9,  0], 0xffd700,  15,  60, -50, 0.42);
+const geo4 = wire(THREE.IcosahedronGeometry, [4,  1], 0x0088ff, -45, -55, -90, 0.48);
+const geo5 = wire(THREE.OctahedronGeometry,  [7,  0], 0x00ccff,  80,  30, -70, 0.45);
+const geo6 = wire(THREE.TetrahedronGeometry, [4,  0], 0xffd700, -80, -15, -55, 0.42);
+const geo7 = wire(THREE.IcosahedronGeometry, [6,  0], 0x0088ff,  -5, -70, -45, 0.50);
+const geo8 = wire(THREE.OctahedronGeometry,  [10, 0], 0x00ccff,  35,  70, -100,0.38);
+const geo9 = wire(THREE.TetrahedronGeometry, [6,  0], 0xffd700, -30,  20, -40, 0.44);
 scene.add(geo1, geo2, geo3, geo4, geo5, geo6, geo7, geo8, geo9);
 let mx=0, my=0;
 try {
