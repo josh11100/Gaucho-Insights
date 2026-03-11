@@ -546,6 +546,10 @@ p{font-family:'Rajdhani',sans-serif;font-size:clamp(.95em,2vw,1.15em);line-heigh
           <div class="bt" style="color:rgba(255,215,0,.7)">💻 BEST ON DESKTOP</div>
           <div class="bb" style="color:#778;">For the full experience, open on a <b style="color:#99a">computer or laptop</b>. Mobile layout may vary.</div>
         </div>
+        <div class="box" style="border-left:4px solid #ff69b4;padding-left:18px;background:rgba(255,105,180,.04)">
+          <div class="bt" style="color:#ff69b4">✉️ CONTACT & FEEDBACK</div>
+          <div class="bb" style="color:#9ab;">Found an issue or have a suggestion? I'd love to hear from you! Reach out at <a href="mailto:jchungers123@gmail.com" style="color:#ff69b4;text-decoration:none;font-weight:700;">jchungers123@gmail.com</a></div>
+        </div>
       </div>
     </div>
   </div>
@@ -1431,6 +1435,22 @@ sc.addEventListener('mouseleave',()=>{cd.style.transform='';});
     Deployment note: add <code>pytesseract</code> + <code>Pillow</code> to requirements.txt
     and <code>tesseract-ocr</code> to packages.txt
   </span>
+</div>
+""", unsafe_allow_html=True)
+
+        st.markdown("""
+<div style="background:rgba(255,165,0,0.07);border:1px solid rgba(255,165,0,0.35);
+            border-radius:14px;padding:14px 18px;margin-bottom:18px;
+            font-family:'Rajdhani',sans-serif;font-size:.92em;color:#c8a87a;line-height:1.8;">
+  <span style="font-family:'Orbitron',sans-serif;font-size:.75em;color:#ffaa44;letter-spacing:1px;">
+    😟 DISCLAIMER
+  </span><br>
+  This section uses OCR to read your schedule and may occasionally produce incorrect results —
+  sorry about that! If you notice any wrong information, please feel free to
+  <b style="color:#ffaa44;">use the left filters</b> to look up your class manually.
+  You're also always welcome to reach out at
+  <a href="mailto:jchungers123@gmail.com" style="color:#ffaa44;text-decoration:none;font-weight:700;">jchungers123@gmail.com</a>
+  for any issues or feedback. 😟
 </div>
 """, unsafe_allow_html=True)
 
