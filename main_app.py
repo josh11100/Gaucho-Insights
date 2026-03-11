@@ -1443,14 +1443,14 @@ sc.addEventListener('mouseleave',()=>{cd.style.transform='';});
             border-radius:14px;padding:14px 18px;margin-bottom:18px;
             font-family:'Rajdhani',sans-serif;font-size:.92em;color:#c8a87a;line-height:1.8;">
   <span style="font-family:'Orbitron',sans-serif;font-size:.75em;color:#ffaa44;letter-spacing:1px;">
-    😟 DISCLAIMER
+    (╥﹏╥) DISCLAIMER
   </span><br>
   This section uses OCR to read your schedule and may occasionally produce incorrect results —
   sorry about that! If you notice any wrong information, please feel free to
   <b style="color:#ffaa44;">use the left filters</b> to look up your class manually.
   You're also always welcome to reach out at
   <a href="mailto:jchungers123@gmail.com" style="color:#ffaa44;text-decoration:none;font-weight:700;">jchungers123@gmail.com</a>
-  for any issues or feedback. 😟
+  for any issues or feedback. (╥﹏╥)
 </div>
 """, unsafe_allow_html=True)
 
