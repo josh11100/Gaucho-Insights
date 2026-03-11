@@ -1107,15 +1107,17 @@ function wire(GeoClass, args, color, x, y, z, op) {
         new THREE.MeshBasicMaterial({ color, wireframe:true, transparent:true, opacity:op }));
     m.position.set(x,y,z); return m;
 }
-// White/gray wireframe shapes — clearly visible but not distracting
-const geo1 = wire(THREE.IcosahedronGeometry, [8, 0],  0xffffff,  55, -20, -60, 0.45);
-const geo2 = wire(THREE.OctahedronGeometry,  [6, 0],  0xcccccc, -55,  25, -50, 0.50);
-const geo3 = wire(THREE.TetrahedronGeometry, [5, 0],  0xffffff,  20,  45, -40, 0.45);
-const geo4 = wire(THREE.IcosahedronGeometry, [4, 1],  0xaaaaaa, -65, -35, -70, 0.40);
-const geo5 = wire(THREE.OctahedronGeometry,  [5, 0],  0xdddddd, -20,  55, -45, 0.45);
-const geo6 = wire(THREE.TetrahedronGeometry, [6, 0],  0xbbbbbb,  70,  15, -55, 0.40);
-const geo7 = wire(THREE.IcosahedronGeometry, [3, 0],  0xffffff,   5, -55, -35, 0.50);
-scene.add(geo1, geo2, geo3, geo4, geo5, geo6, geo7);
+// Varied shapes, unique sizes, randomly spread across the scene
+const geo1 = wire(THREE.IcosahedronGeometry, [12, 0], 0xffffff,  60, -25, -80, 0.45);
+const geo2 = wire(THREE.OctahedronGeometry,  [5,  0], 0xcccccc, -70,  40, -60, 0.50);
+const geo3 = wire(THREE.TetrahedronGeometry, [9,  0], 0xffffff,  15,  60, -50, 0.42);
+const geo4 = wire(THREE.IcosahedronGeometry, [4,  1], 0xaaaaaa, -45, -55, -90, 0.40);
+const geo5 = wire(THREE.OctahedronGeometry,  [7,  0], 0xdddddd,  80,  30, -70, 0.45);
+const geo6 = wire(THREE.TetrahedronGeometry, [4,  0], 0xbbbbbb, -80, -15, -55, 0.42);
+const geo7 = wire(THREE.IcosahedronGeometry, [6,  0], 0xffffff,  -5, -70, -45, 0.50);
+const geo8 = wire(THREE.OctahedronGeometry,  [10, 0], 0xdddddd,  35,  70, -100,0.38);
+const geo9 = wire(THREE.TetrahedronGeometry, [6,  0], 0xcccccc, -30,  20, -40, 0.44);
+scene.add(geo1, geo2, geo3, geo4, geo5, geo6, geo7, geo8, geo9);
 let mx=0, my=0;
 try {
     window.parent.document.addEventListener('mousemove', e => {
@@ -1142,6 +1144,8 @@ let f = 0;
     geo5.rotation.y += 0.005; geo5.rotation.z += 0.004;
     geo6.rotation.x -= 0.004; geo6.rotation.y += 0.006;
     geo7.rotation.y -= 0.003; geo7.rotation.z -= 0.005;
+    geo8.rotation.x += 0.003; geo8.rotation.y -= 0.004;
+    geo9.rotation.z += 0.006; geo9.rotation.x += 0.003;
     camera.position.x += (mx * 4 - camera.position.x) * 0.025;
     camera.position.y += (-my * 3 - camera.position.y) * 0.025;
     camera.lookAt(0, 0, 0);
