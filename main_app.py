@@ -554,7 +554,6 @@ p{font-family:'Rajdhani',sans-serif;font-size:clamp(.95em,2vw,1.15em);line-heigh
     </div>
   </div>
 </div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 const sc=document.getElementById('sc'),cd=document.getElementById('cd');
 sc.addEventListener('mousemove',e=>{
@@ -562,67 +561,28 @@ sc.addEventListener('mousemove',e=>{
   cd.style.transform=`rotateY(${(e.clientX-r.left-r.width/2)/48}deg) rotateX(${-(e.clientY-r.top-r.height/2)/36}deg)`;
 });
 sc.addEventListener('mouseleave',()=>{cd.style.transform='';});
-
-// ── Replace 2D canvas with Three.js 3D shapes ──
-const cv = document.getElementById('cv');
-cv.style.display = 'none'; // hide old canvas
-
-const mountDiv = document.createElement('div');
-mountDiv.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;overflow:hidden;border-radius:26px;';
-cd.insertBefore(mountDiv, cd.firstChild);
-
-const W = () => mountDiv.clientWidth || 800;
-const H = () => mountDiv.clientHeight || 600;
-
-const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.setSize(W(), H());
-renderer.setClearColor(0x000000, 0);
-mountDiv.appendChild(renderer.domElement);
-
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(60, W()/H(), 0.1, 500);
-camera.position.set(0, 0, 28);
-
-// Bright wireframe shapes
-const shapes = [];
-const configs = [
-  { geo: new THREE.IcosahedronGeometry(3.5, 0), color: 0xffd700, x: -14, y:  6, z: -8,  rx: 0.008, ry: 0.012 },
-  { geo: new THREE.OctahedronGeometry(2.8, 0),  color: 0x00ccff, x:  12, y: -5, z: -6,  rx: 0.010, ry: -0.009 },
-  { geo: new THREE.TetrahedronGeometry(2.4, 0), color: 0xff4488, x:   4, y:  9, z: -10, rx: -0.007, ry: 0.014 },
-  { geo: new THREE.IcosahedronGeometry(2.0, 1), color: 0x00ff88, x: -8,  y: -8, z: -4,  rx: 0.012, ry: -0.006 },
-  { geo: new THREE.OctahedronGeometry(1.6, 0),  color: 0xff8800, x:  16, y:  7, z: -12, rx: -0.011, ry: 0.008 },
-  { geo: new THREE.TetrahedronGeometry(1.8, 0), color: 0xbb44ff, x: -16, y: -4, z: -5,  rx: 0.006, ry: -0.013 },
-];
-
-configs.forEach(cfg => {
-  const mat = new THREE.MeshBasicMaterial({ color: cfg.color, wireframe: true, transparent: true, opacity: 0.75 });
-  const mesh = new THREE.Mesh(cfg.geo, mat);
-  mesh.position.set(cfg.x, cfg.y, cfg.z);
-  mesh._rx = cfg.rx; mesh._ry = cfg.ry;
-  scene.add(mesh);
-  shapes.push(mesh);
-});
-
-// Particle dots
-const pGeo = new THREE.BufferGeometry();
-const pPos = new Float32Array(300 * 3);
-for (let i = 0; i < 300 * 3; i++) pPos[i] = (Math.random() - 0.5) * 60;
-pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
-scene.add(new THREE.Points(pGeo, new THREE.PointsMaterial({ color: 0xffd700, size: 0.12, transparent: true, opacity: 0.5 })));
-
-function onResize() {
-  renderer.setSize(W(), H());
-  camera.aspect = W() / H();
-  camera.updateProjectionMatrix();
-}
-window.addEventListener('resize', onResize);
-setTimeout(onResize, 100);
-
-(function animate() {
-  requestAnimationFrame(animate);
-  shapes.forEach(m => { m.rotation.x += m._rx; m.rotation.y += m._ry; });
-  renderer.render(scene, camera);
+const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+function resize(){cv.width=cd.clientWidth;cv.height=cd.clientHeight;}
+window.addEventListener('resize',resize);resize();setTimeout(resize,80);
+const N=75,pts=Array.from({length:N},()=>({
+  x:Math.random()*cv.width,y:Math.random()*cv.height,
+  vx:(Math.random()-.5)*1.2,vy:(Math.random()-.5)*1.2
+}));
+(function loop(){
+  ctx.clearRect(0,0,cv.width,cv.height);
+  pts.forEach(p=>{
+    p.x+=p.vx;p.y+=p.vy;
+    if(p.x<0||p.x>cv.width)p.vx*=-1;
+    if(p.y<0||p.y>cv.height)p.vy*=-1;
+    ctx.beginPath();ctx.arc(p.x,p.y,1.8,0,Math.PI*2);
+    ctx.fillStyle='rgba(255,215,0,.45)';ctx.fill();
+  });
+  for(let i=0;i<N;i++)for(let j=i+1;j<N;j++){
+    const d=Math.hypot(pts[i].x-pts[j].x,pts[i].y-pts[j].y);
+    if(d<120){ctx.beginPath();ctx.moveTo(pts[i].x,pts[i].y);ctx.lineTo(pts[j].x,pts[j].y);
+      ctx.strokeStyle=`rgba(0,116,217,${(1-d/120)*.55})`;ctx.lineWidth=.7;ctx.stroke();}
+  }
+  requestAnimationFrame(loop);
 })();
 </script>
 """, height=700)
@@ -1147,14 +1107,14 @@ function wire(GeoClass, args, color, x, y, z, op) {
         new THREE.MeshBasicMaterial({ color, wireframe:true, transparent:true, opacity:op }));
     m.position.set(x,y,z); return m;
 }
-// Brighter, bigger, more visible shapes
-const geo1 = wire(THREE.IcosahedronGeometry, [8, 0],  0xffd700,  25,-10,-30, 0.55);
-const geo2 = wire(THREE.OctahedronGeometry,  [6, 0],  0x00ccff, -22, 12,-25, 0.60);
-const geo3 = wire(THREE.TetrahedronGeometry, [5, 0],  0xff4488,  10, 18,-20, 0.55);
-const geo4 = wire(THREE.IcosahedronGeometry, [4, 1],  0x00ff88, -30,-18,-35, 0.50);
-const geo5 = wire(THREE.OctahedronGeometry,  [5, 0],  0xff8800,  -8, 20,-18, 0.55);
-const geo6 = wire(THREE.TetrahedronGeometry, [6, 0],  0xbb44ff,  30,  5,-22, 0.50);
-const geo7 = wire(THREE.IcosahedronGeometry, [3, 0],  0x00ccff,   0,-22,-15, 0.60);
+// Brighter, bigger, more visible shapes — spread wide across screen
+const geo1 = wire(THREE.IcosahedronGeometry, [8, 0],  0xffd700,  55, -20, -60, 0.55);
+const geo2 = wire(THREE.OctahedronGeometry,  [6, 0],  0x00ccff, -55,  25, -50, 0.60);
+const geo3 = wire(THREE.TetrahedronGeometry, [5, 0],  0xff4488,  20,  45, -40, 0.55);
+const geo4 = wire(THREE.IcosahedronGeometry, [4, 1],  0x00ff88, -65, -35, -70, 0.50);
+const geo5 = wire(THREE.OctahedronGeometry,  [5, 0],  0xff8800, -20,  55, -45, 0.55);
+const geo6 = wire(THREE.TetrahedronGeometry, [6, 0],  0xbb44ff,  70,  15, -55, 0.50);
+const geo7 = wire(THREE.IcosahedronGeometry, [3, 0],  0x00ccff,   5, -55, -35, 0.60);
 scene.add(geo1, geo2, geo3, geo4, geo5, geo6, geo7);
 let mx=0, my=0;
 try {
