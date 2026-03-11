@@ -450,9 +450,9 @@ def filter_changed():
 
 
 def gpa_badge(gpa):
-    if gpa < 3.0:
+    if gpa < 3.1:
         return "STRESSFUL", "#FF4136", "rgba(255,65,54,0.35)"
-    elif gpa > 3.5:
+    elif gpa >= 3.3:
         return "EASY", "#2ECC40", "rgba(46,204,64,0.35)"
     else:
         return "CHILL", "#0074D9", "rgba(0,116,217,0.35)"
@@ -535,11 +535,11 @@ p{font-family:'Rajdhani',sans-serif;font-size:clamp(.95em,2vw,1.15em);line-heigh
           <div class="bb">Filter classes and click any professor name to see their full RMP profile + GPA history.</div>
         </div>
         <div class="box" style="border-left:4px solid #2ECC40;padding-left:18px">
-          <div class="bt" style="color:#2ECC40">EASY  › 3.5 avg GPA</div>
+          <div class="bt" style="color:#2ECC40">EASY  › 3.3 avg GPA</div>
           <div class="bb">Class is known to be manageable. High average grades historically.</div>
         </div>
         <div class="box" style="border-left:4px solid #FF4136;padding-left:18px">
-          <div class="bt" style="color:#FF4136">STRESSFUL ‹ 3.0 avg GPA</div>
+          <div class="bt" style="color:#FF4136">STRESSFUL ‹ 3.1 avg GPA</div>
           <div class="bb">Historically tough. Prepare carefully or choose a different section.</div>
         </div>
         <div class="box" style="border-left:4px solid #00e5ff;padding-left:18px;background:rgba(0,229,255,.04)">
@@ -812,8 +812,8 @@ sc.addEventListener('mouseleave',()=>{{cd.style.transform='rotateY(0) rotateX(0)
 
         xr=[-0.5, len(terms)-0.5]; yr=[-0.5, len(courses)-0.5]
         for ref_z, ref_color, ref_name in [
-            (3.5,"rgba(46,204,64,0.15)","── EASY ≥ 3.5"),
-            (3.0,"rgba(255,65,54,0.15)","── STRESSFUL < 3.0")]:
+            (3.3,"rgba(46,204,64,0.15)","── EASY ≥ 3.3"),
+            (3.1,"rgba(255,65,54,0.15)","── STRESSFUL < 3.1")]:
             fig2.add_trace(go.Surface(
                 x=[[xr[0],xr[1]],[xr[0],xr[1]]], y=[[yr[0],yr[0]],[yr[1],yr[1]]],
                 z=[[ref_z,ref_z],[ref_z,ref_z]], colorscale=[[0,ref_color],[1,ref_color]],
@@ -1210,17 +1210,17 @@ let f = 0;
   <div style="margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
     <span style="background:#2ECC40;color:#000;padding:3px 10px;border-radius:20px;
                  font-weight:700;font-size:.8em;white-space:nowrap;">EASY</span>
-    <span style="color:#8ab;font-size:.85em;">Avg GPA &gt; 3.5</span>
+    <span style="color:#8ab;font-size:.85em;">Avg GPA &gt; 3.3</span>
   </div>
   <div style="margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
     <span style="background:#0074D9;color:#fff;padding:3px 10px;border-radius:20px;
                  font-weight:700;font-size:.8em;white-space:nowrap;">CHILL</span>
-    <span style="color:#8ab;font-size:.85em;">Avg GPA 3.1 – 3.5</span>
+    <span style="color:#8ab;font-size:.85em;">Avg GPA 3.1 – 3.29</span>
   </div>
   <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
     <span style="background:#FF4136;color:#fff;padding:3px 10px;border-radius:20px;
                  font-weight:700;font-size:.8em;white-space:nowrap;">STRESSFUL</span>
-    <span style="color:#8ab;font-size:.85em;">Avg GPA &lt; 3.0</span>
+    <span style="color:#8ab;font-size:.85em;">Avg GPA &lt; 3.1</span>
   </div>
 </div>""", unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
@@ -1692,11 +1692,11 @@ sc.addEventListener('mouseleave',()=>{cd.style.transform='';});
                                        f"{int(course_color[3:5],16)},"
                                        f"{int(course_color[5:7],16)},0.07)"),
                             hovertemplate="<b>%{x}</b><br>Avg GPA: <b>%{y:.2f}</b><extra></extra>"))
-                        trend_fig.add_hline(y=3.5, line_dash="dot",
+                        trend_fig.add_hline(y=3.3, line_dash="dot",
                                             line_color="rgba(46,204,64,0.4)", line_width=1.5,
                                             annotation_text="EASY", annotation_font_color="#2ECC40",
                                             annotation_font_size=9)
-                        trend_fig.add_hline(y=3.0, line_dash="dot",
+                        trend_fig.add_hline(y=3.1, line_dash="dot",
                                             line_color="rgba(255,65,54,0.4)", line_width=1.5,
                                             annotation_text="STRESSFUL", annotation_font_color="#FF4136",
                                             annotation_font_size=9)
@@ -1814,9 +1814,9 @@ sc.addEventListener('mouseleave',()=>{cd.style.transform='';});
                                     marker=dict(size=6 if lw>2 else 4, color=cc, opacity=opac),
                                     opacity=opac,
                                     hovertemplate=f"<b>{c}</b><br>%{{x}}<br>GPA: <b>%{{y:.2f}}</b><extra></extra>"))
-                            hist_fig.add_hline(y=3.5, line_dash="dot",
+                            hist_fig.add_hline(y=3.3, line_dash="dot",
                                                line_color="rgba(46,204,64,0.35)", line_width=1)
-                            hist_fig.add_hline(y=3.0, line_dash="dot",
+                            hist_fig.add_hline(y=3.1, line_dash="dot",
                                                line_color="rgba(255,65,54,0.35)", line_width=1)
                             hist_fig.update_layout(
                                 template="plotly_dark", height=260,
