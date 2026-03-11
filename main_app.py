@@ -1107,14 +1107,14 @@ function wire(GeoClass, args, color, x, y, z, op) {
         new THREE.MeshBasicMaterial({ color, wireframe:true, transparent:true, opacity:op }));
     m.position.set(x,y,z); return m;
 }
-// Brighter, bigger, more visible shapes — spread wide across screen
-const geo1 = wire(THREE.IcosahedronGeometry, [8, 0],  0xffd700,  55, -20, -60, 0.55);
-const geo2 = wire(THREE.OctahedronGeometry,  [6, 0],  0x00ccff, -55,  25, -50, 0.60);
-const geo3 = wire(THREE.TetrahedronGeometry, [5, 0],  0xff4488,  20,  45, -40, 0.55);
-const geo4 = wire(THREE.IcosahedronGeometry, [4, 1],  0x00ff88, -65, -35, -70, 0.50);
-const geo5 = wire(THREE.OctahedronGeometry,  [5, 0],  0xff8800, -20,  55, -45, 0.55);
-const geo6 = wire(THREE.TetrahedronGeometry, [6, 0],  0xbb44ff,  70,  15, -55, 0.50);
-const geo7 = wire(THREE.IcosahedronGeometry, [3, 0],  0x00ccff,   5, -55, -35, 0.60);
+// White/gray wireframe shapes — clearly visible but not distracting
+const geo1 = wire(THREE.IcosahedronGeometry, [8, 0],  0xffffff,  55, -20, -60, 0.45);
+const geo2 = wire(THREE.OctahedronGeometry,  [6, 0],  0xcccccc, -55,  25, -50, 0.50);
+const geo3 = wire(THREE.TetrahedronGeometry, [5, 0],  0xffffff,  20,  45, -40, 0.45);
+const geo4 = wire(THREE.IcosahedronGeometry, [4, 1],  0xaaaaaa, -65, -35, -70, 0.40);
+const geo5 = wire(THREE.OctahedronGeometry,  [5, 0],  0xdddddd, -20,  55, -45, 0.45);
+const geo6 = wire(THREE.TetrahedronGeometry, [6, 0],  0xbbbbbb,  70,  15, -55, 0.40);
+const geo7 = wire(THREE.IcosahedronGeometry, [3, 0],  0xffffff,   5, -55, -35, 0.50);
 scene.add(geo1, geo2, geo3, geo4, geo5, geo6, geo7);
 let mx=0, my=0;
 try {
