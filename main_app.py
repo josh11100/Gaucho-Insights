@@ -1265,7 +1265,7 @@ let f = 0;
         if selected_dept:
             df = df[df["dept"] == selected_dept]
         if course_q:
-            df = df[df["course"].str.contains(course_q, na=False)]
+            df = df[df["course"].str.contains(r"(?<!\d)" + re.escape(course_q) + r"(?!\w)", na=False, regex=True)]
         if prof_q:
             df = df[df["instructor"].str.contains(prof_q, na=False)]
 
