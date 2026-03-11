@@ -1147,11 +1147,15 @@ function wire(GeoClass, args, color, x, y, z, op) {
         new THREE.MeshBasicMaterial({ color, wireframe:true, transparent:true, opacity:op }));
     m.position.set(x,y,z); return m;
 }
-const geo1 = wire(THREE.IcosahedronGeometry, [8, 0], 0xffd700,  25,-10,-30, 0.10);
-const geo2 = wire(THREE.OctahedronGeometry,  [6, 0], 0x0088ff, -22, 12,-25, 0.12);
-const geo3 = wire(THREE.TetrahedronGeometry, [5, 0], 0xff4488,  10, 18,-20, 0.09);
-const geo4 = wire(THREE.IcosahedronGeometry, [4, 1], 0x00ccff, -30,-18,-35, 0.07);
-scene.add(geo1, geo2, geo3, geo4);
+// Brighter, bigger, more visible shapes
+const geo1 = wire(THREE.IcosahedronGeometry, [8, 0],  0xffd700,  25,-10,-30, 0.55);
+const geo2 = wire(THREE.OctahedronGeometry,  [6, 0],  0x00ccff, -22, 12,-25, 0.60);
+const geo3 = wire(THREE.TetrahedronGeometry, [5, 0],  0xff4488,  10, 18,-20, 0.55);
+const geo4 = wire(THREE.IcosahedronGeometry, [4, 1],  0x00ff88, -30,-18,-35, 0.50);
+const geo5 = wire(THREE.OctahedronGeometry,  [5, 0],  0xff8800,  -8, 20,-18, 0.55);
+const geo6 = wire(THREE.TetrahedronGeometry, [6, 0],  0xbb44ff,  30,  5,-22, 0.50);
+const geo7 = wire(THREE.IcosahedronGeometry, [3, 0],  0x00ccff,   0,-22,-15, 0.60);
+scene.add(geo1, geo2, geo3, geo4, geo5, geo6, geo7);
 let mx=0, my=0;
 try {
     window.parent.document.addEventListener('mousemove', e => {
@@ -1175,6 +1179,9 @@ let f = 0;
     geo2.rotation.y -= 0.005; geo2.rotation.z += 0.003;
     geo3.rotation.x += 0.006; geo3.rotation.z -= 0.004;
     geo4.rotation.y += 0.003; geo4.rotation.x -= 0.005;
+    geo5.rotation.y += 0.005; geo5.rotation.z += 0.004;
+    geo6.rotation.x -= 0.004; geo6.rotation.y += 0.006;
+    geo7.rotation.y -= 0.003; geo7.rotation.z -= 0.005;
     camera.position.x += (mx * 4 - camera.position.x) * 0.025;
     camera.position.y += (-my * 3 - camera.position.y) * 0.025;
     camera.lookAt(0, 0, 0);
