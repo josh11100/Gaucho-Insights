@@ -807,113 +807,159 @@ sc.addEventListener('mouseleave',()=>{{cd.style.transform='';}});
     <div style="font-size:.62em;color:#445;margin-top:4px;letter-spacing:.8px;">LAST: {latest_term}</div></div>
 </div>""", unsafe_allow_html=True)
 
-    # ── GPA trend over time ───────────────────────────────────────────────────
+    # ── GPA trend over time — single clean golden line ───────────────────────
     st.markdown('<div style="font-family:Orbitron,sans-serif;font-size:.72em;color:#FFD700;'
                 'letter-spacing:2px;margin:10px 0 8px;">GPA TREND OVER TIME</div>',
                 unsafe_allow_html=True)
 
-    instructors = sorted(df["instructor"].unique())
-    trend_fig = go.Figure()
-    for ci, inst in enumerate(instructors):
-        sub = df[df["instructor"] == inst]
-        cc  = palette[ci % len(palette)]
-        trend_fig.add_trace(go.Scatter(
-            x=sub["term"], y=sub[gpa_col],
-            mode="lines+markers", name=inst,
-            line=dict(color=cc, width=2),
-            marker=dict(size=7, color=cc, line=dict(color="rgba(255,255,255,0.4)", width=1)),
-            hovertemplate=f"<b>{inst}</b><br>%{{x}}<br>GPA: <b>%{{y:.2f}}</b><extra></extra>"))
+    # Aggregate all instructors into a single course-level trend
+    agg_trend = df.groupby("term")[gpa_col].mean().reset_index()
+    agg_trend["_sort"] = agg_trend["term"].apply(
+        lambda t: (int(t.split()[-1]) if t.split()[-1].isdigit() else 0) * 10 +
+                  {"WINTER":0,"SPRING":1,"SUMMER":2,"FALL":3}.get(t.split()[0], 0))
+    agg_trend = agg_trend.sort_values("_sort").drop(columns=["_sort"])
 
-    trend_fig.add_hline(y=3.3, line_dash="dot", line_color="rgba(46,204,64,0.4)", line_width=1.5,
-                        annotation_text="EASY 3.3", annotation_font_color="#2ECC40", annotation_font_size=9)
-    trend_fig.add_hline(y=3.1, line_dash="dot", line_color="rgba(255,65,54,0.4)", line_width=1.5,
-                        annotation_text="STRESSFUL 3.1", annotation_font_color="#FF4136", annotation_font_size=9)
+    n_pts = len(agg_trend)
+    # Only show value labels when there are few enough points to avoid clutter
+    show_text = n_pts <= 16
+    # Show at most 12 x-axis tick labels
+    x_step   = max(1, n_pts // 12)
+    x_tvals  = agg_trend["term"].tolist()[::x_step]
+
+    trend_fig = go.Figure()
+    trend_fig.add_trace(go.Scatter(
+        x=agg_trend["term"], y=agg_trend[gpa_col],
+        mode=("lines+markers+text" if show_text else "lines+markers"),
+        **({"text": [f"{v:.2f}" for v in agg_trend[gpa_col]],
+            "textposition": "top center",
+            "textfont": dict(size=9, color="#FFD700", family="Orbitron")} if show_text else {}),
+        line=dict(color="#FFD700", width=3),
+        marker=dict(size=8, color="#FFD700",
+                    line=dict(color="#000814", width=2)),
+        fill="tozeroy", fillcolor="rgba(255,215,0,0.07)",
+        name="Course Avg",
+        hovertemplate="<b>%{x}</b><br>Avg GPA: <b>%{y:.2f}</b><extra></extra>"))
+
+    trend_fig.add_hline(y=3.3, line_dash="dot",
+                        line_color="rgba(46,204,64,0.5)", line_width=1.5,
+                        annotation_text="EASY 3.3", annotation_font_color="#2ECC40",
+                        annotation_font_size=9, annotation_position="right")
+    trend_fig.add_hline(y=3.1, line_dash="dot",
+                        line_color="rgba(255,65,54,0.5)", line_width=1.5,
+                        annotation_text="STRESSFUL 3.1", annotation_font_color="#FF4136",
+                        annotation_font_size=9, annotation_position="right")
+
     trend_fig.update_layout(
         template="plotly_dark", height=260,
-        margin=dict(l=0, r=60, t=10, b=0),
-        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,8,22,0.5)",
-        legend=dict(font=dict(size=10, color="#aaa"), bgcolor="rgba(0,0,0,0)",
-                    orientation="h", y=-0.3),
-        xaxis=dict(tickfont=dict(size=9, color="#778"), showgrid=False, tickangle=-30),
-        yaxis=dict(tickfont=dict(size=9, color="#556"), gridcolor="rgba(255,255,255,0.04)",
-                   range=[max(1.5, df[gpa_col].min() - 0.4), 4.3],
-                   title=dict(text="Avg GPA", font=dict(size=10, color="#778"))))
+        margin=dict(l=0, r=90, t=20, b=0),
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,8,22,0.6)",
+        showlegend=False,
+        xaxis=dict(tickfont=dict(size=9, color="#667"), showgrid=False,
+                   tickangle=-35, title=None,
+                   tickmode="array", tickvals=x_tvals, ticktext=x_tvals),
+        yaxis=dict(tickfont=dict(size=9, color="#556"),
+                   gridcolor="rgba(255,255,255,0.05)",
+                   range=[max(1.5, agg_trend[gpa_col].min() - 0.4), 4.3],
+                   title=dict(text="Avg GPA", font=dict(size=10, color="#667"))))
     st.plotly_chart(trend_fig, use_container_width=True,
                     key=f"course_trend_{course_name}", config={"displayModeBar": False})
 
-    # ── 3D Grade Distribution ─────────────────────────────────────────────────
+    # ── 3D Grade Distribution — aggregate per term, clean mesh bars ──────────
     st.markdown('<div style="font-family:Orbitron,sans-serif;font-size:.72em;color:#FFD700;'
-                'letter-spacing:2px;margin:18px 0 4px;">3D GRADE DISTRIBUTION</div>',
+                'letter-spacing:2px;margin:22px 0 4px;">GRADE DISTRIBUTION BY TERM — 3D</div>',
                 unsafe_allow_html=True)
-    st.markdown('<div style="font-family:Rajdhani,sans-serif;font-size:.82em;color:#556;margin:0 0 10px;">'
-                'Drag to rotate · Scroll to zoom · Each bar = one section term</div>',
+    st.markdown('<div style="font-family:Rajdhani,sans-serif;font-size:.82em;color:#556;margin:0 0 12px;">'
+                'Drag to rotate · Scroll to zoom · X = Term · Y = Grade · Z = Students</div>',
                 unsafe_allow_html=True)
 
-    terms   = list(dict.fromkeys(df["term"].tolist()))
-    grades  = ["A","B","C","D","F"]
-    g_cols  = {"A":"#2ECC40","B":"#0074D9","C":"#FFDC00","D":"#FF851B","F":"#FF4136"}
-    term_idx = {t: i for i, t in enumerate(terms)}
+    # Aggregate grade counts per term (sum across all instructors)
+    grade_cols = ["a", "b", "c", "d", "f"]
+    agg_grades = df.groupby("term")[grade_cols].sum().reset_index()
+    agg_grades["_sort"] = agg_grades["term"].apply(
+        lambda t: int(t.split()[-1]) * 10 +
+                  {"WINTER":0,"SPRING":1,"SUMMER":2,"FALL":3}.get(t.split()[0], 0))
+    agg_grades = agg_grades.sort_values("_sort").drop(columns=["_sort"])
+
+    # Cap at 20 most recent terms
+    if len(agg_grades) > 20:
+        agg_grades = agg_grades.tail(20)
+
+    terms_3d   = agg_grades["term"].tolist()
+    n_terms    = len(terms_3d)
+    grades     = ["A", "B", "C", "D", "F"]
+    g_colors   = {"A":"#2ECC40","B":"#0074D9","C":"#FFDC00","D":"#FF851B","F":"#FF4136"}
+    term_idx   = {t: i for i, t in enumerate(terms_3d)}
 
     fig3d = go.Figure()
+
     for gi, grade in enumerate(grades):
         col_key = grade.lower()
-        xs, ys, zs, hovers = [], [], [], []
-        for _, r in df.iterrows():
-            cnt = int(r.get(col_key, 0) or 0)
-            if cnt > 0:
-                xs.append(term_idx[r["term"]])
-                ys.append(gi)
-                zs.append(cnt)
-                hovers.append(f"{r['term']}<br>{grade}: {cnt} students<br>GPA: {r[gpa_col]:.2f}")
+        color   = g_colors[grade]
+        w       = 0.30   # half-width of each bar
 
-        if xs:
-            # Draw bars as 3D scatter with big markers to simulate bars
-            fig3d.add_trace(go.Scatter3d(
-                x=xs, y=ys, z=zs,
-                mode="markers", name=f"Grade {grade}",
-                marker=dict(size=10, color=g_cols[grade], opacity=0.85,
-                            symbol="square",
-                            line=dict(color="rgba(255,255,255,0.2)", width=0.5)),
-                hovertemplate="<b>%{customdata}</b><extra></extra>",
-                customdata=hovers))
+        for _, row3d in agg_grades.iterrows():
+            cnt = int(row3d.get(col_key, 0) or 0)
+            if cnt <= 0:
+                continue
+            xi = term_idx[row3d["term"]]
+            yi = gi
+            zt = cnt
 
-            # Drop lines to floor
-            dx, dy, dz = [], [], []
-            for x, y, z in zip(xs, ys, zs):
-                dx += [x, x, None]; dy += [y, y, None]; dz += [0, z, None]
-            fig3d.add_trace(go.Scatter3d(
-                x=dx, y=dy, z=dz, mode="lines",
-                line=dict(color=g_cols[grade], width=3), opacity=0.6,
-                showlegend=False, hoverinfo="skip"))
+            # 8 vertices of a rectangular prism (bar)
+            bx = [xi-w, xi+w, xi+w, xi-w,  xi-w, xi+w, xi+w, xi-w]
+            by = [yi-w, yi-w, yi+w, yi+w,  yi-w, yi-w, yi+w, yi+w]
+            bz = [0,    0,    0,    0,      zt,   zt,   zt,   zt  ]
+
+            fig3d.add_trace(go.Mesh3d(
+                x=bx, y=by, z=bz,
+                i=[0,0,0, 4,4,4, 1,2,3, 5,6,7],
+                j=[1,2,3, 5,6,7, 2,3,0, 6,7,4],
+                k=[2,3,0, 6,7,4, 5,6,7, 1,2,3],
+                color=color, opacity=0.90, flatshading=True,
+                showlegend=(xi == 0),  # legend entry only once per grade
+                name=f"Grade {grade}", legendgroup=f"g{grade}",
+                hovertemplate=f"<b>{row3d['term']}</b><br>Grade {grade}: <b>{cnt}</b> students<extra></extra>",
+                lighting=dict(ambient=0.75, diffuse=0.65, specular=0.1,
+                              roughness=0.6, fresnel=0.05)))
+
+    # Sparse tick labels on X — at most 10
+    step       = max(1, n_terms // 10)
+    tick_vals  = list(range(0, n_terms, step))
+    tick_texts = [terms_3d[i] for i in tick_vals]
 
     fig3d.update_layout(
-        template="plotly_dark", height=520,
+        template="plotly_dark", height=500,
         margin=dict(l=0, r=0, t=10, b=0),
         paper_bgcolor="rgba(0,0,0,0)",
         scene=dict(
             bgcolor="rgba(0,6,18,1)",
-            xaxis=dict(tickvals=list(range(len(terms))), ticktext=terms,
-                       tickfont=dict(size=9, color="#bbc"),
-                       gridcolor="rgba(255,255,255,0.04)",
-                       showbackground=True, backgroundcolor="rgba(0,8,24,0.5)",
-                       title=dict(text="Term", font=dict(size=12, color="#ccd"))),
+            xaxis=dict(tickvals=tick_vals, ticktext=tick_texts,
+                       tickfont=dict(size=9, color="#99aabb"),
+                       gridcolor="rgba(255,255,255,0.05)",
+                       showbackground=True, backgroundcolor="rgba(0,8,24,0.55)",
+                       title=dict(text="Term", font=dict(size=11, color="#aabccc"))),
             yaxis=dict(tickvals=list(range(len(grades))), ticktext=grades,
-                       tickfont=dict(size=11, color="#ddd"),
-                       gridcolor="rgba(255,255,255,0.04)",
-                       showbackground=True, backgroundcolor="rgba(0,8,24,0.5)",
-                       title=dict(text="Grade", font=dict(size=12, color="#ccd"))),
-            zaxis=dict(tickfont=dict(size=9, color="#bbc"),
-                       gridcolor="rgba(255,255,255,0.04)",
+                       tickfont=dict(size=13, color="#ffffff"),
+                       gridcolor="rgba(255,255,255,0.05)",
+                       showbackground=True, backgroundcolor="rgba(0,8,24,0.55)",
+                       title=dict(text="Grade", font=dict(size=11, color="#aabccc"))),
+            zaxis=dict(tickfont=dict(size=9, color="#99aabb"),
+                       gridcolor="rgba(255,255,255,0.05)",
                        showbackground=True, backgroundcolor="rgba(0,10,28,0.7)",
-                       title=dict(text="Students", font=dict(size=12, color="#ccd"))),
-            camera=dict(eye=dict(x=1.8, y=-1.6, z=1.2), up=dict(x=0, y=0, z=1)),
+                       title=dict(text="Students", font=dict(size=11, color="#aabccc"))),
+            camera=dict(eye=dict(x=1.5, y=-1.6, z=1.0), up=dict(x=0, y=0, z=1)),
             aspectmode="manual",
-            aspectratio=dict(x=max(1.6, len(terms)*0.3), y=0.6, z=0.8)),
-        legend=dict(x=0.01, y=0.99, font=dict(family="Rajdhani", size=11, color="#aaa"),
-                    bgcolor="rgba(0,0,0,0)", bordercolor="rgba(255,215,0,0.15)", borderwidth=1))
+            aspectratio=dict(x=min(2.4, max(1.4, n_terms * 0.16)), y=0.45, z=0.65)),
+        legend=dict(x=0.01, y=0.98,
+                    font=dict(family="Rajdhani", size=12, color="#ccc"),
+                    bgcolor="rgba(0,10,30,0.75)",
+                    bordercolor="rgba(255,215,0,0.2)", borderwidth=1,
+                    itemsizing="constant", tracegroupgap=3))
 
     st.plotly_chart(fig3d, use_container_width=True,
-                    key=f"course_3d_{course_name}", config={"displayModeBar": True, "displaylogo": False})
+                    key=f"course_3d_{course_name}",
+                    config={"displayModeBar": True, "displaylogo": False,
+                            "modeBarButtonsToRemove": ["toImage"]})
 
     # ── Per-instructor breakdown ──────────────────────────────────────────────
     st.markdown('<div style="font-family:Orbitron,sans-serif;font-size:.72em;color:#FFD700;'
