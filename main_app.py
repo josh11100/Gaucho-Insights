@@ -1895,80 +1895,130 @@ let f = 0;
             f_cnt = max(0, int(row.get("f") or 0))
             total_students = a_cnt + b_cnt + c_cnt + d_cnt + f_cnt
 
-            with st.container(border=True):
-                left_col, right_col = st.columns([3, 2])
+            # Build chart JSON
+            if total_students > 0:
+                fig = px.bar(
+                    pd.DataFrame({"Grade":["A","B","C","D","F"],
+                                  "Count":[a_cnt,b_cnt,c_cnt,d_cnt,f_cnt]}),
+                    x="Grade", y="Count", color="Grade",
+                    color_discrete_map={"A":"#2ECC40","B":"#0074D9","C":"#FFDC00",
+                                        "D":"#FF851B","F":"#FF4136"},
+                    template="plotly_dark", height=130)
+                fig.update_layout(
+                    margin=dict(l=0,r=0,t=4,b=28), showlegend=False,
+                    xaxis_title=None, yaxis_title=None,
+                    paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                    xaxis=dict(tickfont=dict(size=11,color="#aaa")),
+                    yaxis=dict(tickfont=dict(size=9,color="#555"), rangemode="nonnegative"))
+                fig_json = fig.to_json()
+                chart_html = f"""
+  <div class="chart" id="chart_{idx}"></div>
+  <script>
+    Plotly.newPlot('chart_{idx}', {fig_json}.data, {fig_json}.layout,
+      {{displayModeBar:false, responsive:true}});
+  </script>"""
+            else:
+                chart_html = f"""
+  <div class="chart" style="display:flex;flex-direction:column;align-items:center;
+       justify-content:center;background:rgba(255,255,255,.03);border-radius:10px;">
+    <div style="font-family:Orbitron,sans-serif;font-size:1.6em;font-weight:900;
+                color:{clr};">{gpa_val:.2f}</div>
+    <div style="font-size:.6em;color:#445;letter-spacing:1px;margin-top:4px;">AVG GPA</div>
+  </div>"""
 
-                with left_col:
-                    # Course title IS the click target — styled as a heading link
-                    st.markdown('<div class="course-title-btn">', unsafe_allow_html=True)
-                    if st.button(
-                        f"{row['course']}",
-                        key=f"course_btn_{idx}",
-                        help="View full class stats & grade distribution",
-                    ):
-                        st.session_state.sel_course_name = row["course"]
-                        st.session_state.sel_prof_key    = None
-                        st.rerun()
-                    st.markdown('</div>', unsafe_allow_html=True)
+            prof_el = (
+                f'<button class="prof-btn" onclick="window.parent.postMessage('
+                f'{{type:\'prof_click\',jk:\'{jk}\',name:\'{prof_name.replace(chr(39),"")}\','
+                f'course:\'{row["course"]}\'}},\'*\')">'
+                f'👤 {prof_name}</button>'
+            ) if has_rmp else (
+                f'<div class="prof-plain">{prof_name}</div>'
+            )
 
-                    # Quarter label just below the title
-                    st.markdown(
-                        f'<div style="font-family:Rajdhani,sans-serif;font-size:.78em;'
-                        f'color:#445;margin:-4px 0 6px;letter-spacing:.5px;">'
-                        f'{row["quarter"]} {row["year"]}</div>',
-                        unsafe_allow_html=True)
+            rmp_badge = ('<span class="rmp-pill">RMP</span>' if has_rmp else "")
 
-                    # Professor button
-                    if has_rmp:
-                        if st.button(f"👤 {prof_name}", key=f"prof_btn_{idx}_{jk}",
-                                     help="Click to view RMP ratings + GPA history"):
-                            st.session_state.sel_prof_key    = jk
-                            st.session_state.sel_prof_name   = prof_name
-                            st.session_state.sel_prof_course = row["course"]
-                            st.session_state.sel_course_name = None
-                            st.rerun()
-                    else:
-                        st.markdown(
-                            f'<div style="font-family:Rajdhani,sans-serif;font-size:.9em;'
-                            f'color:#556;margin:2px 0 4px;padding:2px 0;">{prof_name}</div>',
-                            unsafe_allow_html=True)
+            components.html(f"""<!DOCTYPE html><html><head>
+<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Rajdhani:wght@600;700&display=swap');
+*{{margin:0;padding:0;box-sizing:border-box}}
+html,body{{background:transparent;overflow:hidden;font-family:Rajdhani,sans-serif}}
+.card{{display:flex;flex-direction:row;align-items:stretch;gap:0;width:100%;min-height:130px;}}
+.left{{flex:3;min-width:0;display:flex;flex-direction:column;justify-content:center;
+       gap:5px;padding:2px 12px 2px 0;}}
+.chart{{flex:2;min-width:150px;max-width:46%;flex-shrink:0;}}
+.course-btn{{background:transparent;border:none;color:#e8f4ff;
+             font-family:Orbitron,monospace;font-size:clamp(.85em,1.6vw,1.05em);
+             font-weight:700;letter-spacing:.5px;cursor:pointer;text-align:left;
+             padding:0;text-decoration:underline dotted rgba(255,215,0,.4);
+             text-underline-offset:4px;transition:color .15s;line-height:1.3;width:100%;}}
+.course-btn:hover{{color:#FFD700;text-decoration-color:rgba(255,215,0,.9);}}
+.quarter{{font-size:.76em;color:#445;letter-spacing:.5px;}}
+.prof-btn{{background:rgba(0,116,217,.13);border:1px solid rgba(0,116,217,.45);
+           color:#5bb8ff;border-radius:9px;font-family:Rajdhani,sans-serif;font-weight:700;
+           font-size:.88em;padding:4px 11px;cursor:pointer;text-align:left;
+           transition:background .15s,border-color .15s,color .15s;white-space:nowrap;
+           overflow:hidden;text-overflow:ellipsis;max-width:100%;}}
+.prof-btn:hover{{background:rgba(255,215,0,.1);border-color:rgba(255,215,0,.55);color:#FFD700;}}
+.prof-plain{{font-size:.88em;color:#445;padding:2px 0;}}
+.bottom{{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:2px;}}
+.gpa{{font-family:Orbitron,monospace;font-size:.88em;font-weight:700;color:#cde;white-space:nowrap;}}
+.badge{{padding:2px 10px;border-radius:20px;font-size:.68em;font-weight:900;
+        letter-spacing:1px;white-space:nowrap;background:{clr};color:{txt_col};}}
+.rmp-pill{{font-size:.68em;color:#FFD700;background:rgba(255,215,0,.08);
+           border:1px solid rgba(255,215,0,.25);padding:2px 7px;border-radius:10px;}}
+</style>
+</head><body>
+<div class="card">
+  <div class="left">
+    <button class="course-btn" onclick="window.parent.postMessage(
+      {{type:'course_click',course:'{row['course']}'}},'*')">{row['course']}</button>
+    <div class="quarter">{row["quarter"]} {row["year"]}</div>
+    {prof_el}
+    <div class="bottom">
+      <span class="gpa">GPA {gpa_val:.2f}</span>
+      <span class="badge">{status}</span>
+      {rmp_badge}
+    </div>
+  </div>
+  {chart_html}
+</div>
+</body></html>""", height=155, scrolling=False)
 
-                    st.markdown(
-                        f'<div style="display:flex;align-items:center;gap:8px;margin-top:2px;flex-wrap:wrap;">'
-                        f'<span style="font-family:Orbitron,monospace;font-size:.85em;color:#cde;">'
-                        f'GPA {gpa_val:.2f}</span>'
-                        f'<span style="background:{clr};color:{txt_col};padding:2px 10px;'
-                        f'border-radius:20px;font-size:.7em;font-weight:900;letter-spacing:1px;">'
-                        f'{status}</span>{rmp_pill}</div>',
-                        unsafe_allow_html=True)
+            # Hidden Streamlit buttons — triggered by postMessage below
+            # (rendered at 0 height after the loop via shared listener)
 
-                with right_col:
-                    if total_students > 0:
-                        fig = px.bar(
-                            pd.DataFrame({"Grade":["A","B","C","D","F"],
-                                          "Count":[a_cnt,b_cnt,c_cnt,d_cnt,f_cnt]}),
-                            x="Grade", y="Count", color="Grade",
-                            color_discrete_map={"A":"#2ECC40","B":"#0074D9","C":"#FFDC00",
-                                                "D":"#FF851B","F":"#FF4136"},
-                            template="plotly_dark", height=120)
-                        fig.update_layout(
-                            margin=dict(l=0,r=0,t=2,b=0), showlegend=False,
-                            xaxis_title=None, yaxis_title=None,
-                            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                            xaxis=dict(tickfont=dict(size=10,color="#aaa")),
-                            yaxis=dict(tickfont=dict(size=9,color="#555"), rangemode="nonnegative"))
-                        st.plotly_chart(fig, use_container_width=True,
-                                        key=f"chart_{idx}", config={"displayModeBar": False})
-                    else:
-                        st.markdown(
-                            f'<div style="height:120px;display:flex;flex-direction:column;'
-                            f'align-items:center;justify-content:center;'
-                            f'background:rgba(255,255,255,0.03);border-radius:10px;">'
-                            f'<div style="font-family:Orbitron,sans-serif;font-size:1.8em;'
-                            f'font-weight:900;color:{clr};">{gpa_val:.2f}</div>'
-                            f'<div style="font-size:.65em;color:#445;letter-spacing:1px;margin-top:4px;">'
-                            f'AVG GPA</div></div>',
-                            unsafe_allow_html=True)
+        # Handle query param clicks (course or prof) set by postMessage listener
+        qp = st.query_params
+        if qp.get("_course"):
+            st.session_state.sel_course_name = qp.get("_course","")
+            st.session_state.sel_prof_key    = None
+            st.query_params.clear()
+            st.rerun()
+        if qp.get("_prof_jk"):
+            st.session_state.sel_prof_key    = qp.get("_prof_jk","")
+            st.session_state.sel_prof_name   = qp.get("_prof_name","")
+            st.session_state.sel_prof_course = qp.get("_prof_course","")
+            st.session_state.sel_course_name = None
+            st.query_params.clear()
+            st.rerun()
+
+        # Shared postMessage → query param listener (height=0, invisible)
+        components.html("""<script>
+window.addEventListener('message', function(e) {
+    if (!e.data || !e.data.type) return;
+    var url = new URL(window.parent.location.href);
+    if (e.data.type === 'course_click') {
+        url.searchParams.set('_course', e.data.course);
+        window.parent.location.href = url.toString();
+    } else if (e.data.type === 'prof_click') {
+        url.searchParams.set('_prof_jk',     e.data.jk);
+        url.searchParams.set('_prof_name',   e.data.name);
+        url.searchParams.set('_prof_course', e.data.course);
+        window.parent.location.href = url.toString();
+    }
+});
+</script>""", height=0)
 
     # ── MY QUARTER ──────────────────────────────────────────────────────────
     with tab_quarter:
