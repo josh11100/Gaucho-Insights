@@ -278,6 +278,42 @@ div[data-baseweb="tooltip"],
 section[data-testid="stMain"] > div {
     overflow-x: hidden !important;
 }
+/* Course title button — looks like a heading link, not a generic button */
+button[kind="secondary"][data-testid="stBaseButton-secondary"]:has(> div > p) {
+    /* Streamlit wraps button text in <p> inside <div> */
+}
+/* Target course title buttons via a wrapper class we'll inject */
+.course-title-btn > div > button,
+.course-title-btn button {
+    background: transparent !important;
+    border: none !important;
+    color: #e8f4ff !important;
+    font-family: 'Orbitron', monospace !important;
+    font-size: 1em !important;
+    font-weight: 700 !important;
+    padding: 0 !important;
+    text-align: left !important;
+    letter-spacing: .5px !important;
+    text-decoration: underline dotted rgba(255,215,0,0.35) !important;
+    text-underline-offset: 4px !important;
+    cursor: pointer !important;
+    box-shadow: none !important;
+    min-height: 0 !important;
+    height: auto !important;
+    line-height: 1.3 !important;
+    transition: color .15s !important;
+}
+.course-title-btn button:hover {
+    color: #FFD700 !important;
+    text-decoration-color: rgba(255,215,0,0.8) !important;
+    background: transparent !important;
+    border: none !important;
+}
+.course-title-btn button:focus,
+.course-title-btn button:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -1863,23 +1899,24 @@ let f = 0;
                 left_col, right_col = st.columns([3, 2])
 
                 with left_col:
-                    # ── Clickable course name ──────────────────────────────
-                    course_label = f"📋 {row['course']}"
-                    quarter_html = (f'<span style="font-size:.7em;color:#445;font-family:Rajdhani,'
-                                    f'sans-serif;margin-left:6px;">{row["quarter"]} {row["year"]}</span>')
-                    st.markdown(
-                        f'<div style="font-family:Orbitron,monospace;font-size:1em;font-weight:700;'
-                        f'color:#e8f4ff;margin-bottom:2px;">'
-                        f'{row["course"]} {quarter_html}</div>',
-                        unsafe_allow_html=True)
-
-                    # Course info button
-                    if st.button(f"📊 {row['course']} — Class Stats",
-                                 key=f"course_btn_{idx}",
-                                 help="Click to view full class stats & 3D grade distribution"):
+                    # Course title IS the click target — styled as a heading link
+                    st.markdown('<div class="course-title-btn">', unsafe_allow_html=True)
+                    if st.button(
+                        f"{row['course']}",
+                        key=f"course_btn_{idx}",
+                        help="View full class stats & grade distribution",
+                    ):
                         st.session_state.sel_course_name = row["course"]
                         st.session_state.sel_prof_key    = None
                         st.rerun()
+                    st.markdown('</div>', unsafe_allow_html=True)
+
+                    # Quarter label just below the title
+                    st.markdown(
+                        f'<div style="font-family:Rajdhani,sans-serif;font-size:.78em;'
+                        f'color:#445;margin:-4px 0 6px;letter-spacing:.5px;">'
+                        f'{row["quarter"]} {row["year"]}</div>',
+                        unsafe_allow_html=True)
 
                     # Professor button
                     if has_rmp:
