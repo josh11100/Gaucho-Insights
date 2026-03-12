@@ -1911,25 +1911,32 @@ let f = 0;
                     xaxis=dict(tickfont=dict(size=11,color="#aaa")),
                     yaxis=dict(tickfont=dict(size=9,color="#555"), rangemode="nonnegative"))
                 fig_json = fig.to_json()
-                chart_html = f"""
-  <div class="chart" id="chart_{idx}"></div>
-  <script>
-    Plotly.newPlot('chart_{idx}', {fig_json}.data, {fig_json}.layout,
-      {{displayModeBar:false, responsive:true}});
-  </script>"""
+                # ✅ Parse JSON first, then pass .data/.layout to Plotly
+                chart_html = (
+                    f'<div class="chart" id="ch{idx}"></div>'
+                    f'<script>'
+                    f'var _f=JSON.parse({repr(fig_json)});'
+                    f'Plotly.newPlot("ch{idx}",_f.data,_f.layout,{{displayModeBar:false,responsive:true}});'
+                    f'</script>'
+                )
             else:
-                chart_html = f"""
-  <div class="chart" style="display:flex;flex-direction:column;align-items:center;
-       justify-content:center;background:rgba(255,255,255,.03);border-radius:10px;">
-    <div style="font-family:Orbitron,sans-serif;font-size:1.6em;font-weight:900;
-                color:{clr};">{gpa_val:.2f}</div>
-    <div style="font-size:.6em;color:#445;letter-spacing:1px;margin-top:4px;">AVG GPA</div>
-  </div>"""
+                chart_html = (
+                    f'<div class="chart" style="display:flex;flex-direction:column;align-items:center;'
+                    f'justify-content:center;background:rgba(255,255,255,.03);border-radius:10px;">'
+                    f'<div style="font-family:Orbitron,sans-serif;font-size:1.6em;font-weight:900;'
+                    f'color:{clr};">{gpa_val:.2f}</div>'
+                    f'<div style="font-size:.6em;color:#445;letter-spacing:1px;margin-top:4px;">AVG GPA</div>'
+                    f'</div>'
+                )
+
+            # ✅ Safe JSON for postMessage — no f-string brace conflicts
+            course_safe = row["course"].replace("'", "\\'")
+            prof_safe   = prof_name.replace("'", "\\'")
 
             prof_el = (
-                f'<button class="prof-btn" onclick="window.parent.postMessage('
-                f'{{type:\'prof_click\',jk:\'{jk}\',name:\'{prof_name.replace(chr(39),"")}\','
-                f'course:\'{row["course"]}\'}},\'*\')">'
+                f'<button class="prof-btn" '
+                f'onclick="window.parent.postMessage({{type:\'prof_click\','
+                f'jk:\'{jk}\',name:\'{prof_safe}\',course:\'{course_safe}\'}},' + "\'*\')" + f'>'
                 f'👤 {prof_name}</button>'
             ) if has_rmp else (
                 f'<div class="prof-plain">{prof_name}</div>'
@@ -1937,43 +1944,46 @@ let f = 0;
 
             rmp_badge = ('<span class="rmp-pill">RMP</span>' if has_rmp else "")
 
-            components.html(f"""<!DOCTYPE html><html><head>
+            components.html(
+                f"""<!DOCTYPE html><html><head>
 <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Rajdhani:wght@600;700&display=swap');
 *{{margin:0;padding:0;box-sizing:border-box}}
 html,body{{background:transparent;overflow:hidden;font-family:Rajdhani,sans-serif}}
-.card{{display:flex;flex-direction:row;align-items:stretch;gap:0;width:100%;min-height:130px;}}
-.left{{flex:3;min-width:0;display:flex;flex-direction:column;justify-content:center;
-       gap:5px;padding:2px 12px 2px 0;}}
-.chart{{flex:2;min-width:150px;max-width:46%;flex-shrink:0;}}
+.card{{display:flex;flex-direction:row;align-items:center;gap:12px;width:100%;min-height:130px;padding:4px 0;}}
+.left{{flex:3;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:5px;}}
+.chart{{flex:2;min-width:140px;max-width:44%;flex-shrink:0;align-self:stretch;}}
 .course-btn{{background:transparent;border:none;color:#e8f4ff;
-             font-family:Orbitron,monospace;font-size:clamp(.85em,1.6vw,1.05em);
+             font-family:Orbitron,monospace;font-size:clamp(.82em,1.5vw,1em);
              font-weight:700;letter-spacing:.5px;cursor:pointer;text-align:left;
              padding:0;text-decoration:underline dotted rgba(255,215,0,.4);
-             text-underline-offset:4px;transition:color .15s;line-height:1.3;width:100%;}}
+             text-underline-offset:4px;transition:color .15s;line-height:1.3;
+             width:fit-content;max-width:100%;display:block;}}
 .course-btn:hover{{color:#FFD700;text-decoration-color:rgba(255,215,0,.9);}}
-.quarter{{font-size:.76em;color:#445;letter-spacing:.5px;}}
+.quarter{{font-size:.74em;color:#445;letter-spacing:.4px;}}
 .prof-btn{{background:rgba(0,116,217,.13);border:1px solid rgba(0,116,217,.45);
            color:#5bb8ff;border-radius:9px;font-family:Rajdhani,sans-serif;font-weight:700;
-           font-size:.88em;padding:4px 11px;cursor:pointer;text-align:left;
-           transition:background .15s,border-color .15s,color .15s;white-space:nowrap;
-           overflow:hidden;text-overflow:ellipsis;max-width:100%;}}
+           font-size:.86em;padding:4px 11px;cursor:pointer;
+           transition:background .15s,border-color .15s,color .15s;
+           white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+           width:fit-content;max-width:100%;display:block;}}
 .prof-btn:hover{{background:rgba(255,215,0,.1);border-color:rgba(255,215,0,.55);color:#FFD700;}}
-.prof-plain{{font-size:.88em;color:#445;padding:2px 0;}}
-.bottom{{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:2px;}}
-.gpa{{font-family:Orbitron,monospace;font-size:.88em;font-weight:700;color:#cde;white-space:nowrap;}}
-.badge{{padding:2px 10px;border-radius:20px;font-size:.68em;font-weight:900;
+.prof-plain{{font-size:.86em;color:#445;padding:1px 0;}}
+.bottom{{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}}
+.gpa{{font-family:Orbitron,monospace;font-size:.86em;font-weight:700;color:#cde;white-space:nowrap;}}
+.badge{{padding:2px 9px;border-radius:20px;font-size:.66em;font-weight:900;
         letter-spacing:1px;white-space:nowrap;background:{clr};color:{txt_col};}}
-.rmp-pill{{font-size:.68em;color:#FFD700;background:rgba(255,215,0,.08);
+.rmp-pill{{font-size:.66em;color:#FFD700;background:rgba(255,215,0,.08);
            border:1px solid rgba(255,215,0,.25);padding:2px 7px;border-radius:10px;}}
 </style>
 </head><body>
 <div class="card">
   <div class="left">
-    <button class="course-btn" onclick="window.parent.postMessage(
-      {{type:'course_click',course:'{row['course']}'}},'*')">{row['course']}</button>
-    <div class="quarter">{row["quarter"]} {row["year"]}</div>
+    <button class="course-btn"
+      onclick="window.parent.postMessage({{type:'course_click',course:'{course_safe}'}},'*')"
+    >{row['course']}</button>
+    <div class="quarter">{row['quarter']} {row['year']}</div>
     {prof_el}
     <div class="bottom">
       <span class="gpa">GPA {gpa_val:.2f}</span>
@@ -1983,10 +1993,8 @@ html,body{{background:transparent;overflow:hidden;font-family:Rajdhani,sans-seri
   </div>
   {chart_html}
 </div>
-</body></html>""", height=155, scrolling=False)
-
-            # Hidden Streamlit buttons — triggered by postMessage below
-            # (rendered at 0 height after the loop via shared listener)
+</body></html>""",
+                height=160, scrolling=False)
 
         # Handle query param clicks (course or prof) set by postMessage listener
         qp = st.query_params
