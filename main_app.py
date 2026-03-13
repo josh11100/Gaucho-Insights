@@ -1314,6 +1314,16 @@ let f = 0;
             st.warning("No results found. Try adjusting the filters.")
             return
 
+        # ── Handle prof click via query params (set by anchor tags in cards below) ──
+        qp = st.query_params
+        if qp.get("_prof_jk"):
+            st.session_state.sel_prof_key    = qp.get("_prof_jk", "")
+            st.session_state.sel_prof_name   = qp.get("_prof_name", "")
+            st.session_state.sel_prof_course = qp.get("_prof_course", "")
+            st.session_state.sel_course_name = None
+            st.query_params.clear()
+            st.rerun()
+
         q_order = {"FALL": 3, "SUMMER": 2, "SPRING": 1, "WINTER": 0}
         df = df.copy()
         df["_qord"] = df["quarter"].str.upper().map(q_order).fillna(0)
@@ -1372,7 +1382,21 @@ let f = 0;
                              f'font-weight:900;color:{clr};white-space:nowrap;">'
                              f'{gpa_val:.2f}</div>')
 
-            # Full card as one HTML block — no st.columns, no border=True
+            from urllib.parse import quote
+            prof_link = (
+                f'<a href="?_prof_jk={quote(jk)}&_prof_name={quote(prof_name)}&_prof_course={quote(row["course"])}" '
+                f'style="font-family:Rajdhani,sans-serif;font-size:.85em;font-weight:700;'
+                f'color:#5bb8ff;text-decoration:none;margin:3px 0;display:inline-block;"'
+                f'onmouseover="this.style.color=\'#FFD700\'" onmouseout="this.style.color=\'#5bb8ff\'">'
+                f'👤 {prof_name}'
+                f'<span style="font-size:.72em;color:rgba(255,215,0,.5);margin-left:4px;">→ RMP</span>'
+                f'</a>'
+            ) if has_rmp else (
+                f'<div style="font-family:Rajdhani,sans-serif;font-size:.85em;color:#3a5068;margin:3px 0;">'
+                f'👤 {prof_name}</div>'
+            )
+
+            # Full card as one HTML block — no st.columns, no border=True, no st.button
             st.markdown(
                 f'<div style="display:flex;align-items:center;justify-content:space-between;'
                 f'padding:12px 16px;border-left:3px solid {clr};">'
@@ -1382,11 +1406,7 @@ let f = 0;
                 f'  {row["course"]} '
                 f'  <span style="font-size:.65em;color:#334;font-family:Rajdhani,sans-serif;font-weight:400;">'
                 f'  {row["quarter"]} {int(row["year"])}</span></div>'
-                f'  <div style="font-family:Rajdhani,sans-serif;font-size:.85em;'
-                f'  color:{"#5bb8ff" if has_rmp else "#3a5068"};margin:3px 0;">'
-                f'  👤 {prof_name}'
-                + (f'  <span style="font-size:.72em;color:rgba(255,215,0,.5);margin-left:4px;">→ RMP</span>' if has_rmp else '')
-                + f'  </div>'
+                f'  {prof_link}'
                 f'  <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">'
                 f'  <span style="font-family:Orbitron,sans-serif;font-size:.78em;color:#b0c8e0;font-weight:700;">'
                 f'  GPA {gpa_val:.2f}</span>'
@@ -1398,15 +1418,6 @@ let f = 0;
                 f'</div>',
                 unsafe_allow_html=True
             )
-
-            # Invisible st.button for prof click — zero height via CSS
-            if has_rmp:
-                if st.button(f"👤 {prof_name}", key=f"prof_btn_{idx}_{jk}",
-                             help="View RMP profile + GPA history"):
-                    st.session_state.sel_prof_key    = jk
-                    st.session_state.sel_prof_name   = prof_name
-                    st.session_state.sel_prof_course = row["course"]
-                    st.rerun()
 
             # Divider line between cards
             st.markdown(
