@@ -173,31 +173,29 @@ div[data-baseweb="tooltip"],
     pointer-events: none !important;
 }
 
-/* ── Prof buttons inside result cards: hide the raw st.button, show styled markdown instead ── */
-[data-testid="stVerticalBlockBorderWrapper"] .stButton > button[kind="secondary"] {
-    height: 0 !important;
-    min-height: 0 !important;
-    padding: 0 !important;
-    border: none !important;
-    overflow: hidden !important;
-    position: absolute !important;
-    opacity: 0 !important;
-    pointer-events: all !important;
-    width: 100% !important;
-    top: 0 !important;
-    left: 0 !important;
-    z-index: 10 !important;
+/* ── Hidden prof click buttons — invisible but fully clickable ── */
+.hidden-prof-btn { 
+    height: 0 !important; 
+    overflow: visible !important; 
+    position: relative !important;
 }
-
-/* ── Hide ghost prof/course buttons that leak below result cards ── */
-[data-testid="stMainBlockContainer"] > div > [data-testid="stVerticalBlock"] > div > [data-testid="stButton"] {
-    visibility: hidden !important;
-    height: 0 !important;
-    min-height: 0 !important;
-    overflow: hidden !important;
-    margin: 0 !important;
-    padding: 0 !important;
+.hidden-prof-btn > div[data-testid="stButton"] {
     position: absolute !important;
+    top: -38px !important;
+    left: 0 !important;
+    width: 200px !important;
+    height: 34px !important;
+    z-index: 999 !important;
+}
+.hidden-prof-btn > div[data-testid="stButton"] > button {
+    opacity: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    cursor: pointer !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    background: transparent !important;
 }
 /* ── Inputs ── */
 .stTextInput > div > div > input, .stSelectbox > div > div {
@@ -1334,7 +1332,7 @@ let f = 0;
                     f'color:rgba(255,215,0,.45);letter-spacing:2px;margin-bottom:18px;">'
                     f'SHOWING {len(shown)} OF {len(df)} RESULTS</div>', unsafe_allow_html=True)
 
-        # ── Result cards: avoid st.button inside border=True (causes ghost duplicates) ──
+        # ── Result cards ──
         for idx, row in shown.iterrows():
             gpa_val          = row[gpa_col]
             status, clr, shd = gpa_badge(gpa_val)
@@ -1356,55 +1354,35 @@ let f = 0;
                 'font-weight:700;letter-spacing:.5px;vertical-align:middle;margin-left:4px;">RMP</span>'
             ) if has_rmp else ""
 
-            # Inline SVG mini bar chart
+            # Inline SVG mini bar chart — bigger
             if total_students > 0:
                 counts     = [a_cnt, b_cnt, c_cnt, d_cnt, f_cnt]
                 bar_colors = ["#2ECC40","#0074D9","#FFDC00","#FF851B","#FF4136"]
                 max_c      = max(counts) or 1
-                CW, CH, BW = 130, 48, 18
+                CW, CH, BW = 200, 72, 28
                 gap        = (CW - 5 * BW) / 6
                 bars       = ""
                 for gi, (c, bc) in enumerate(zip(counts, bar_colors)):
-                    bh = max(2, int((c / max_c) * (CH - 12)))
+                    bh = max(3, int((c / max_c) * (CH - 18)))
                     x  = int(gap + gi * (BW + gap))
-                    y  = CH - 10 - bh
+                    y  = CH - 14 - bh
                     lbl= ["A","B","C","D","F"][gi]
                     bars += (f'<rect x="{x}" y="{y}" width="{BW}" height="{bh}" '
-                             f'fill="{bc}" rx="2" opacity="0.9"/>'
-                             f'<text x="{x+BW//2}" y="{CH-1}" text-anchor="middle" '
-                             f'font-size="8" fill="#667" font-family="sans-serif">{lbl}</text>')
+                             f'fill="{bc}" rx="3" opacity="0.9"/>'
+                             f'<text x="{x+BW//2}" y="{CH-2}" text-anchor="middle" '
+                             f'font-size="10" fill="#778" font-family="sans-serif">{lbl}</text>')
                 chart_svg = (f'<svg width="{CW}" height="{CH}" viewBox="0 0 {CW} {CH}" '
                              f'xmlns="http://www.w3.org/2000/svg" '
-                             f'style="flex-shrink:0;margin-left:12px;">{bars}</svg>')
+                             f'style="flex-shrink:0;margin-left:16px;">{bars}</svg>')
             else:
-                chart_svg = (f'<div style="flex-shrink:0;margin-left:12px;'
-                             f'font-family:Orbitron,sans-serif;font-size:1.1em;'
-                             f'font-weight:900;color:{clr};white-space:nowrap;">'
-                             f'{gpa_val:.2f}</div>')
+                chart_svg = (f'<div style="flex-shrink:0;margin-left:16px;width:200px;'
+                             f'display:flex;flex-direction:column;align-items:center;justify-content:center;">'
+                             f'<span style="font-family:Orbitron,sans-serif;font-size:1.4em;'
+                             f'font-weight:900;color:{clr};">{gpa_val:.2f}</span>'
+                             f'<span style="font-size:.6em;color:#445;letter-spacing:1px;margin-top:2px;">AVG GPA</span>'
+                             f'</div>')
 
-            from urllib.parse import quote
-            if has_rmp:
-                jk_enc   = quote(jk,   safe='')
-                pn_enc   = quote(prof_name, safe='')
-                pc_enc   = quote(row["course"], safe='')
-                prof_link = (
-                    f'<span onclick="'
-                    f'var u=window.location.href.split(\'?\')[0];'
-                    f'window.parent.location.href=u+\'?_prof_jk={jk_enc}&_prof_name={pn_enc}&_prof_course={pc_enc}\';'
-                    f'" style="font-family:Rajdhani,sans-serif;font-size:.85em;font-weight:700;'
-                    f'color:#5bb8ff;cursor:pointer;margin:3px 0;display:inline-block;"'
-                    f'onmouseover="this.style.color=\'#FFD700\'" onmouseout="this.style.color=\'#5bb8ff\'">'
-                    f'👤 {prof_name}'
-                    f'<span style="font-size:.72em;color:rgba(255,215,0,.5);margin-left:4px;">→ RMP</span>'
-                    f'</span>'
-                )
-            else:
-                prof_link = (
-                    f'<div style="font-family:Rajdhani,sans-serif;font-size:.85em;color:#3a5068;margin:3px 0;">'
-                    f'👤 {prof_name}</div>'
-                )
-
-            # Full card as one HTML block — no st.columns, no border=True, no st.button
+            # Card HTML
             st.markdown(
                 f'<div style="display:flex;align-items:center;justify-content:space-between;'
                 f'padding:12px 16px;border-left:3px solid {clr};">'
@@ -1414,8 +1392,14 @@ let f = 0;
                 f'  {row["course"]} '
                 f'  <span style="font-size:.65em;color:#334;font-family:Rajdhani,sans-serif;font-weight:400;">'
                 f'  {row["quarter"]} {int(row["year"])}</span></div>'
-                f'  {prof_link}'
-                f'  <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">'
+                + (f'  <div style="font-family:Rajdhani,sans-serif;font-size:.88em;font-weight:700;'
+                   f'  color:#5bb8ff;margin:4px 0 2px;cursor:pointer;" class="prof-lbl-{idx}">'
+                   f'  👤 {prof_name}'
+                   f'  <span style="font-size:.72em;color:rgba(255,215,0,.5);margin-left:4px;">→ RMP</span>'
+                   f'  </div>' if has_rmp else
+                   f'  <div style="font-family:Rajdhani,sans-serif;font-size:.88em;color:#3a5068;margin:4px 0 2px;">'
+                   f'  👤 {prof_name}</div>')
+                + f'  <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:2px;">'
                 f'  <span style="font-family:Orbitron,sans-serif;font-size:.78em;color:#b0c8e0;font-weight:700;">'
                 f'  GPA {gpa_val:.2f}</span>'
                 f'  <span style="background:{clr};color:{txt_col};padding:2px 9px;border-radius:16px;'
@@ -1427,7 +1411,17 @@ let f = 0;
                 unsafe_allow_html=True
             )
 
-            # Divider line between cards
+            # Real clickable st.button — hidden via CSS, overlays the prof name text
+            if has_rmp:
+                st.markdown(f'<div class="hidden-prof-btn" id="hpb-{idx}">', unsafe_allow_html=True)
+                if st.button(f"👤 {prof_name}", key=f"prof_btn_{idx}_{jk}"):
+                    st.session_state.sel_prof_key    = jk
+                    st.session_state.sel_prof_name   = prof_name
+                    st.session_state.sel_prof_course = row["course"]
+                    st.rerun()
+                st.markdown('</div>', unsafe_allow_html=True)
+
+            # Divider
             st.markdown(
                 '<hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:0;">',
                 unsafe_allow_html=True
