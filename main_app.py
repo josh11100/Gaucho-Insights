@@ -1352,6 +1352,7 @@ let f = 0;
             jk               = row.get("join_key","")
             has_rmp          = jk in rmp_lookup
             txt_col          = "#000" if status == "EASY" else "#fff"
+            course_name      = row["course"]
 
             a_cnt = int(row.get("a", 0) or 0)
             b_cnt = int(row.get("b", 0) or 0)
@@ -1360,13 +1361,28 @@ let f = 0;
             f_cnt = int(row.get("f", 0) or 0)
             total_students = a_cnt + b_cnt + c_cnt + d_cnt + f_cnt
 
+            # 4-year avg GPA for this course
+            try:
+                latest_year = int(row["year"])
+            except Exception:
+                latest_year = 2025
+            cutoff_year = latest_year - 4
+            hist_4yr = full_df[
+                (full_df["course"] == course_name) &
+                (full_df["year"].astype(int) >= cutoff_year)
+            ]
+            avg_4yr = hist_4yr[gpa_col].mean() if not hist_4yr.empty else None
+            avg_4yr_str = f"{avg_4yr:.2f}" if avg_4yr else "N/A"
+            avg_4yr_clr, _, _ = gpa_badge(avg_4yr) if avg_4yr else ("N/A", "#888", "")
+            _, avg_4yr_color, _ = gpa_badge(avg_4yr) if avg_4yr else ("N/A", "#888", "")
+
             rmp_pill = (
                 '<span style="font-size:.62em;color:#FFD700;background:rgba(255,215,0,.08);'
                 'border:1px solid rgba(255,215,0,.3);padding:2px 7px;border-radius:10px;'
                 'font-weight:700;letter-spacing:.5px;vertical-align:middle;margin-left:4px;">RMP</span>'
             ) if has_rmp else ""
 
-            # Inline SVG mini bar chart — bigger
+            # Inline SVG mini bar chart
             if total_students > 0:
                 counts     = [a_cnt, b_cnt, c_cnt, d_cnt, f_cnt]
                 bar_colors = ["#2ECC40","#0074D9","#FFDC00","#FF851B","#FF4136"]
@@ -1387,56 +1403,70 @@ let f = 0;
                              f'xmlns="http://www.w3.org/2000/svg" '
                              f'style="flex-shrink:0;margin-left:16px;">{bars}</svg>')
             else:
-                chart_svg = (f'<div style="flex-shrink:0;margin-left:16px;width:200px;'
+                chart_svg = (f'<div style="flex-shrink:0;margin-left:16px;width:120px;'
                              f'display:flex;flex-direction:column;align-items:center;justify-content:center;">'
                              f'<span style="font-family:Orbitron,sans-serif;font-size:1.4em;'
                              f'font-weight:900;color:{clr};">{gpa_val:.2f}</span>'
                              f'<span style="font-size:.6em;color:#445;letter-spacing:1px;margin-top:2px;">AVG GPA</span>'
                              f'</div>')
 
-            # Card HTML (prof name row is empty — button renders there via Streamlit below)
+            # ── Card: course name row + inline GPA/badge/RMP + chart ──
             st.markdown(
                 f'<div style="display:flex;align-items:center;justify-content:space-between;'
-                f'padding:12px 16px 4px;border-left:3px solid {clr};">'
+                f'padding:11px 16px 8px;border-left:3px solid {clr};gap:12px;">'
+
+                # Left: course name, date, prof
                 f'<div style="flex:1;min-width:0;">'
-                f'  <div style="font-family:Orbitron,sans-serif;font-size:.95em;font-weight:700;'
-                f'  color:#e8f4ff;letter-spacing:.4px;margin-bottom:2px;">'
-                f'  {row["course"]} '
-                f'  <span style="font-size:.65em;color:#334;font-family:Rajdhani,sans-serif;font-weight:400;">'
-                f'  {row["quarter"]} {int(row["year"])}</span></div>'
+
+                # Row 1: course name + date + 4yr stat badge inline
+                f'  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;">'
+                f'  <span style="font-family:Orbitron,sans-serif;font-size:.95em;font-weight:700;color:#e8f4ff;">'
+                f'  {course_name}</span>'
+                f'  <span style="font-family:Rajdhani,sans-serif;font-size:.78em;color:#8899aa;font-weight:500;">'
+                f'  {row["quarter"]} {int(row["year"])}</span>'
+                f'  <span style="font-family:Rajdhani,sans-serif;font-size:.62em;color:{avg_4yr_color};'
+                f'  background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);'
+                f'  padding:1px 7px;border-radius:8px;white-space:nowrap;" '
+                f'  title="Avg GPA over last 4 years">📊 4YR {avg_4yr_str}</span>'
+                f'  </div>'
+
+                # Row 2: prof name (button injected below)
                 f'</div>'
+
+                # Right: chart
                 f'{chart_svg}'
                 f'</div>',
                 unsafe_allow_html=True
             )
 
-            # Prof name row — real st.button styled as plain blue text, or plain text if no RMP
-            if has_rmp:
-                st.markdown('<div class="prof-text-btn">', unsafe_allow_html=True)
-                if st.button(f"👤 {prof_name}  → RMP", key=f"prof_btn_{idx}_{jk}"):
-                    st.session_state.sel_prof_key    = jk
-                    st.session_state.sel_prof_name   = prof_name
-                    st.session_state.sel_prof_course = row["course"]
-                    st.rerun()
-                st.markdown('</div>', unsafe_allow_html=True)
-            else:
+            # Prof name + GPA/badge row — all on one line via columns trick
+            left_col, right_col = st.columns([1, 1])
+            with left_col:
+                if has_rmp:
+                    st.markdown('<div class="prof-text-btn">', unsafe_allow_html=True)
+                    if st.button(f"👤 {prof_name}  → RMP", key=f"prof_btn_{idx}_{jk}"):
+                        st.session_state.sel_prof_key    = jk
+                        st.session_state.sel_prof_name   = prof_name
+                        st.session_state.sel_prof_course = course_name
+                        st.rerun()
+                    st.markdown('</div>', unsafe_allow_html=True)
+                else:
+                    st.markdown(
+                        f'<div style="font-family:Rajdhani,sans-serif;font-size:.88em;'
+                        f'color:#3a5068;padding:0 0 6px 19px;">👤 {prof_name}</div>',
+                        unsafe_allow_html=True
+                    )
+
+            with right_col:
                 st.markdown(
-                    f'<div style="font-family:Rajdhani,sans-serif;font-size:.88em;'
-                    f'color:#3a5068;padding:0 16px 2px 19px;">👤 {prof_name}</div>',
+                    f'<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:4px 0 6px;">'
+                    f'<span style="font-family:Orbitron,sans-serif;font-size:.78em;color:#b0c8e0;font-weight:700;">'
+                    f'GPA {gpa_val:.2f}</span>'
+                    f'<span style="background:{clr};color:{txt_col};padding:2px 9px;border-radius:16px;'
+                    f'font-size:.6em;font-weight:900;letter-spacing:.8px;">{status}</span>'
+                    f'{rmp_pill}</div>',
                     unsafe_allow_html=True
                 )
-
-            # GPA + badge row
-            st.markdown(
-                f'<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;'
-                f'padding:2px 16px 10px 19px;border-left:3px solid {clr};margin-top:-2px;">'
-                f'<span style="font-family:Orbitron,sans-serif;font-size:.78em;color:#b0c8e0;font-weight:700;">'
-                f'GPA {gpa_val:.2f}</span>'
-                f'<span style="background:{clr};color:{txt_col};padding:2px 9px;border-radius:16px;'
-                f'font-size:.6em;font-weight:900;letter-spacing:.8px;">{status}</span>'
-                f'{rmp_pill}</div>',
-                unsafe_allow_html=True
-            )
 
             # Divider
             st.markdown(
