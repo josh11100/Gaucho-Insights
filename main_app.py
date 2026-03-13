@@ -1967,20 +1967,20 @@ function clickProf(){{
 """, height=130, scrolling=False)
 
             # ── Hidden Streamlit buttons triggered by postMessage ──────────
-            col_c, col_p, _ = st.columns([1, 1, 8])
-            with col_c:
-                if st.button("c", key=f"cb_{idx}", label_visibility="collapsed"):
-                    st.session_state.sel_course_name = row["course"]
-                    st.session_state.sel_prof_key    = None
+            # ── Trigger buttons hidden via CSS ────────────────────────
+            st.markdown('<div style="height:0;overflow:hidden;margin:0;padding:0;">', unsafe_allow_html=True)
+            if st.button(f"course_{idx}", key=f"cb_{idx}"):
+                st.session_state.sel_course_name = row["course"]
+                st.session_state.sel_prof_key    = None
+                st.rerun()
+            if has_rmp:
+                if st.button(f"prof_{idx}", key=f"pb_{idx}"):
+                    st.session_state.sel_prof_key    = jk
+                    st.session_state.sel_prof_name   = prof_name
+                    st.session_state.sel_prof_course = row["course"]
+                    st.session_state.sel_course_name = None
                     st.rerun()
-            with col_p:
-                if has_rmp:
-                    if st.button("p", key=f"pb_{idx}", label_visibility="collapsed"):
-                        st.session_state.sel_prof_key    = jk
-                        st.session_state.sel_prof_name   = prof_name
-                        st.session_state.sel_prof_course = row["course"]
-                        st.session_state.sel_course_name = None
-                        st.rerun()
+            st.markdown('</div>', unsafe_allow_html=True)
 
         # ── postMessage → click hidden button ─────────────────────────────
         components.html("""
