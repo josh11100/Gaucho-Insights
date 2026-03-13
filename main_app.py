@@ -1806,92 +1806,122 @@ let f = 0;
             f_cnt = max(0, int(row.get("f") or 0))
             total_students = a_cnt + b_cnt + c_cnt + d_cnt + f_cnt
 
+            # ── SVG mini bar chart ─────────────────────────────────────────
             if total_students > 0:
                 grades  = ["A","B","C","D","F"]
                 counts  = [a_cnt, b_cnt, c_cnt, d_cnt, f_cnt]
                 colors  = ["#2ECC40","#0074D9","#FFDC00","#FF851B","#FF4136"]
                 max_c   = max(counts) or 1
-                W, H    = 200, 100
-                bar_w   = 28
-                gap     = (W - len(grades)*bar_w) / (len(grades)+1)
+                CW, CH  = 160, 72
+                bar_w   = 22
+                gap     = (CW - len(grades)*bar_w) / (len(grades)+1)
                 bars_svg = ""
                 for i,(g,c,col) in enumerate(zip(grades,counts,colors)):
-                    bh = int((c/max_c)*(H-20))
+                    bh = max(2, int((c/max_c)*(CH-18)))
                     x  = int(gap + i*(bar_w+gap))
-                    y  = H - 18 - bh
+                    y  = CH - 14 - bh
                     bars_svg += (
                         f'<rect x="{x}" y="{y}" width="{bar_w}" height="{bh}" '
-                        f'fill="{col}" rx="3"/>'
-                        f'<text x="{x+bar_w//2}" y="{H-4}" text-anchor="middle" '
-                        f'font-size="11" fill="#aaa" font-family="Rajdhani,sans-serif">{g}</text>'
+                        f'fill="{col}" rx="3" opacity="0.9"/>'
+                        f'<text x="{x+bar_w//2}" y="{CH-2}" text-anchor="middle" '
+                        f'font-size="9" fill="#667" font-family="Rajdhani,sans-serif">{g}</text>'
                     )
-                chart_svg = (
-                    f'<svg width="{W}" height="{H}" viewBox="0 0 {W} {H}" '
+                chart_html = (
+                    f'<svg width="{CW}" height="{CH}" viewBox="0 0 {CW} {CH}" '
                     f'xmlns="http://www.w3.org/2000/svg">{bars_svg}</svg>'
                 )
             else:
-                chart_svg = (
-                    f'<div style="width:200px;height:100px;display:flex;align-items:center;'
+                chart_html = (
+                    f'<div style="width:160px;height:72px;display:flex;align-items:center;'
                     f'justify-content:center;flex-direction:column;">'
-                    f'<span style="font-family:Orbitron,sans-serif;font-size:1.4em;'
+                    f'<span style="font-family:Orbitron,sans-serif;font-size:1.3em;'
                     f'font-weight:900;color:{clr};">{gpa_val:.2f}</span>'
-                    f'<span style="font-size:.6em;color:#445;margin-top:4px;">AVG GPA</span></div>'
+                    f'<span style="font-size:.55em;color:#334;margin-top:3px;letter-spacing:1px;">AVG GPA</span></div>'
                 )
 
-            rmp_badge  = (
-                '<span style="font-size:.65em;color:#FFD700;background:rgba(255,215,0,.08);'
-                'border:1px solid rgba(255,215,0,.28);padding:2px 7px;border-radius:10px;">RMP</span>'
+            rmp_pill = (
+                '<span style="font-size:.6em;color:#FFD700;background:rgba(255,215,0,.1);'
+                'border:1px solid rgba(255,215,0,.35);padding:2px 8px;border-radius:10px;'
+                'font-weight:700;letter-spacing:.5px;">RMP</span>'
             ) if has_rmp else ""
-            badge_html = (
-                f'<span style="padding:2px 9px;border-radius:20px;font-size:.67em;'
+
+            status_pill = (
+                f'<span style="padding:2px 10px;border-radius:20px;font-size:.6em;'
                 f'font-weight:900;letter-spacing:1px;white-space:nowrap;'
                 f'background:{clr};color:{txt_col};">{status}</span>'
             )
 
-            # ── Card: left info col + right SVG chart ──────────────────────
-            left_col, chart_col = st.columns([3, 2])
-            with left_col:
-                # Course name — transparent underline button (no box)
-                if st.button(f"{row['course']}", key=f"course_{idx}",
-                             help="View course grade history"):
+            prof_color = "#5bb8ff" if has_rmp else "#3a5068"
+            rmp_hint   = ' <span style="font-size:.7em;color:rgba(255,215,0,.45);">→ RMP</span>' if has_rmp else ""
+
+            # ── Rich card (pure HTML, no Streamlit columns) ────────────────
+            st.markdown(f"""
+<div style="
+    background: linear-gradient(135deg, rgba(0,18,42,0.97) 0%, rgba(0,10,28,0.99) 100%);
+    border: 1px solid rgba(0,116,217,0.28);
+    border-left: 3px solid {clr};
+    border-radius: 16px;
+    padding: 14px 18px 13px 18px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 4px 28px rgba(0,0,0,0.45), inset 0 0 24px rgba(0,116,217,0.03);
+    position: relative;
+    overflow: hidden;
+">
+  <div style="position:absolute;top:0;left:0;right:0;height:1px;
+    background:linear-gradient(90deg,transparent 0%,rgba(255,215,0,0.12) 50%,transparent 100%);"></div>
+
+  <div style="flex:1;min-width:0;">
+    <div style="font-family:'Orbitron',sans-serif;font-size:.95em;font-weight:900;
+                color:#e8f4ff;letter-spacing:.5px;margin-bottom:3px;
+                text-decoration:underline dotted rgba(255,215,0,.4);
+                text-underline-offset:3px;">
+      {row['course']}
+    </div>
+    <div style="font-size:.66em;color:#2a3d55;letter-spacing:.5px;margin-bottom:6px;
+                font-family:'Rajdhani',sans-serif;text-transform:uppercase;">
+      {row['quarter']} {int(row['year'])}
+    </div>
+    <div style="font-family:'Rajdhani',sans-serif;font-size:.84em;
+                color:{prof_color};margin-bottom:9px;font-weight:600;">
+      👤 {prof_name}{rmp_hint}
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+      <span style="font-family:'Orbitron',monospace;font-size:.8em;font-weight:700;
+                   color:#b8d4ee;letter-spacing:.5px;">GPA {gpa_val:.2f}</span>
+      {status_pill}
+      {rmp_pill}
+    </div>
+  </div>
+
+  <div style="flex-shrink:0;opacity:0.88;border-left:1px solid rgba(255,255,255,0.05);
+              padding-left:16px;">
+    {chart_html}
+  </div>
+</div>
+""", unsafe_allow_html=True)
+
+            # ── Action buttons (compact, sit flush below the card) ─────────
+            btn_col1, btn_col2, _ = st.columns([2, 2, 5])
+            with btn_col1:
+                if st.button(f"📊 Open {row['course']}", key=f"course_{idx}",
+                             use_container_width=True):
                     st.session_state.sel_course_name = row["course"]
                     st.session_state.sel_prof_key    = None
                     st.rerun()
-
-                st.markdown(
-                    f'<div style="font-size:.72em;color:#3d5068;letter-spacing:.3px;'
-                    f'margin-top:2px;margin-bottom:4px;">{row["quarter"]} {int(row["year"])}</div>',
-                    unsafe_allow_html=True)
-
+            with btn_col2:
                 if has_rmp:
                     if st.button(f"👤 {prof_name}", key=f"prof_{idx}",
-                                 help="View professor RMP + GPA stats"):
+                                 use_container_width=True):
                         st.session_state.sel_prof_key    = jk
                         st.session_state.sel_prof_name   = prof_name
                         st.session_state.sel_prof_course = row["course"]
                         st.session_state.sel_course_name = None
                         st.rerun()
-                else:
-                    st.markdown(
-                        f'<div style="font-size:.84em;color:#3d5068;">👤 {prof_name}</div>',
-                        unsafe_allow_html=True)
 
-                # GPA + badges row — flex-wrap so nothing clips
-                st.markdown(
-                    f'<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;'
-                    f'margin-top:4px;padding-bottom:2px;">'
-                    f'<span style="font-family:Orbitron,monospace;font-size:.84em;font-weight:700;'
-                    f'color:#cde;">GPA {gpa_val:.2f}</span>'
-                    f'{badge_html}{rmp_badge}</div>',
-                    unsafe_allow_html=True)
-
-            with chart_col:
-                st.markdown(chart_svg, unsafe_allow_html=True)
-
-            st.markdown(
-                '<div style="height:8px;border-bottom:1px solid rgba(255,255,255,.04);'
-                'margin-bottom:8px;"></div>',
-                unsafe_allow_html=True)
+            st.markdown('<div style="margin-bottom:4px;"></div>', unsafe_allow_html=True)
 
         qp = st.query_params
         if qp.get("_course"):
