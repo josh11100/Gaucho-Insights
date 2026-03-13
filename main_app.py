@@ -1896,7 +1896,7 @@ let f = 0;
             total_students = a_cnt + b_cnt + c_cnt + d_cnt + f_cnt
 
             # ── Build chart HTML ──────────────────────────────────────────
-            cid = f"ch{idx}"
+            cid = "ch" + str(idx)
             if total_students > 0:
                 fig = px.bar(
                     pd.DataFrame({"Grade":["A","B","C","D","F"],
@@ -1911,19 +1911,28 @@ let f = 0;
                     paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
                     xaxis=dict(tickfont=dict(size=11,color="#aaa")),
                     yaxis=dict(tickfont=dict(size=9,color="#555"), rangemode="nonnegative"))
-                # Use pio.to_html snippet — avoids all JS escaping issues
-                chart_div = pio.to_html(fig, include_plotlyjs=False, full_html=False,
-                                        div_id=cid, config={"displayModeBar": False})
-                chart_html = '<div class="chart">' + chart_div + '</div>'
+                # Embed data directly as JS object — no JSON.parse, no escaping issues
+                fig_data_js  = str(fig.to_dict()["data"]).replace("True","true").replace("False","false").replace("None","null")
+                fig_layout_js = str(fig.to_dict()["layout"]).replace("True","true").replace("False","false").replace("None","null")
+                chart_html = (
+                    "<div class='chart' id='" + cid + "'></div>"
+                    "<script>"
+                    "(function tryPlot(n){"
+                    "if(typeof Plotly!=='undefined'){"
+                    "Plotly.newPlot('" + cid + "'," + fig_data_js + "," + fig_layout_js + ",{displayModeBar:false,responsive:true});"
+                    "}else if(n>0){setTimeout(function(){tryPlot(n-1);},80);}"
+                    "})(25);"
+                    "</script>"
+                )
             else:
                 chart_html = (
-                    '<div class="chart" style="display:flex;flex-direction:column;'
-                    'align-items:center;justify-content:center;'
-                    'background:rgba(255,255,255,.03);border-radius:10px;">'
-                    '<div style="font-family:Orbitron,sans-serif;font-size:1.6em;'
-                    'font-weight:900;color:' + clr + ';">' + f"{gpa_val:.2f}" + '</div>'
-                    '<div style="font-size:.6em;color:#445;letter-spacing:1px;'
-                    'margin-top:4px;">AVG GPA</div></div>'
+                    "<div class='chart' style='display:flex;flex-direction:column;"
+                    "align-items:center;justify-content:center;"
+                    "background:rgba(255,255,255,.03);border-radius:10px;'>"
+                    "<div style='font-family:Orbitron,sans-serif;font-size:1.6em;"
+                    "font-weight:900;color:" + clr + ";'>" + f"{gpa_val:.2f}" + "</div>"
+                    "<div style='font-size:.6em;color:#445;letter-spacing:1px;"
+                    "margin-top:4px;'>AVG GPA</div></div>"
                 )
 
             # ── Build prof element ────────────────────────────────────────
