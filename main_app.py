@@ -70,7 +70,6 @@ section[data-testid="stMain"] > div:first-child {
 
 /* Stack home page columns at medium widths */
 @media (max-width: 1100px) {
-    /* Make home columns stack */
     section[data-testid="stMain"] [data-testid="stHorizontalBlock"]:first-of-type {
         flex-direction: column !important;
     }
@@ -83,7 +82,6 @@ section[data-testid="stMain"] > div:first-child {
 
 /* Search result cards — shrink gracefully */
 @media (max-width: 900px) {
-    /* Professor button text shouldn't wrap */
     .stButton > button {
         white-space: nowrap !important;
         overflow: hidden !important;
@@ -91,7 +89,6 @@ section[data-testid="stMain"] > div:first-child {
         font-size: 0.82em !important;
         padding: 4px 8px !important;
     }
-    /* Stack search result columns */
     [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stHorizontalBlock"] {
         flex-direction: column !important;
     }
@@ -170,16 +167,7 @@ section[data-testid="stMain"] > div:first-child {
     border-color: rgba(255,215,0,0.6) !important;
     color: #FFD700 !important;
 }
-/* Hide invisible trigger buttons (label_visibility=collapsed) used for postMessage prof clicks */
-/* These are st.buttons rendered after each components.html card — hide them visually */
-[data-testid="stButton"] button[kind="secondary"] {
-    /* Default — visible for normal buttons */
-}
-/* Target search-card trigger buttons: they appear directly after an iframe element */
-iframe + div [data-testid="stButton"],
-iframe ~ div > [data-testid="stButton"] {
-    /* can't reliably target here without a wrapper class */
-}
+
 /* Remove white focus outline / tooltip box on buttons */
 .stButton > button:focus,
 .stButton > button:focus-visible,
@@ -199,10 +187,13 @@ iframe ~ div > [data-testid="stButton"] {
     text-overflow: ellipsis !important;
     max-width: 100% !important;
 }
-/* Course name buttons — look like Orbitron headings, not buttons */
+
+/* ── COURSE NAME BUTTON — plain underlined heading, NO box ── */
 [data-testid="stColumn"]:first-child .stButton:first-child > button {
     background: transparent !important;
     border: none !important;
+    box-shadow: none !important;
+    outline: none !important;
     color: #e8f4ff !important;
     font-family: 'Orbitron', monospace !important;
     font-size: 1em !important;
@@ -213,19 +204,31 @@ iframe ~ div > [data-testid="stButton"] {
     text-underline-offset: 3px !important;
     text-align: left !important;
     border-radius: 0 !important;
-    box-shadow: none !important;
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
     width: 100% !important;
     justify-content: flex-start !important;
+    min-height: 0 !important;
+    height: auto !important;
+    line-height: 1.3 !important;
 }
 [data-testid="stColumn"]:first-child .stButton:first-child > button:hover {
     color: #FFD700 !important;
     background: transparent !important;
     border: none !important;
+    box-shadow: none !important;
     text-decoration-color: rgba(255,215,0,.9) !important;
 }
+[data-testid="stColumn"]:first-child .stButton:first-child > button:focus,
+[data-testid="stColumn"]:first-child .stButton:first-child > button:focus-visible,
+[data-testid="stColumn"]:first-child .stButton:first-child > button:focus:not(:active) {
+    outline: none !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: transparent !important;
+}
+
 /* Hide Streamlit's native tooltip popup */
 [data-testid="tooltipHoverTarget"],
 div[class*="tooltip"],
@@ -252,14 +255,9 @@ div[data-baseweb="tooltip"],
 ::-webkit-scrollbar-thumb { background: rgba(255,215,0,0.3); border-radius: 3px; }
 
 /* ════════════════════════════════════
-   MOBILE / NARROW SCREEN FIXES
-   ════════════════════════════════════ */
-
-/* ════════════════════════════════════
    RESPONSIVE — narrow / half-screen
    ════════════════════════════════════ */
 
-/* Stack home page columns at narrow widths */
 @media (max-width: 860px) {
     .home-cols [data-testid="stHorizontalBlock"] {
         flex-direction: column !important;
@@ -271,7 +269,6 @@ div[data-baseweb="tooltip"],
     }
 }
 
-/* Search cards: always side-by-side, just compress */
 @media (max-width: 860px) {
     .stTabs [data-baseweb="tab"] {
         font-size: clamp(10px, 2vw, 14px) !important;
@@ -284,7 +281,6 @@ div[data-baseweb="tooltip"],
     }
     [data-testid="stColumn"] {
         min-width: 0 !important;
-        overflow: hidden !important;
     }
 }
 
@@ -300,31 +296,24 @@ div[data-baseweb="tooltip"],
     }
 }
 
-
-/* Prevent column overflow at any screen size */
+/* Prevent column overflow — visible so badges don't clip */
 [data-testid="stColumn"] {
     min-width: 0 !important;
-    overflow: hidden !important;
+    overflow: visible !important;
 }
 [data-testid="stColumn"] > div {
     min-width: 0 !important;
-    overflow: hidden !important;
+    overflow: visible !important;
     word-break: break-word !important;
 }
-    overflow-x: hidden !important;
-}
-section[data-testid="stMain"] > div {
-    overflow-x: hidden !important;
-}
-/* Course title button — looks like a heading link, not a generic button */
-button[kind="secondary"][data-testid="stBaseButton-secondary"]:has(> div > p) {
-    /* Streamlit wraps button text in <p> inside <div> */
-}
-/* Target course title buttons via a wrapper class we'll inject */
+
+/* course-title-btn helper class (kept for compatibility) */
 .course-title-btn > div > button,
 .course-title-btn button {
     background: transparent !important;
     border: none !important;
+    box-shadow: none !important;
+    outline: none !important;
     color: #e8f4ff !important;
     font-family: 'Orbitron', monospace !important;
     font-size: 1em !important;
@@ -335,7 +324,6 @@ button[kind="secondary"][data-testid="stBaseButton-secondary"]:has(> div > p) {
     text-decoration: underline dotted rgba(255,215,0,0.35) !important;
     text-underline-offset: 4px !important;
     cursor: pointer !important;
-    box-shadow: none !important;
     min-height: 0 !important;
     height: auto !important;
     line-height: 1.3 !important;
@@ -378,33 +366,24 @@ def name_similarity(first_a: str, first_b: str) -> float:
     if not toks_a or not toks_b:
         return 0.5
 
-    # ── Initials-vs-full-name matching ──────────────────────────────────────
-    # e.g. "Y D" (initials from Y-D) vs "YUEDONG" (full name in RMP)
-    # Check if one side looks like initials (all single chars) and the other is a full name
     a_is_initials = all(len(t) == 1 for t in toks_a)
     b_is_initials = all(len(t) == 1 for t in toks_b)
 
     if a_is_initials and not b_is_initials:
-        # toks_a = ['Y','D'], toks_b = ['YUEDONG']
-        # Try: does the full name start with the first initial?
-        full_name = "".join(toks_b)  # e.g. YUEDONG
-        initials  = toks_a           # e.g. ['Y','D']
-        # Check first initial matches first letter of full name
+        full_name = "".join(toks_b)
+        initials  = toks_a
         if full_name and initials[0] == full_name[0]:
-            # Check second initial (if present) appears somewhere in the name after position 0
             if len(initials) > 1:
                 if initials[1] in full_name[1:]:
-                    return 0.95  # strong match: Y-D → YUEDONG (Y start, D inside)
+                    return 0.95
                 else:
-                    return 0.7   # first initial matches
-            return 0.85  # single initial matches first letter
-        return 0.1  # first initial doesn't match — very unlikely same person
+                    return 0.7
+            return 0.85
+        return 0.1
 
     if b_is_initials and not a_is_initials:
-        # Flip and recurse
         return name_similarity(first_b, first_a)
 
-    # ── Standard token-by-token similarity (both full names or both initials) ──
     matches = 0
     for ta, tb in zip(toks_a, toks_b):
         if ta == tb:
@@ -454,12 +433,9 @@ def load_data():
         if col in df.columns:
             df[col] = df[col].astype(str).str.upper().str.strip()
 
-    # Normalize internal whitespace in course names (e.g. "PSTAT   100" → "PSTAT 100")
     df["course"] = df["course"].str.replace(r'\s+', ' ', regex=True).str.strip()
-
     df["join_key"] = df["instructor"].apply(make_join_key)
 
-    # Build known-lastnames set for OCR fused-token detection
     known_lastnames = set(
         df["instructor"].astype(str).str.upper().str.strip()
         .str.split().str[0].dropna().unique()
@@ -574,11 +550,10 @@ def clear_filters():
 def dismiss_prof():
     st.session_state.sel_prof_key = None
     st.session_state.sel_prof_name = None
-    st.session_state.active_tab = 1  # switch to Search Tool tab
+    st.session_state.active_tab = 1
 
 
 def filter_changed():
-    """Called when any sidebar filter changes — jump to Search Tool."""
     st.session_state.active_tab = 1
     st.session_state.force_search_tab = True
     dismiss_prof()
@@ -790,7 +765,6 @@ sc.addEventListener('mouseleave',()=>{li.style.transform='';});
 #  COURSE PROFILE CARD
 # ─────────────────────────────────────────────
 def render_course_card(course_name: str, course_df: pd.DataFrame, gpa_col: str):
-    """Full-page course card: stats, GPA trend, 3D grade distribution, per-instructor breakdown."""
     if course_df.empty:
         st.warning(f"No data found for {course_name}.")
         return
@@ -815,7 +789,6 @@ def render_course_card(course_name: str, course_df: pd.DataFrame, gpa_col: str):
     status, clr, _ = gpa_badge(avg_gpa)
     txt_col = "#000" if status == "EASY" else "#fff"
 
-    # ── Header card ──────────────────────────────────────────────────────────
     components.html(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap');
@@ -861,7 +834,6 @@ sc.addEventListener('mouseleave',()=>{{cd.style.transform='';}});
 </script>
 """, height=180)
 
-    # ── Quick stats row ───────────────────────────────────────────────────────
     st.markdown(f"""
 <div style="display:flex;gap:10px;flex-wrap:wrap;margin:14px 0 20px;">
   <div style="flex:1;min-width:100px;background:rgba(255,255,255,.04);border-radius:12px;padding:12px;text-align:center;border:1px solid rgba(255,255,255,.07);">
@@ -881,12 +853,10 @@ sc.addEventListener('mouseleave',()=>{{cd.style.transform='';}});
     <div style="font-size:.62em;color:#445;margin-top:4px;letter-spacing:.8px;">LAST: {latest_term}</div></div>
 </div>""", unsafe_allow_html=True)
 
-    # ── GPA trend over time — single clean golden line ───────────────────────
     st.markdown('<div style="font-family:Orbitron,sans-serif;font-size:.72em;color:#FFD700;'
                 'letter-spacing:2px;margin:10px 0 8px;">GPA TREND OVER TIME</div>',
                 unsafe_allow_html=True)
 
-    # Aggregate all instructors into a single course-level trend
     agg_trend = df.groupby("term")[gpa_col].mean().reset_index()
     agg_trend["_sort"] = agg_trend["term"].apply(
         lambda t: (int(t.split()[-1]) if t.split()[-1].isdigit() else 0) * 10 +
@@ -894,9 +864,7 @@ sc.addEventListener('mouseleave',()=>{{cd.style.transform='';}});
     agg_trend = agg_trend.sort_values("_sort").drop(columns=["_sort"])
 
     n_pts = len(agg_trend)
-    # Only show value labels when there are few enough points to avoid clutter
     show_text = n_pts <= 16
-    # Show at most 12 x-axis tick labels
     x_step   = max(1, n_pts // 12)
     x_tvals  = agg_trend["term"].tolist()[::x_step]
 
@@ -938,7 +906,6 @@ sc.addEventListener('mouseleave',()=>{{cd.style.transform='';}});
     st.plotly_chart(trend_fig, use_container_width=True,
                     key=f"course_trend_{course_name}", config={"displayModeBar": False})
 
-    # ── 3D Grade Distribution — aggregate per term, clean mesh bars ──────────
     st.markdown('<div style="font-family:Orbitron,sans-serif;font-size:.72em;color:#FFD700;'
                 'letter-spacing:2px;margin:22px 0 4px;">GRADE DISTRIBUTION BY TERM — 3D</div>',
                 unsafe_allow_html=True)
@@ -946,7 +913,6 @@ sc.addEventListener('mouseleave',()=>{{cd.style.transform='';}});
                 'Drag to rotate · Scroll to zoom · X = Term · Y = Grade · Z = Students</div>',
                 unsafe_allow_html=True)
 
-    # Aggregate grade counts per term (sum across all instructors)
     grade_cols = ["a", "b", "c", "d", "f"]
     agg_grades = df.groupby("term")[grade_cols].sum().reset_index()
     agg_grades["_sort"] = agg_grades["term"].apply(
@@ -954,7 +920,6 @@ sc.addEventListener('mouseleave',()=>{{cd.style.transform='';}});
                   {"WINTER":0,"SPRING":1,"SUMMER":2,"FALL":3}.get(t.split()[0], 0))
     agg_grades = agg_grades.sort_values("_sort").drop(columns=["_sort"])
 
-    # Cap at 20 most recent terms
     if len(agg_grades) > 20:
         agg_grades = agg_grades.tail(20)
 
@@ -969,7 +934,7 @@ sc.addEventListener('mouseleave',()=>{{cd.style.transform='';}});
     for gi, grade in enumerate(grades):
         col_key = grade.lower()
         color   = g_colors[grade]
-        w       = 0.30   # half-width of each bar
+        w       = 0.30
 
         for _, row3d in agg_grades.iterrows():
             cnt = int(row3d.get(col_key, 0) or 0)
@@ -979,7 +944,6 @@ sc.addEventListener('mouseleave',()=>{{cd.style.transform='';}});
             yi = gi
             zt = cnt
 
-            # 8 vertices of a rectangular prism (bar)
             bx = [xi-w, xi+w, xi+w, xi-w,  xi-w, xi+w, xi+w, xi-w]
             by = [yi-w, yi-w, yi+w, yi+w,  yi-w, yi-w, yi+w, yi+w]
             bz = [0,    0,    0,    0,      zt,   zt,   zt,   zt  ]
@@ -990,13 +954,12 @@ sc.addEventListener('mouseleave',()=>{{cd.style.transform='';}});
                 j=[1,2,3, 5,6,7, 2,3,0, 6,7,4],
                 k=[2,3,0, 6,7,4, 5,6,7, 1,2,3],
                 color=color, opacity=0.90, flatshading=True,
-                showlegend=(xi == 0),  # legend entry only once per grade
+                showlegend=(xi == 0),
                 name=f"Grade {grade}", legendgroup=f"g{grade}",
                 hovertemplate=f"<b>{row3d['term']}</b><br>Grade {grade}: <b>{cnt}</b> students<extra></extra>",
                 lighting=dict(ambient=0.75, diffuse=0.65, specular=0.1,
                               roughness=0.6, fresnel=0.05)))
 
-    # Sparse tick labels on X — at most 10
     step       = max(1, n_terms // 10)
     tick_vals  = list(range(0, n_terms, step))
     tick_texts = [terms_3d[i] for i in tick_vals]
@@ -1035,7 +998,6 @@ sc.addEventListener('mouseleave',()=>{{cd.style.transform='';}});
                     config={"displayModeBar": True, "displaylogo": False,
                             "modeBarButtonsToRemove": ["toImage"]})
 
-    # ── Per-instructor breakdown ──────────────────────────────────────────────
     st.markdown('<div style="font-family:Orbitron,sans-serif;font-size:.72em;color:#FFD700;'
                 'letter-spacing:2px;margin:18px 0 8px;">( ˘▽˘)っ♨ INSTRUCTOR BREAKDOWN</div>',
                 unsafe_allow_html=True)
@@ -1226,7 +1188,6 @@ sc.addEventListener('mouseleave',()=>{{cd.style.transform='rotateY(0) rotateX(0)
                         bgcolor="rgba(0,0,0,0)", itemsizing="constant",
                         bordercolor="rgba(255,215,0,0.15)", borderwidth=1, visible=False))
 
-        # ── Course filter state ──────────────────────────────────────────────
         prof_key = st.session_state.sel_prof_key
         state_key = f"gpa3d_active_{prof_key}"
         if state_key not in st.session_state or st.session_state[state_key] is None:
@@ -1234,12 +1195,11 @@ sc.addEventListener('mouseleave',()=>{{cd.style.transform='rotateY(0) rotateX(0)
 
         active_courses = st.session_state[state_key]
 
-        # ── Re-build fig with only active courses visible ────────────────────
         fig2 = go.Figure()
         filtered_courses = [c for c in courses if c in active_courses]
 
         if not filtered_courses:
-            filtered_courses = courses  # fallback: show all if all deselected
+            filtered_courses = courses
 
         for ci, course in enumerate(courses):
             if course not in active_courses:
@@ -1308,7 +1268,6 @@ sc.addEventListener('mouseleave',()=>{{cd.style.transform='rotateY(0) rotateX(0)
                         config={"displayModeBar":True,"displaylogo":False,
                                 "modeBarButtonsToRemove":["toImage"]})
 
-        # ── Clickable course filter legend ───────────────────────────────────
         st.markdown(f'<div style="font-family:Orbitron,sans-serif;font-size:.68em;color:#FFD700;'
                     f'letter-spacing:2px;margin:10px 0 8px;">COURSES '
                     f'<span style="font-family:Rajdhani,sans-serif;font-size:.85em;color:#556;'
@@ -1347,9 +1306,7 @@ sc.addEventListener('mouseleave',()=>{{cd.style.transform='rotateY(0) rotateX(0)
                     st.session_state[state_key] = new_active
                     st.rerun()
 
-        # Show/hide all controls
         searched_course = st.session_state.get("sel_prof_course", "")
-        # Pin the searched course — fall back to first course if not found in this prof's history
         pin_course = searched_course if searched_course in courses else courses[0]
         ctrl_col1, ctrl_col2, _ = st.columns([1, 1, 4])
         with ctrl_col1:
@@ -1371,31 +1328,15 @@ sc.addEventListener('mouseleave',()=>{{cd.style.transform='rotateY(0) rotateX(0)
         st.dataframe(summary, hide_index=True, use_container_width=True)
 
 
-# Built from the grades DB on load — used to detect fused OCR names like "YUG" → "YU G"
 _KNOWN_LASTNAMES: set = set()
 
 
 def clean_instructor_name(raw: str) -> str:
-    """
-    Robustly clean an instructor name extracted from OCR or copy-paste.
-    Handles: junk chars, hyphenated initials (Y-D→Y D), fused OCR tokens (YUG→YU G).
-
-    GOLD format examples:
-        WANG Y-D        → WANG Y D
-        GARFIELD P M    → GARFIELD P M
-        YUG             → YU G  (OCR fused last name + initial on yellow row)
-        XIAOT           → XIAO T
-        }SMITH A        → SMITH A
-    """
     if not raw:
         return ""
 
     s = raw.upper().strip()
-
-    # Replace hyphens BETWEEN single letters (e.g. Y-D → Y D)
     s = re.sub(r'\b([A-Z])-([A-Z])\b', r'\1 \2', s)
-
-    # Remove non-letter/space chars
     s = re.sub(r"[^A-Z\s]", " ", s)
     s = re.sub(r"\s+", " ", s).strip()
 
@@ -1403,14 +1344,9 @@ def clean_instructor_name(raw: str) -> str:
     if not tokens:
         return ""
 
-    # ── Fused-token fix ───────────────────────────────────────────────────────
-    # OCR on colored/yellow rows sometimes drops spaces: "YU G" → "YUG", "XIAO T" → "XIAOT"
-    # Detect: single token, NOT in known lastnames, but its prefix IS a known lastname
-    # and the suffix is exactly 1 letter → split it back out
     if len(tokens) == 1 and len(tokens[0]) >= 3 and _KNOWN_LASTNAMES:
         tok = tokens[0]
         if tok not in _KNOWN_LASTNAMES:
-            # Try splitting off trailing 1 or 2 chars as initials
             for split_at in [-1, -2]:
                 prefix = tok[:split_at]
                 suffix = tok[split_at:]
@@ -1434,23 +1370,13 @@ def clean_instructor_name(raw: str) -> str:
 
 
 def parse_gold_schedule(text: str) -> list[dict]:
-    """
-    Parse UCSB GOLD schedule text (from OCR or copy-paste).
-    Handles the exact 'My Class Schedule' table layout.
-    """
     results = []
     lines = [l.strip() for l in text.strip().splitlines() if l.strip()]
 
-    # Course header variations from OCR:
-    # Normal:      "PSTAT 126 - REGRESSION ANALYSIS"
-    # Yellow row:  "PSTAT 100 DS_CONC&ANLS"  or  "PSTAT 100- DS_CONC&ANLS"  (dash may be missing/mangled)
-    # So we match: DEPT NUM optionally followed by dash/space and title
     course_pat  = re.compile(
         r'^([A-Z][A-Z\s&_]+?)\s+(\d+[A-Z0-9]*)\s*[-–]?\s*(.*)$'
     )
-    # Section line starts with a 5-digit enrollment code
     section_pat = re.compile(r'^\d{5}\b')
-    # Days pattern — used to find where instructor name ends
     day_pat     = re.compile(r'\b([MTWRF]{1,5}|T\.B\.A\.?|TBA)\b')
 
     current_course = current_dept = current_num = None
@@ -1472,7 +1398,6 @@ def parse_gold_schedule(text: str) -> list[dict]:
                 if dm:
                     instructor_raw = after[:dm.start()].strip().rstrip(",").strip()
                 else:
-                    # No day found — take everything up to first digit (time) or end
                     m2 = re.search(r'\d', after)
                     instructor_raw = after[:m2.start()].strip() if m2 else after.strip()
 
@@ -1481,14 +1406,6 @@ def parse_gold_schedule(text: str) -> list[dict]:
                 results.append({"course": current_course, "dept": current_dept,
                                  "num": current_num, "instructor": instructor})
 
-        # Also handle lines that are just an instructor name (multi-instructor OCR lines)
-        # e.g. a line like "FENG X" or "NAKAYAMA M T" appearing after a section line
-        elif current_course and not section_pat.match(line):
-            # If the line looks like a name (all caps, no digits, short), try to use it
-            # but only if we haven't already captured an instructor for this course
-            pass
-
-    # Deduplicate — keep only ONE entry per course (the first/primary instructor)
     seen_course, unique = set(), []
     for r in results:
         if r["course"] not in seen_course:
@@ -1497,22 +1414,7 @@ def parse_gold_schedule(text: str) -> list[dict]:
     return unique
 
 
-# ─────────────────────────────────────────────
-#  OCR SCHEDULE PARSER  (no API — uses tesseract)
-# ─────────────────────────────────────────────
 def parse_schedule_from_image(image_bytes: bytes) -> list[dict]:
-    """
-    Extract courses + instructors from a UCSB GOLD screenshot.
-
-    Uses pytesseract (free, local OCR) — zero API calls, zero cost.
-
-    Setup:
-      pip install pytesseract Pillow
-      Tesseract binary:
-        Mac:                  brew install tesseract
-        Linux/Streamlit Cloud: add 'tesseract-ocr' to packages.txt
-        Windows:              https://github.com/UB-Mannheim/tesseract/wiki
-    """
     try:
         from PIL import Image
         import pytesseract
@@ -1533,21 +1435,16 @@ def parse_schedule_from_image(image_bytes: bytes) -> list[dict]:
         image = Image.open(io.BytesIO(image_bytes))
         w, h  = image.size
         image = image.resize((w * 2, h * 2), Image.LANCZOS)
-        # Convert to grayscale — removes yellow background bias
         image = image.convert("L")
-        # Boost contrast so text on yellow/colored backgrounds is as clear as on white
         image = ImageEnhance.Contrast(image).enhance(2.5)
         image = ImageEnhance.Sharpness(image).enhance(2.0)
 
-        # Pass 1: PSM 6 (uniform block of text) — best for full schedule tables
         raw_text1 = pytesseract.image_to_string(image, config="--psm 6")
         results1  = parse_gold_schedule(raw_text1)
 
-        # Pass 2: PSM 4 (single column) — catches rows PSM 6 misses
         raw_text2 = pytesseract.image_to_string(image, config="--psm 4")
         results2  = parse_gold_schedule(raw_text2)
 
-        # Merge: keep all unique courses across both passes
         seen, merged = set(), []
         for r in results1 + results2:
             if r["course"] not in seen:
@@ -1569,7 +1466,6 @@ def main():
     _KNOWN_LASTNAMES = known_lastnames
     render_hero()
 
-    # ── Mobile warning banner ─────────────────────────────────────────────
     components.html("""
 <script>
 (function() {
@@ -1611,11 +1507,8 @@ def main():
     function tryHide() {
         try {
             const parent = window.parent.document;
-            // Hide only the filename text inside the sidebar header, not the header itself
-            // (the header contains the collapse/expand toggle button)
             parent.querySelectorAll('[data-testid="stSidebarHeader"] > div:first-child')
                   .forEach(el => el.style.display = 'none');
-            // Hide the top header bar (share/github icons row)
             parent.querySelectorAll('header[data-testid="stHeader"]')
                   .forEach(el => el.style.display = 'none');
         } catch(e) {}
@@ -1627,9 +1520,6 @@ def main():
 </script>
 """, height=0)
 
-    # ── 3D Animated Space Background ─────────────────────────────────────────
-    # Strategy: render Three.js inside the iframe, then use window.parent JS
-    # to reposition the iframe itself as a fixed full-screen background layer.
     components.html("""
 <!DOCTYPE html>
 <html>
@@ -1644,7 +1534,6 @@ def main():
 <canvas id="c"></canvas>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
-// ── Reposition this iframe as a fixed full-screen background ──
 (function positionIframe() {
     const el = window.frameElement;
     if (!el) return;
@@ -1657,7 +1546,6 @@ def main():
     el.style.pointerEvents = 'none';
     el.style.border = 'none';
     el.style.background = 'transparent';
-    // Also ensure all sibling iframes (hero, content) sit above
     try {
         const allFrames = window.parent.document.querySelectorAll('iframe');
         allFrames.forEach(f => {
@@ -1668,7 +1556,6 @@ def main():
     } catch(e) {}
 })();
 
-// ── Three.js scene ──
 const canvas   = document.getElementById('c');
 const W = () => window.innerWidth, H = () => window.innerHeight;
 
@@ -1681,7 +1568,6 @@ const scene  = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(70, W()/H(), 0.1, 3000);
 camera.position.set(0, 0, 60);
 
-// ── 1. Star field — 3 depth layers ──
 function makeStars(n, spread, size, color, opacity) {
     const geo = new THREE.BufferGeometry();
     const pos = new Float32Array(n * 3);
@@ -1695,7 +1581,6 @@ const s2 = makeStars(1500, 1200, 0.22, 0xc8dcff, 0.7);
 const s3 = makeStars(500,  600,  0.28, 0xffe8a0, 0.9);
 scene.add(s1, s2, s3);
 
-// ── 2. Wireframe geometry accents ──
 function wire(GeoClass, args, color, x, y, z, op) {
     const m = new THREE.Mesh(
         new GeoClass(...args),
@@ -1710,9 +1595,6 @@ const geo3 = wire(THREE.TetrahedronGeometry, [5, 0], 0xff4488,  10, 18,-20, 0.09
 const geo4 = wire(THREE.IcosahedronGeometry, [4, 1], 0x00ccff, -30,-18,-35, 0.07);
 scene.add(geo1, geo2, geo3, geo4);
 
-
-
-// ── 5. Mouse parallax ──
 let mx=0, my=0;
 try {
     window.parent.document.addEventListener('mousemove', e => {
@@ -1727,7 +1609,6 @@ window.addEventListener('resize', () => {
     renderer.setSize(W(), H());
 });
 
-// ── Animate ──
 let f = 0;
 (function tick() {
     requestAnimationFrame(tick);
@@ -1743,12 +1624,9 @@ let f = 0;
     geo3.rotation.x += 0.006; geo3.rotation.z -= 0.004;
     geo4.rotation.y += 0.003; geo4.rotation.x -= 0.005;
 
-
     camera.position.x += (mx * 4 - camera.position.x) * 0.025;
     camera.position.y += (-my * 3 - camera.position.y) * 0.025;
     camera.lookAt(0, 0, 0);
-
-
 
     renderer.render(scene, camera);
 })();
@@ -1759,7 +1637,6 @@ let f = 0;
 
     tab_home, tab_search, tab_quarter = st.tabs(["HOME", "SEARCH TOOL", "MY QUARTER"])
 
-    # Auto-switch to Search Tool tab whenever a filter is changed
     if st.session_state.get("force_search_tab") or st.session_state.active_tab == 1:
         components.html("""
 <script>
@@ -1783,9 +1660,7 @@ let f = 0;
             setTimeout(tryClick, 100);
         }
     }
-    // Start immediately and keep retrying every 100ms until it works
     tryClick();
-    // Also fire at fixed intervals as backup
     [50, 200, 400, 800, 1200].forEach(function(ms) {
         setTimeout(clickSearchTab, ms);
     });
@@ -1830,7 +1705,6 @@ let f = 0;
         st.markdown('</div>', unsafe_allow_html=True)
 
     # ── SEARCH TOOL ─────────────────────────────────────────────────────────
-    # ── SIDEBAR (always rendered regardless of active tab) ───────────────────
     with st.sidebar:
         st.markdown("""
 <div style="font-family:'Orbitron',sans-serif;color:#FFD700;font-size:.82em;letter-spacing:2px;
@@ -1862,7 +1736,6 @@ let f = 0;
 </div>""", unsafe_allow_html=True)
 
     with tab_search:
-        # Load Plotly JS once for inline chart rendering
         st.markdown('<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>',
                     unsafe_allow_html=True)
 
@@ -1904,7 +1777,6 @@ let f = 0;
             st.warning("No results found. Try adjusting the filters.")
             return
 
-        # Sort: most recent first — year desc, then quarter desc (FALL > SUMMER > SPRING > WINTER)
         q_order = {"FALL": 3, "SUMMER": 2, "SPRING": 1, "WINTER": 0}
         df = df.copy()
         df["_qord"] = df["quarter"].str.upper().map(q_order).fillna(0)
@@ -1930,7 +1802,6 @@ let f = 0;
             f_cnt = max(0, int(row.get("f") or 0))
             total_students = a_cnt + b_cnt + c_cnt + d_cnt + f_cnt
 
-            # ── Inline SVG bar chart (no JS, no CDN, instant) ─────────────
             if total_students > 0:
                 grades  = ["A","B","C","D","F"]
                 counts  = [a_cnt, b_cnt, c_cnt, d_cnt, f_cnt]
@@ -1973,19 +1844,21 @@ let f = 0;
                 f'background:{clr};color:{txt_col};">{status}</span>'
             )
 
-            # ── Card: course name as clickable button + right SVG chart ──
+            # ── Card: left info col + right SVG chart ──────────────────────
             left_col, chart_col = st.columns([3, 2])
             with left_col:
-                # Course name IS the button — styled via CSS to look like a heading
+                # Course name — transparent underline button (no box)
                 if st.button(f"{row['course']}", key=f"course_{idx}",
                              help="View course grade history"):
                     st.session_state.sel_course_name = row["course"]
                     st.session_state.sel_prof_key    = None
                     st.rerun()
+
                 st.markdown(
                     f'<div style="font-size:.72em;color:#3d5068;letter-spacing:.3px;'
-                    f'margin-top:-6px;margin-bottom:4px;">{row["quarter"]} {int(row["year"])}</div>',
+                    f'margin-top:2px;margin-bottom:4px;">{row["quarter"]} {int(row["year"])}</div>',
                     unsafe_allow_html=True)
+
                 if has_rmp:
                     if st.button(f"👤 {prof_name}", key=f"prof_{idx}",
                                  help="View professor RMP + GPA stats"):
@@ -1998,19 +1871,24 @@ let f = 0;
                     st.markdown(
                         f'<div style="font-size:.84em;color:#3d5068;">👤 {prof_name}</div>',
                         unsafe_allow_html=True)
+
+                # GPA + badges row — flex-wrap so nothing clips
                 st.markdown(
-                    f'<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:2px;">'
+                    f'<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;'
+                    f'margin-top:4px;padding-bottom:2px;">'
                     f'<span style="font-family:Orbitron,monospace;font-size:.84em;font-weight:700;'
                     f'color:#cde;">GPA {gpa_val:.2f}</span>'
                     f'{badge_html}{rmp_badge}</div>',
                     unsafe_allow_html=True)
+
             with chart_col:
                 st.markdown(chart_svg, unsafe_allow_html=True)
 
-            st.markdown('<div style="height:8px;border-bottom:1px solid rgba(255,255,255,.04);margin-bottom:8px;"></div>',
-                        unsafe_allow_html=True)
+            st.markdown(
+                '<div style="height:8px;border-bottom:1px solid rgba(255,255,255,.04);'
+                'margin-bottom:8px;"></div>',
+                unsafe_allow_html=True)
 
-        # Handle query param clicks (course or prof) set by postMessage listener
         qp = st.query_params
         if qp.get("_course"):
             st.session_state.sel_course_name = qp.get("_course","")
@@ -2076,7 +1954,6 @@ sc.addEventListener('mouseleave',()=>{cd.style.transform='';});
 </div>
 """, unsafe_allow_html=True)
 
-        # ── Image uploader ───────────────────────────────────────────────────
         uploaded_img = st.file_uploader(
             "Upload your GOLD schedule screenshot",
             type=["png", "jpg", "jpeg", "webp"],
@@ -2109,20 +1986,18 @@ sc.addEventListener('mouseleave',()=>{cd.style.transform='';});
         if not parsed:
             st.stop()
 
-        # ── Quarter summary ──────────────────────────────────────────────────
         n_courses  = len(parsed)
         n_with_rmp = sum(1 for p in parsed if make_join_key(p["instructor"]) in rmp_lookup)
         avg_gpas   = []
         for p in parsed:
             jk          = make_join_key(p["instructor"])
-            course_name = p.get("course", "")   # e.g. "MATH 3B"
+            course_name = p.get("course", "")
             sub         = full_df[full_df["join_key"] == jk]
             if course_name and not sub.empty:
                 course_sub = sub[sub["course"] == course_name]
                 if not course_sub.empty:
                     sub = course_sub
             if not sub.empty:
-                # One representative value per course-professor pair (median across all their offerings of that class)
                 avg_gpas.append(sub[gpa_col].median())
         overall_avg             = sum(avg_gpas) / len(avg_gpas) if avg_gpas else None
         ov_status, ov_clr, _    = gpa_badge(overall_avg) if overall_avg else ("N/A","#666","")
@@ -2161,8 +2036,6 @@ sc.addEventListener('mouseleave',()=>{cd.style.transform='';});
             jk           = make_join_key(instructor)
             course_color = palette[pi % len(palette)]
 
-            # ── Fuzzy instructor match fallback ──────────────────────────────
-            # If exact join key not found, try matching by last name + initials
             def best_jk_match(instructor_str, df):
                 exact = make_join_key(instructor_str)
                 if exact in df["join_key"].values:
@@ -2172,24 +2045,20 @@ sc.addEventListener('mouseleave',()=>{cd.style.transform='';});
                 if not last:
                     return exact
 
-                # Find all DB entries with the same last name
                 candidates = df[df["join_key"].str.startswith(last + "||")]
                 if candidates.empty:
                     return exact
 
                 unique_jks = candidates["join_key"].unique()
 
-                # Only one candidate — always use it
                 if len(unique_jks) == 1:
                     return unique_jks[0]
 
-                # Multiple candidates — score by first name similarity
                 first_initial = first[0] if first else ""
                 best, best_score = exact, -1
                 for jk_cand in unique_jks:
                     cand_first = jk_cand.split("||", 1)[1]
                     cand_initial = cand_first[0] if cand_first else ""
-                    # Initial match: "T" matches "TING", "G" matches "GEORGE" etc.
                     if first_initial and cand_initial == first_initial:
                         score = name_similarity(first, cand_first) + 1.0
                     elif not first_initial:
@@ -2200,10 +2069,8 @@ sc.addEventListener('mouseleave',()=>{cd.style.transform='';});
                         best_score = score
                         best = jk_cand
 
-                # Return best match as long as we found a reasonable one
                 if best_score >= 0.3:
                     return best
-                # Last resort: if only initials and no good match, try first-initial only
                 if first_initial:
                     for jk_cand in unique_jks:
                         cand_first = jk_cand.split("||", 1)[1]
@@ -2213,7 +2080,6 @@ sc.addEventListener('mouseleave',()=>{cd.style.transform='';});
 
             jk = best_jk_match(instructor, full_df)
 
-            # Match by full course name first (exact), then fall back to num contains
             course_exact = full_df[
                 (full_df["join_key"] == jk) &
                 (full_df["course"] == course_name)].copy()
@@ -2253,7 +2119,7 @@ sc.addEventListener('mouseleave',()=>{cd.style.transform='';});
 
             with st.container(border=True):
                 st.markdown(f'''
-<div style="display:flex;align-items:center;gap:12px;margin-bottom:2px;">
+<div style="display:flex;align-items:center;gap:12px;margin-bottom:2px;flex-wrap:wrap;">
   <span style="display:inline-block;width:10px;height:10px;border-radius:50%;
                background:{course_color};box-shadow:0 0 8px {course_color};flex-shrink:0;"></span>
   <span style="font-family:Orbitron,sans-serif;font-size:1.05em;font-weight:900;color:#FFD700;">{course_name}</span>
@@ -2270,7 +2136,6 @@ sc.addEventListener('mouseleave',()=>{cd.style.transform='';});
                     f"👤  {instructor} — Professor"
                 ])
 
-                # ── CLASS STATS ─────────────────────────────────────────────
                 with tab_class:
                     if specific_hist.empty and all_prof_hist.empty:
                         st.markdown('<div style="color:#445;font-family:Rajdhani,sans-serif;padding:16px 0;">'
@@ -2365,7 +2230,6 @@ sc.addEventListener('mouseleave',()=>{cd.style.transform='';});
                             st.plotly_chart(dist_fig, use_container_width=True,
                                             key=f"cdist_{pi}", config={"displayModeBar": False})
 
-                # ── PROFESSOR ────────────────────────────────────────────────
                 with tab_prof:
                     col_rmp, col_history = st.columns([1, 2])
 
