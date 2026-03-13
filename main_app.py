@@ -173,29 +173,39 @@ div[data-baseweb="tooltip"],
     pointer-events: none !important;
 }
 
-/* ── Hidden prof click buttons — invisible but fully clickable ── */
-.hidden-prof-btn { 
-    height: 0 !important; 
-    overflow: visible !important; 
-    position: relative !important;
-}
-.hidden-prof-btn > div[data-testid="stButton"] {
-    position: absolute !important;
-    top: -38px !important;
-    left: 0 !important;
-    width: 200px !important;
-    height: 34px !important;
-    z-index: 999 !important;
-}
-.hidden-prof-btn > div[data-testid="stButton"] > button {
-    opacity: 0 !important;
-    width: 100% !important;
-    height: 100% !important;
-    cursor: pointer !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    border: none !important;
+/* ── Prof name buttons — look like plain blue text, no box ── */
+.prof-text-btn { padding: 0 16px 0 16px !important; margin: 0 !important; }
+.prof-text-btn > div[data-testid="stButton"] > button {
     background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+    color: #5bb8ff !important;
+    font-family: 'Rajdhani', sans-serif !important;
+    font-size: .88em !important;
+    font-weight: 700 !important;
+    padding: 0 0 2px 3px !important;
+    margin: 0 !important;
+    min-height: 0 !important;
+    height: auto !important;
+    line-height: 1.4 !important;
+    border-radius: 0 !important;
+    text-align: left !important;
+    justify-content: flex-start !important;
+    cursor: pointer !important;
+    width: auto !important;
+}
+.prof-text-btn > div[data-testid="stButton"] > button:hover {
+    color: #FFD700 !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+.prof-text-btn > div[data-testid="stButton"] > button:focus,
+.prof-text-btn > div[data-testid="stButton"] > button:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+    border: none !important;
 }
 /* ── Inputs ── */
 .stTextInput > div > div > input, .stSelectbox > div > div {
@@ -1287,16 +1297,18 @@ let f = 0;
             lk        = st.session_state.sel_prof_key
             info      = rmp_lookup.get(lk, {})
             prof_hist = full_df[full_df["join_key"] == lk].copy()
+            # Close button at the TOP
+            if st.button("(シ_ _)シ  Close Professor Card", key="close_prof"):
+                st.session_state.sel_prof_key  = None
+                st.session_state.sel_prof_name = None
+                st.rerun()
+            st.markdown("---")
             if info:
                 render_prof_card(info, st.session_state.sel_prof_name, prof_hist, gpa_col)
             else:
                 st.info(f"No RMP data found for {st.session_state.sel_prof_name}.")
                 if not prof_hist.empty:
                     render_prof_card({}, st.session_state.sel_prof_name, prof_hist, gpa_col)
-            if st.button("(シ_ _)シ  Close Professor Card", key="close_prof"):
-                st.session_state.sel_prof_key  = None
-                st.session_state.sel_prof_name = None
-                st.rerun()
             st.markdown("---")
 
         # ── FILTER results ────────────────────────────────────────────────────
@@ -1382,44 +1394,49 @@ let f = 0;
                              f'<span style="font-size:.6em;color:#445;letter-spacing:1px;margin-top:2px;">AVG GPA</span>'
                              f'</div>')
 
-            # Card HTML
+            # Card HTML (prof name row is empty — button renders there via Streamlit below)
             st.markdown(
                 f'<div style="display:flex;align-items:center;justify-content:space-between;'
-                f'padding:12px 16px;border-left:3px solid {clr};">'
+                f'padding:12px 16px 4px;border-left:3px solid {clr};">'
                 f'<div style="flex:1;min-width:0;">'
                 f'  <div style="font-family:Orbitron,sans-serif;font-size:.95em;font-weight:700;'
-                f'  color:#e8f4ff;letter-spacing:.4px;">'
+                f'  color:#e8f4ff;letter-spacing:.4px;margin-bottom:2px;">'
                 f'  {row["course"]} '
                 f'  <span style="font-size:.65em;color:#334;font-family:Rajdhani,sans-serif;font-weight:400;">'
                 f'  {row["quarter"]} {int(row["year"])}</span></div>'
-                + (f'  <div style="font-family:Rajdhani,sans-serif;font-size:.88em;font-weight:700;'
-                   f'  color:#5bb8ff;margin:4px 0 2px;cursor:pointer;" class="prof-lbl-{idx}">'
-                   f'  👤 {prof_name}'
-                   f'  <span style="font-size:.72em;color:rgba(255,215,0,.5);margin-left:4px;">→ RMP</span>'
-                   f'  </div>' if has_rmp else
-                   f'  <div style="font-family:Rajdhani,sans-serif;font-size:.88em;color:#3a5068;margin:4px 0 2px;">'
-                   f'  👤 {prof_name}</div>')
-                + f'  <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:2px;">'
-                f'  <span style="font-family:Orbitron,sans-serif;font-size:.78em;color:#b0c8e0;font-weight:700;">'
-                f'  GPA {gpa_val:.2f}</span>'
-                f'  <span style="background:{clr};color:{txt_col};padding:2px 9px;border-radius:16px;'
-                f'  font-size:.6em;font-weight:900;letter-spacing:.8px;">{status}</span>'
-                f'  {rmp_pill}</div>'
                 f'</div>'
                 f'{chart_svg}'
                 f'</div>',
                 unsafe_allow_html=True
             )
 
-            # Real clickable st.button — hidden via CSS, overlays the prof name text
+            # Prof name row — real st.button styled as plain blue text, or plain text if no RMP
             if has_rmp:
-                st.markdown(f'<div class="hidden-prof-btn" id="hpb-{idx}">', unsafe_allow_html=True)
-                if st.button(f"👤 {prof_name}", key=f"prof_btn_{idx}_{jk}"):
+                st.markdown('<div class="prof-text-btn">', unsafe_allow_html=True)
+                if st.button(f"👤 {prof_name}  → RMP", key=f"prof_btn_{idx}_{jk}"):
                     st.session_state.sel_prof_key    = jk
                     st.session_state.sel_prof_name   = prof_name
                     st.session_state.sel_prof_course = row["course"]
                     st.rerun()
                 st.markdown('</div>', unsafe_allow_html=True)
+            else:
+                st.markdown(
+                    f'<div style="font-family:Rajdhani,sans-serif;font-size:.88em;'
+                    f'color:#3a5068;padding:0 16px 2px 19px;">👤 {prof_name}</div>',
+                    unsafe_allow_html=True
+                )
+
+            # GPA + badge row
+            st.markdown(
+                f'<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;'
+                f'padding:2px 16px 10px 19px;border-left:3px solid {clr};margin-top:-2px;">'
+                f'<span style="font-family:Orbitron,sans-serif;font-size:.78em;color:#b0c8e0;font-weight:700;">'
+                f'GPA {gpa_val:.2f}</span>'
+                f'<span style="background:{clr};color:{txt_col};padding:2px 9px;border-radius:16px;'
+                f'font-size:.6em;font-weight:900;letter-spacing:.8px;">{status}</span>'
+                f'{rmp_pill}</div>',
+                unsafe_allow_html=True
+            )
 
             # Divider
             st.markdown(
