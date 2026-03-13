@@ -1743,26 +1743,30 @@ let f = 0;
         if st.session_state.sel_course_name and not st.session_state.sel_prof_key:
             cn       = st.session_state.sel_course_name
             c_df     = full_df[full_df["course"] == cn].copy()
-            render_course_card(cn, c_df, gpa_col)
+            # ── Close button at the TOP so user never has to scroll down ──
             if st.button("(シ_ _)シ  Close Course Card", key="close_course"):
                 st.session_state.sel_course_name = None
                 st.rerun()
+            st.markdown("---")
+            render_course_card(cn, c_df, gpa_col)
             st.markdown("---")
 
         if st.session_state.sel_prof_key:
             lk        = st.session_state.sel_prof_key
             info      = rmp_lookup.get(lk, {})
             prof_hist = full_df[full_df["join_key"] == lk].copy()
+            # ── Close button at the TOP so user never has to scroll down ──
+            if st.button("(シ_ _)シ  Close Professor Card", key="close_prof"):
+                st.session_state.sel_prof_key  = None
+                st.session_state.sel_prof_name = None
+                st.rerun()
+            st.markdown("---")
             if info:
                 render_prof_card(info, st.session_state.sel_prof_name, prof_hist, gpa_col)
             else:
                 st.info(f"No RMP data found for {st.session_state.sel_prof_name}.")
                 if not prof_hist.empty:
                     render_prof_card({}, st.session_state.sel_prof_name, prof_hist, gpa_col)
-            if st.button("(シ_ _)シ  Close Professor Card", key="close_prof"):
-                st.session_state.sel_prof_key  = None
-                st.session_state.sel_prof_name = None
-                st.rerun()
             st.markdown("---")
 
         df = full_df.copy()
