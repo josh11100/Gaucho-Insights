@@ -188,6 +188,17 @@ div[data-baseweb="tooltip"],
     left: 0 !important;
     z-index: 10 !important;
 }
+
+/* ── Hide ghost prof/course buttons that leak below result cards ── */
+[data-testid="stMainBlockContainer"] > div > [data-testid="stVerticalBlock"] > div > [data-testid="stButton"] {
+    visibility: hidden !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    position: absolute !important;
+}
 /* ── Inputs ── */
 .stTextInput > div > div > input, .stSelectbox > div > div {
     background: rgba(0,20,50,0.8) !important;
@@ -1321,11 +1332,7 @@ let f = 0;
             jk               = row.get("join_key","")
             has_rmp          = jk in rmp_lookup
             txt_col          = "#000" if status == "EASY" else "#fff"
-            rmp_pill         = (f'<span style="font-size:.7em;color:#FFD700;background:rgba(255,215,0,.08);'
-                                f'border:1px solid rgba(255,215,0,.22);padding:2px 8px;border-radius:12px;'
-                                f'margin-left:4px;vertical-align:middle;">RMP</span>' if has_rmp else "")
 
-            # Grade distribution data
             a_cnt = int(row.get("a", 0) or 0)
             b_cnt = int(row.get("b", 0) or 0)
             c_cnt = int(row.get("c", 0) or 0)
@@ -1333,88 +1340,79 @@ let f = 0;
             f_cnt = int(row.get("f", 0) or 0)
             total_students = a_cnt + b_cnt + c_cnt + d_cnt + f_cnt
 
-            # Card top: left info + right chart in columns (no border=True to avoid ghost buttons)
-            left_col, right_col = st.columns([3, 2])
+            rmp_pill = (
+                '<span style="font-size:.62em;color:#FFD700;background:rgba(255,215,0,.08);'
+                'border:1px solid rgba(255,215,0,.3);padding:2px 7px;border-radius:10px;'
+                'font-weight:700;letter-spacing:.5px;vertical-align:middle;margin-left:4px;">RMP</span>'
+            ) if has_rmp else ""
 
-            with left_col:
-                st.markdown(
-                    f'<div style="background:rgba(0,20,45,0.85);border:1px solid rgba(0,116,217,0.3);'
-                    f'border-radius:14px 14px 0 0;padding:14px 16px 4px;'
-                    f'border-left:3px solid {clr};">'
-                    f'<div style="font-family:Orbitron,monospace;font-size:1em;font-weight:700;'
-                    f'color:#e8f4ff;margin-bottom:4px;">'
-                    f'{row["course"]} '
-                    f'<span style="font-size:.7em;color:#445;font-family:Rajdhani,sans-serif;">'
-                    f'{row["quarter"]} {row["year"]}</span></div>',
-                    unsafe_allow_html=True
-                )
-                # Prof button — safe here, outside border=True
-                if has_rmp:
-                    if st.button(f"👤 {prof_name}", key=f"prof_btn_{idx}_{jk}",
-                                 help="Click to view RMP ratings + GPA history"):
-                        st.session_state.sel_prof_key    = jk
-                        st.session_state.sel_prof_name   = prof_name
-                        st.session_state.sel_prof_course = row["course"]
-                        st.rerun()
-                else:
-                    st.markdown(
-                        f'<div style="font-family:Rajdhani,sans-serif;font-size:.9em;'
-                        f'color:#556;padding:3px 0 4px;">{prof_name}</div>',
-                        unsafe_allow_html=True
-                    )
-                st.markdown(
-                    f'<div style="display:flex;align-items:center;gap:8px;margin:4px 0 12px;flex-wrap:wrap;">'
-                    f'<span style="font-family:Orbitron,monospace;font-size:.85em;color:#cde;">'
-                    f'GPA {gpa_val:.2f}</span>'
-                    f'<span style="background:{clr};color:{txt_col};padding:2px 10px;'
-                    f'border-radius:20px;font-size:.7em;font-weight:900;letter-spacing:1px;">'
-                    f'{status}</span>'
-                    f'{rmp_pill}</div></div>',
-                    unsafe_allow_html=True
-                )
+            # Inline SVG mini bar chart
+            if total_students > 0:
+                counts     = [a_cnt, b_cnt, c_cnt, d_cnt, f_cnt]
+                bar_colors = ["#2ECC40","#0074D9","#FFDC00","#FF851B","#FF4136"]
+                max_c      = max(counts) or 1
+                CW, CH, BW = 130, 48, 18
+                gap        = (CW - 5 * BW) / 6
+                bars       = ""
+                for gi, (c, bc) in enumerate(zip(counts, bar_colors)):
+                    bh = max(2, int((c / max_c) * (CH - 12)))
+                    x  = int(gap + gi * (BW + gap))
+                    y  = CH - 10 - bh
+                    lbl= ["A","B","C","D","F"][gi]
+                    bars += (f'<rect x="{x}" y="{y}" width="{BW}" height="{bh}" '
+                             f'fill="{bc}" rx="2" opacity="0.9"/>'
+                             f'<text x="{x+BW//2}" y="{CH-1}" text-anchor="middle" '
+                             f'font-size="8" fill="#667" font-family="sans-serif">{lbl}</text>')
+                chart_svg = (f'<svg width="{CW}" height="{CH}" viewBox="0 0 {CW} {CH}" '
+                             f'xmlns="http://www.w3.org/2000/svg" '
+                             f'style="flex-shrink:0;margin-left:12px;">{bars}</svg>')
+            else:
+                chart_svg = (f'<div style="flex-shrink:0;margin-left:12px;'
+                             f'font-family:Orbitron,sans-serif;font-size:1.1em;'
+                             f'font-weight:900;color:{clr};white-space:nowrap;">'
+                             f'{gpa_val:.2f}</div>')
 
-            with right_col:
-                st.markdown(
-                    f'<div style="background:rgba(0,20,45,0.85);border:1px solid rgba(0,116,217,0.3);'
-                    f'border-top:1px solid rgba(0,116,217,0.3);'
-                    f'border-radius:14px 14px 0 0;padding:4px 4px 0;height:148px;'
-                    f'display:flex;align-items:center;justify-content:center;">',
-                    unsafe_allow_html=True
-                )
-                if total_students > 0:
-                    grades_df = pd.DataFrame({
-                        "Grade": ["A", "B", "C", "D", "F"],
-                        "Count": [a_cnt, b_cnt, c_cnt, d_cnt, f_cnt]
-                    })
-                    fig = px.bar(
-                        grades_df, x="Grade", y="Count", color="Grade",
-                        color_discrete_map={"A":"#2ECC40","B":"#0074D9","C":"#FFDC00",
-                                            "D":"#FF851B","F":"#FF4136"},
-                        template="plotly_dark", height=120
-                    )
-                    fig.update_layout(
-                        margin=dict(l=0, r=0, t=2, b=0), showlegend=False,
-                        xaxis_title=None, yaxis_title=None,
-                        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                        xaxis=dict(tickfont=dict(size=10, color="#aaa")),
-                        yaxis=dict(tickfont=dict(size=9, color="#555"), rangemode="nonnegative")
-                    )
-                    st.plotly_chart(fig, use_container_width=True,
-                                    key=f"chart_{idx}", config={"displayModeBar": False})
-                else:
-                    st.markdown(
-                        f'<div style="height:120px;display:flex;flex-direction:column;'
-                        f'align-items:center;justify-content:center;'
-                        f'background:rgba(255,255,255,0.03);border-radius:10px;">'
-                        f'<div style="font-family:Orbitron,sans-serif;font-size:1.8em;'
-                        f'font-weight:900;color:{clr};">{gpa_val:.2f}</div>'
-                        f'<div style="font-size:.65em;color:#445;letter-spacing:1px;margin-top:4px;">'
-                        f'AVG GPA</div></div>',
-                        unsafe_allow_html=True
-                    )
-                st.markdown('</div>', unsafe_allow_html=True)
+            # Full card as one HTML block — no st.columns, no border=True
+            st.markdown(
+                f'<div style="display:flex;align-items:center;justify-content:space-between;'
+                f'padding:12px 16px;border-left:3px solid {clr};">'
+                f'<div style="flex:1;min-width:0;">'
+                f'  <div style="font-family:Orbitron,sans-serif;font-size:.95em;font-weight:700;'
+                f'  color:#e8f4ff;letter-spacing:.4px;">'
+                f'  {row["course"]} '
+                f'  <span style="font-size:.65em;color:#334;font-family:Rajdhani,sans-serif;font-weight:400;">'
+                f'  {row["quarter"]} {int(row["year"])}</span></div>'
+                f'  <div style="font-family:Rajdhani,sans-serif;font-size:.85em;'
+                f'  color:{"#5bb8ff" if has_rmp else "#3a5068"};margin:3px 0;">'
+                f'  👤 {prof_name}'
+                + (f'  <span style="font-size:.72em;color:rgba(255,215,0,.5);margin-left:4px;">→ RMP</span>' if has_rmp else '')
+                + f'  </div>'
+                f'  <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">'
+                f'  <span style="font-family:Orbitron,sans-serif;font-size:.78em;color:#b0c8e0;font-weight:700;">'
+                f'  GPA {gpa_val:.2f}</span>'
+                f'  <span style="background:{clr};color:{txt_col};padding:2px 9px;border-radius:16px;'
+                f'  font-size:.6em;font-weight:900;letter-spacing:.8px;">{status}</span>'
+                f'  {rmp_pill}</div>'
+                f'</div>'
+                f'{chart_svg}'
+                f'</div>',
+                unsafe_allow_html=True
+            )
 
-            st.markdown('<div style="height:8px;"></div>', unsafe_allow_html=True)
+            # Invisible st.button for prof click — zero height via CSS
+            if has_rmp:
+                if st.button(f"👤 {prof_name}", key=f"prof_btn_{idx}_{jk}",
+                             help="View RMP profile + GPA history"):
+                    st.session_state.sel_prof_key    = jk
+                    st.session_state.sel_prof_name   = prof_name
+                    st.session_state.sel_prof_course = row["course"]
+                    st.rerun()
+
+            # Divider line between cards
+            st.markdown(
+                '<hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:0;">',
+                unsafe_allow_html=True
+            )
 
     # ── MY QUARTER ──────────────────────────────────────────────────────────
     with tab_quarter:
