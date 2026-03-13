@@ -1314,7 +1314,7 @@ let f = 0;
             st.warning("No results found. Try adjusting the filters.")
             return
 
-        # ── Handle prof click via query params (set by anchor tags in cards below) ──
+        # ── Handle prof click via postMessage from card anchors ──
         qp = st.query_params
         if qp.get("_prof_jk"):
             st.session_state.sel_prof_key    = qp.get("_prof_jk", "")
@@ -1383,18 +1383,26 @@ let f = 0;
                              f'{gpa_val:.2f}</div>')
 
             from urllib.parse import quote
-            prof_link = (
-                f'<a href="?_prof_jk={quote(jk)}&_prof_name={quote(prof_name)}&_prof_course={quote(row["course"])}" '
-                f'style="font-family:Rajdhani,sans-serif;font-size:.85em;font-weight:700;'
-                f'color:#5bb8ff;text-decoration:none;margin:3px 0;display:inline-block;"'
-                f'onmouseover="this.style.color=\'#FFD700\'" onmouseout="this.style.color=\'#5bb8ff\'">'
-                f'👤 {prof_name}'
-                f'<span style="font-size:.72em;color:rgba(255,215,0,.5);margin-left:4px;">→ RMP</span>'
-                f'</a>'
-            ) if has_rmp else (
-                f'<div style="font-family:Rajdhani,sans-serif;font-size:.85em;color:#3a5068;margin:3px 0;">'
-                f'👤 {prof_name}</div>'
-            )
+            if has_rmp:
+                jk_enc   = quote(jk,   safe='')
+                pn_enc   = quote(prof_name, safe='')
+                pc_enc   = quote(row["course"], safe='')
+                prof_link = (
+                    f'<span onclick="'
+                    f'var u=window.location.href.split(\'?\')[0];'
+                    f'window.parent.location.href=u+\'?_prof_jk={jk_enc}&_prof_name={pn_enc}&_prof_course={pc_enc}\';'
+                    f'" style="font-family:Rajdhani,sans-serif;font-size:.85em;font-weight:700;'
+                    f'color:#5bb8ff;cursor:pointer;margin:3px 0;display:inline-block;"'
+                    f'onmouseover="this.style.color=\'#FFD700\'" onmouseout="this.style.color=\'#5bb8ff\'">'
+                    f'👤 {prof_name}'
+                    f'<span style="font-size:.72em;color:rgba(255,215,0,.5);margin-left:4px;">→ RMP</span>'
+                    f'</span>'
+                )
+            else:
+                prof_link = (
+                    f'<div style="font-family:Rajdhani,sans-serif;font-size:.85em;color:#3a5068;margin:3px 0;">'
+                    f'👤 {prof_name}</div>'
+                )
 
             # Full card as one HTML block — no st.columns, no border=True, no st.button
             st.markdown(
