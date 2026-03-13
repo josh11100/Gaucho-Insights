@@ -207,6 +207,39 @@ div[data-baseweb="tooltip"],
     box-shadow: none !important;
     border: none !important;
 }
+
+/* ── Course STATS buttons — small pill style ── */
+.stats-text-btn { padding: 0 4px !important; margin: 0 !important; }
+.stats-text-btn > div[data-testid="stButton"] > button {
+    background: rgba(0,180,255,0.08) !important;
+    border: 1px solid rgba(0,180,255,0.3) !important;
+    box-shadow: none !important;
+    outline: none !important;
+    color: #00ccff !important;
+    font-family: 'Orbitron', sans-serif !important;
+    font-size: .6em !important;
+    font-weight: 700 !important;
+    padding: 2px 10px !important;
+    margin: 0 !important;
+    min-height: 0 !important;
+    height: auto !important;
+    line-height: 1.6 !important;
+    border-radius: 8px !important;
+    letter-spacing: 1px !important;
+    cursor: pointer !important;
+    width: auto !important;
+}
+.stats-text-btn > div[data-testid="stButton"] > button:hover {
+    background: rgba(0,180,255,0.18) !important;
+    color: #fff !important;
+    border-color: rgba(0,180,255,0.6) !important;
+    box-shadow: none !important;
+}
+.stats-text-btn > div[data-testid="stButton"] > button:focus,
+.stats-text-btn > div[data-testid="stButton"] > button:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+}
 /* ── Inputs ── */
 .stTextInput > div > div > input, .stSelectbox > div > div {
     background: rgba(0,20,50,0.8) !important;
@@ -447,7 +480,7 @@ def load_data():
 # ─────────────────────────────────────────────
 #  SESSION STATE
 # ─────────────────────────────────────────────
-for key in ["sel_prof_key", "sel_prof_name", "sel_prof_course"]:
+for key in ["sel_prof_key", "sel_prof_name", "sel_prof_course", "sel_course_name", "sel_course_year"]:
     if key not in st.session_state:
         st.session_state[key] = None
 for key in ["dept_q", "course_q", "prof_q"]:
@@ -942,6 +975,129 @@ sc.addEventListener('mouseleave',()=>{{cd.style.transform='rotateY(0) rotateX(0)
         st.dataframe(summary, hide_index=True, use_container_width=True)
 
 
+# ─────────────────────────────────────────────
+#  COURSE STATS CARD
+# ─────────────────────────────────────────────
+def render_course_card(course_name: str, course_df: pd.DataFrame, gpa_col: str, latest_year: int):
+    cutoff = latest_year - 4
+    df4 = course_df[course_df["year"].astype(int) >= cutoff].copy()
+    df_all = course_df.copy()
+
+    avg_4yr   = df4[gpa_col].mean()   if not df4.empty   else None
+    avg_all   = df_all[gpa_col].mean() if not df_all.empty else None
+    total_sections = len(df_all)
+    total_4yr      = len(df4)
+
+    status_4yr, clr_4yr, _ = gpa_badge(avg_4yr) if avg_4yr else ("N/A", "#888", "")
+    txt_col = "#000" if status_4yr == "EASY" else "#fff"
+
+    # Grade distribution across 4yr
+    a_t = int(df4.get("a", pd.Series(dtype=int)).sum()) if "a" in df4.columns else 0
+    b_t = int(df4.get("b", pd.Series(dtype=int)).sum()) if "b" in df4.columns else 0
+    c_t = int(df4.get("c", pd.Series(dtype=int)).sum()) if "c" in df4.columns else 0
+    d_t = int(df4.get("d", pd.Series(dtype=int)).sum()) if "d" in df4.columns else 0
+    f_t = int(df4.get("f", pd.Series(dtype=int)).sum()) if "f" in df4.columns else 0
+    total_graded = a_t + b_t + c_t + d_t + f_t
+
+    def pct(n): return f"{100*n/total_graded:.0f}%" if total_graded > 0 else "N/A"
+
+    # Top instructors by avg GPA
+    if not df4.empty and "instructor" in df4.columns:
+        top_profs = (df4.groupby("instructor")[gpa_col]
+                     .mean().sort_values(ascending=False).head(5).reset_index())
+        top_profs.columns = ["Instructor", "Avg GPA"]
+    else:
+        top_profs = pd.DataFrame()
+
+    # GPA trend by year (all time)
+    if not df_all.empty:
+        trend = df_all.groupby("year")[gpa_col].mean().reset_index()
+        trend.columns = ["Year", "Avg GPA"]
+        trend = trend.sort_values("Year")
+    else:
+        trend = pd.DataFrame()
+
+    avg_str = f"{avg_4yr:.2f}" if avg_4yr else "N/A"
+    all_str = f"{avg_all:.2f}" if avg_all else "N/A"
+
+    # ── Card header ──
+    st.markdown(f"""
+<div style="background:linear-gradient(135deg,#001428 0%,#001e3a 100%);
+    border-radius:16px;border:1.5px solid rgba(0,180,255,0.3);
+    padding:24px 28px 18px;margin-bottom:18px;
+    box-shadow:0 8px 32px rgba(0,0,0,0.5),inset 0 0 20px rgba(0,116,217,0.04);">
+  <div style="font-family:Orbitron,sans-serif;font-size:1.4em;font-weight:900;
+      color:#00ccff;letter-spacing:2px;margin-bottom:6px;">
+    📊 {course_name}
+  </div>
+  <div style="font-family:Rajdhani,sans-serif;font-size:.85em;color:#4a7a9b;letter-spacing:1px;margin-bottom:18px;">
+    COURSE STATISTICS · {total_sections} total sections · {total_4yr} sections (last 4 yrs)
+  </div>
+  <div style="display:flex;gap:16px;flex-wrap:wrap;">
+    <div style="background:rgba(0,180,255,0.07);border:1px solid rgba(0,180,255,0.2);
+        border-radius:12px;padding:14px 20px;text-align:center;min-width:110px;">
+      <div style="font-family:Orbitron,sans-serif;font-size:1.6em;font-weight:900;color:{clr_4yr};">{avg_str}</div>
+      <div style="font-family:Rajdhani,sans-serif;font-size:.65em;color:#4a7a9b;letter-spacing:1px;margin-top:4px;">AVG GPA (4 YR)</div>
+    </div>
+    <div style="background:rgba(0,180,255,0.07);border:1px solid rgba(0,180,255,0.2);
+        border-radius:12px;padding:14px 20px;text-align:center;min-width:110px;">
+      <div style="font-family:Orbitron,sans-serif;font-size:1.6em;font-weight:900;color:#b0c8e0;">{all_str}</div>
+      <div style="font-family:Rajdhani,sans-serif;font-size:.65em;color:#4a7a9b;letter-spacing:1px;margin-top:4px;">AVG GPA (ALL TIME)</div>
+    </div>
+    <div style="background:rgba(0,180,255,0.07);border:1px solid rgba(0,180,255,0.2);
+        border-radius:12px;padding:14px 20px;text-align:center;min-width:110px;">
+      <div style="font-family:Orbitron,sans-serif;font-size:1.6em;font-weight:900;
+          color:{clr_4yr};">{status_4yr}</div>
+      <div style="font-family:Rajdhani,sans-serif;font-size:.65em;color:#4a7a9b;letter-spacing:1px;margin-top:4px;">OVERALL VIBE</div>
+    </div>
+    <div style="background:rgba(0,180,255,0.07);border:1px solid rgba(0,180,255,0.2);
+        border-radius:12px;padding:14px 20px;text-align:center;min-width:90px;">
+      <div style="font-family:Orbitron,sans-serif;font-size:1.6em;font-weight:900;color:#2ECC40;">{pct(a_t)}</div>
+      <div style="font-family:Rajdhani,sans-serif;font-size:.65em;color:#4a7a9b;letter-spacing:1px;margin-top:4px;">GET A (4 YR)</div>
+    </div>
+    <div style="background:rgba(0,180,255,0.07);border:1px solid rgba(0,180,255,0.2);
+        border-radius:12px;padding:14px 20px;text-align:center;min-width:90px;">
+      <div style="font-family:Orbitron,sans-serif;font-size:1.6em;font-weight:900;color:#FF4136;">{pct(f_t)}</div>
+      <div style="font-family:Rajdhani,sans-serif;font-size:.65em;color:#4a7a9b;letter-spacing:1px;margin-top:4px;">FAIL RATE (4 YR)</div>
+    </div>
+  </div>
+</div>""", unsafe_allow_html=True)
+
+    # ── GPA Trend chart ──
+    if not trend.empty and len(trend) > 1:
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(
+            x=trend["Year"], y=trend["Avg GPA"],
+            mode="lines+markers",
+            line=dict(color="#00ccff", width=2),
+            marker=dict(size=6, color="#00ccff"),
+            fill="tozeroy",
+            fillcolor="rgba(0,204,255,0.07)",
+            name="Avg GPA"
+        ))
+        fig.add_hline(y=3.3, line_dash="dot", line_color="rgba(46,204,64,0.4)",
+                      annotation_text="EASY", annotation_font_color="rgba(46,204,64,0.6)")
+        fig.add_hline(y=3.1, line_dash="dot", line_color="rgba(0,116,217,0.4)",
+                      annotation_text="CHILL", annotation_font_color="rgba(0,116,217,0.6)")
+        fig.update_layout(
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,10,30,0.5)",
+            font=dict(color="#b0c8e0", family="Rajdhani"),
+            height=220, margin=dict(l=40, r=20, t=30, b=30),
+            title=dict(text="GPA TREND (ALL TIME)", font=dict(family="Orbitron", size=11, color="#00ccff")),
+            xaxis=dict(gridcolor="rgba(255,255,255,0.05)", tickformat="d"),
+            yaxis=dict(gridcolor="rgba(255,255,255,0.05)", range=[0, 4.2])
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
+    # ── Top instructors ──
+    if not top_profs.empty:
+        st.markdown('<div style="font-family:Orbitron,sans-serif;font-size:.72em;color:#00ccff;'
+                    'letter-spacing:2px;margin:8px 0 6px;">TOP INSTRUCTORS (4 YR AVG GPA)</div>',
+                    unsafe_allow_html=True)
+        top_profs["Avg GPA"] = top_profs["Avg GPA"].map("{:.2f}".format)
+        st.dataframe(top_profs, hide_index=True, use_container_width=True)
+
+
 _KNOWN_LASTNAMES: set = set()
 
 
@@ -1311,7 +1467,20 @@ let f = 0;
                     render_prof_card({}, st.session_state.sel_prof_name, prof_hist, gpa_col)
             st.markdown("---")
 
-        # ── FILTER results ────────────────────────────────────────────────────
+        # ── COURSE STATS CARD ─────────────────────────────────────────────────
+        if st.session_state.sel_course_name:
+            cn = st.session_state.sel_course_name
+            cy = st.session_state.sel_course_year or 2025
+            course_hist = full_df[full_df["course"] == cn].copy()
+            if st.button("(シ_ _)シ  Close Course Stats", key="close_course"):
+                st.session_state.sel_course_name = None
+                st.session_state.sel_course_year = None
+                st.rerun()
+            st.markdown("---")
+            render_course_card(cn, course_hist, gpa_col, cy)
+            st.markdown("---")
+
+
         df = full_df.copy()
         if selected_dept:
             df = df[df["dept"] == selected_dept]
@@ -1361,21 +1530,6 @@ let f = 0;
             f_cnt = int(row.get("f", 0) or 0)
             total_students = a_cnt + b_cnt + c_cnt + d_cnt + f_cnt
 
-            # 4-year avg GPA for this course
-            try:
-                latest_year = int(row["year"])
-            except Exception:
-                latest_year = 2025
-            cutoff_year = latest_year - 4
-            hist_4yr = full_df[
-                (full_df["course"] == course_name) &
-                (full_df["year"].astype(int) >= cutoff_year)
-            ]
-            avg_4yr = hist_4yr[gpa_col].mean() if not hist_4yr.empty else None
-            avg_4yr_str = f"{avg_4yr:.2f}" if avg_4yr else "N/A"
-            avg_4yr_clr, _, _ = gpa_badge(avg_4yr) if avg_4yr else ("N/A", "#888", "")
-            _, avg_4yr_color, _ = gpa_badge(avg_4yr) if avg_4yr else ("N/A", "#888", "")
-
             rmp_pill = (
                 '<span style="font-size:.62em;color:#FFD700;background:rgba(255,215,0,.08);'
                 'border:1px solid rgba(255,215,0,.3);padding:2px 7px;border-radius:10px;'
@@ -1414,34 +1568,30 @@ let f = 0;
             st.markdown(
                 f'<div style="display:flex;align-items:center;justify-content:space-between;'
                 f'padding:11px 16px 8px;border-left:3px solid {clr};gap:12px;">'
-
-                # Left: course name, date, prof
                 f'<div style="flex:1;min-width:0;">'
-
-                # Row 1: course name + date + 4yr stat badge inline
                 f'  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;">'
                 f'  <span style="font-family:Orbitron,sans-serif;font-size:.95em;font-weight:700;color:#e8f4ff;">'
                 f'  {course_name}</span>'
                 f'  <span style="font-family:Rajdhani,sans-serif;font-size:.78em;color:#8899aa;font-weight:500;">'
                 f'  {row["quarter"]} {int(row["year"])}</span>'
-                f'  <span style="font-family:Rajdhani,sans-serif;font-size:.62em;color:{avg_4yr_color};'
-                f'  background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);'
-                f'  padding:1px 7px;border-radius:8px;white-space:nowrap;" '
-                f'  title="Avg GPA over last 4 years">📊 4YR {avg_4yr_str}</span>'
                 f'  </div>'
-
-                # Row 2: prof name (button injected below)
                 f'</div>'
-
-                # Right: chart
                 f'{chart_svg}'
                 f'</div>',
                 unsafe_allow_html=True
             )
 
-            # Prof name + GPA/badge row — all on one line via columns trick
-            left_col, right_col = st.columns([1, 1])
-            with left_col:
+            # Course STATS button + Prof button on same row
+            btn_col, prof_col, gpa_col2 = st.columns([0.18, 0.42, 0.40])
+            with btn_col:
+                st.markdown('<div class="stats-text-btn">', unsafe_allow_html=True)
+                if st.button("📊 STATS", key=f"course_btn_{idx}_{course_name}"):
+                    st.session_state.sel_course_name = course_name
+                    st.session_state.sel_course_year = int(row["year"])
+                    st.session_state.sel_prof_key    = None
+                    st.rerun()
+                st.markdown('</div>', unsafe_allow_html=True)
+            with prof_col:
                 if has_rmp:
                     st.markdown('<div class="prof-text-btn">', unsafe_allow_html=True)
                     if st.button(f"👤 {prof_name}  → RMP", key=f"prof_btn_{idx}_{jk}"):
@@ -1457,7 +1607,7 @@ let f = 0;
                         unsafe_allow_html=True
                     )
 
-            with right_col:
+            with gpa_col2:
                 st.markdown(
                     f'<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:4px 0 6px;">'
                     f'<span style="font-family:Orbitron,sans-serif;font-size:.78em;color:#b0c8e0;font-weight:700;">'
