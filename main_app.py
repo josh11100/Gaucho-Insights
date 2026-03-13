@@ -173,6 +173,137 @@ div[data-baseweb="tooltip"],
     pointer-events: none !important;
 }
 
+/* ── Card action buttons row — rendered below the HTML visual card ── */
+.card-hidden-btns {
+    margin: -2px 0 0 18px !important;
+    padding: 0 0 8px 0 !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 10px !important;
+}
+.card-hidden-btns > div[data-testid="stButton"] {
+    flex-shrink: 0 !important;
+}
+/* STATS button */
+.card-hidden-btns > div[data-testid="stButton"]:first-child > button {
+    background: rgba(0,180,255,0.1) !important;
+    border: 1px solid rgba(0,180,255,0.35) !important;
+    box-shadow: none !important;
+    color: #00ccff !important;
+    font-family: 'Orbitron', sans-serif !important;
+    font-size: .6em !important;
+    font-weight: 700 !important;
+    padding: 3px 10px !important;
+    min-height: 0 !important;
+    height: auto !important;
+    line-height: 1.6 !important;
+    border-radius: 7px !important;
+    letter-spacing: .8px !important;
+    white-space: nowrap !important;
+}
+.card-hidden-btns > div[data-testid="stButton"]:first-child > button:hover {
+    background: rgba(0,180,255,0.22) !important;
+    color: #fff !important;
+    border-color: rgba(0,180,255,0.6) !important;
+    box-shadow: none !important;
+}
+/* Prof button (second button) */
+.card-hidden-btns > div[data-testid="stButton"]:nth-child(2) > button {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: #5bb8ff !important;
+    font-family: 'Rajdhani', sans-serif !important;
+    font-size: .88em !important;
+    font-weight: 700 !important;
+    padding: 0 4px !important;
+    min-height: 0 !important;
+    height: auto !important;
+    line-height: 1.5 !important;
+    border-radius: 0 !important;
+    white-space: nowrap !important;
+}
+.card-hidden-btns > div[data-testid="stButton"]:nth-child(2) > button:hover {
+    color: #FFD700 !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+.card-hidden-btns > div[data-testid="stButton"] > button:focus,
+.card-hidden-btns > div[data-testid="stButton"] > button:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+/* ── Prof name buttons — look like plain blue text, no box ── */
+.prof-text-btn { padding: 0 16px 0 16px !important; margin: 0 !important; }
+.prof-text-btn > div[data-testid="stButton"] > button {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+    color: #5bb8ff !important;
+    font-family: 'Rajdhani', sans-serif !important;
+    font-size: .88em !important;
+    font-weight: 700 !important;
+    padding: 0 0 2px 3px !important;
+    margin: 0 !important;
+    min-height: 0 !important;
+    height: auto !important;
+    line-height: 1.4 !important;
+    border-radius: 0 !important;
+    text-align: left !important;
+    justify-content: flex-start !important;
+    cursor: pointer !important;
+    width: auto !important;
+}
+.prof-text-btn > div[data-testid="stButton"] > button:hover {
+    color: #FFD700 !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+.prof-text-btn > div[data-testid="stButton"] > button:focus,
+.prof-text-btn > div[data-testid="stButton"] > button:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+    border: none !important;
+}
+
+/* ── Course STATS buttons — small pill style ── */
+.stats-text-btn { padding: 0 4px !important; margin: 0 !important; }
+.stats-text-btn > div[data-testid="stButton"] > button {
+    background: rgba(0,180,255,0.08) !important;
+    border: 1px solid rgba(0,180,255,0.3) !important;
+    box-shadow: none !important;
+    outline: none !important;
+    color: #00ccff !important;
+    font-family: 'Orbitron', sans-serif !important;
+    font-size: .6em !important;
+    font-weight: 700 !important;
+    padding: 2px 10px !important;
+    margin: 0 !important;
+    min-height: 0 !important;
+    height: auto !important;
+    line-height: 1.6 !important;
+    border-radius: 8px !important;
+    letter-spacing: 1px !important;
+    cursor: pointer !important;
+    width: auto !important;
+}
+.stats-text-btn > div[data-testid="stButton"] > button:hover {
+    background: rgba(0,180,255,0.18) !important;
+    color: #fff !important;
+    border-color: rgba(0,180,255,0.6) !important;
+    box-shadow: none !important;
+}
+.stats-text-btn > div[data-testid="stButton"] > button:focus,
+.stats-text-btn > div[data-testid="stButton"] > button:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+}
+
 /* ── Prof name buttons — look like plain blue text, no box ── */
 .prof-text-btn { padding: 0 16px 0 16px !important; margin: 0 !important; }
 .prof-text-btn > div[data-testid="stButton"] > button {
@@ -1536,87 +1667,72 @@ let f = 0;
                 'font-weight:700;letter-spacing:.5px;vertical-align:middle;margin-left:4px;">RMP</span>'
             ) if has_rmp else ""
 
-            # Inline SVG mini bar chart
+            # Inline SVG mini bar chart — bigger
             if total_students > 0:
                 counts     = [a_cnt, b_cnt, c_cnt, d_cnt, f_cnt]
                 bar_colors = ["#2ECC40","#0074D9","#FFDC00","#FF851B","#FF4136"]
                 max_c      = max(counts) or 1
-                CW, CH, BW = 200, 72, 28
+                CW, CH, BW = 250, 90, 36
                 gap        = (CW - 5 * BW) / 6
                 bars       = ""
                 for gi, (c, bc) in enumerate(zip(counts, bar_colors)):
-                    bh = max(3, int((c / max_c) * (CH - 18)))
+                    bh = max(4, int((c / max_c) * (CH - 20)))
                     x  = int(gap + gi * (BW + gap))
-                    y  = CH - 14 - bh
+                    y  = CH - 16 - bh
                     lbl= ["A","B","C","D","F"][gi]
                     bars += (f'<rect x="{x}" y="{y}" width="{BW}" height="{bh}" '
                              f'fill="{bc}" rx="3" opacity="0.9"/>'
-                             f'<text x="{x+BW//2}" y="{CH-2}" text-anchor="middle" '
-                             f'font-size="10" fill="#778" font-family="sans-serif">{lbl}</text>')
+                             f'<text x="{x+BW//2}" y="{CH-3}" text-anchor="middle" '
+                             f'font-size="11" fill="#667" font-family="sans-serif">{lbl}</text>')
                 chart_svg = (f'<svg width="{CW}" height="{CH}" viewBox="0 0 {CW} {CH}" '
-                             f'xmlns="http://www.w3.org/2000/svg" '
-                             f'style="flex-shrink:0;margin-left:16px;">{bars}</svg>')
+                             f'xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;">{bars}</svg>')
             else:
-                chart_svg = (f'<div style="flex-shrink:0;margin-left:16px;width:120px;'
-                             f'display:flex;flex-direction:column;align-items:center;justify-content:center;">'
-                             f'<span style="font-family:Orbitron,sans-serif;font-size:1.4em;'
+                chart_svg = (f'<div style="flex-shrink:0;width:250px;display:flex;flex-direction:column;'
+                             f'align-items:center;justify-content:center;">'
+                             f'<span style="font-family:Orbitron,sans-serif;font-size:1.6em;'
                              f'font-weight:900;color:{clr};">{gpa_val:.2f}</span>'
                              f'<span style="font-size:.6em;color:#445;letter-spacing:1px;margin-top:2px;">AVG GPA</span>'
                              f'</div>')
 
-            # ── Card: course name row + inline GPA/badge/RMP + chart ──
+            # ── Full card: top row is pure HTML (course name + date + chart), bottom row is real buttons ──
             st.markdown(
-                f'<div style="display:flex;align-items:center;justify-content:space-between;'
-                f'padding:11px 16px 8px;border-left:3px solid {clr};gap:12px;">'
-                f'<div style="flex:1;min-width:0;">'
-                f'  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;">'
-                f'  <span style="font-family:Orbitron,sans-serif;font-size:.95em;font-weight:700;color:#e8f4ff;">'
-                f'  {course_name}</span>'
-                f'  <span style="font-family:Rajdhani,sans-serif;font-size:.78em;color:#8899aa;font-weight:500;">'
-                f'  {row["quarter"]} {int(row["year"])}</span>'
+                f'<div style="display:flex;align-items:stretch;border-left:4px solid {clr};margin-bottom:0;padding-bottom:0;">'
+                f'<div style="width:14px;flex-shrink:0;"></div>'
+                f'<div style="flex:1;min-width:0;padding:10px 0 4px;">'
+                f'  <div style="display:flex;align-items:baseline;gap:10px;">'
+                f'    <span style="font-family:Orbitron,sans-serif;font-size:1em;font-weight:700;color:#e8f4ff;">{course_name}</span>'
+                f'    <span style="font-family:Rajdhani,sans-serif;font-size:.8em;color:#7a9ab8;">{row["quarter"]} {int(row["year"])}</span>'
                 f'  </div>'
                 f'</div>'
+                f'<div style="flex-shrink:0;padding:6px 14px 6px 10px;display:flex;align-items:center;">'
                 f'{chart_svg}'
+                f'</div>'
+                f'</div>'
+                # GPA + badge row below, still in the colored left-border zone
+                f'<div style="border-left:4px solid {clr};padding:0 0 8px 28px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">'
+                f'  <span style="font-family:Orbitron,sans-serif;font-size:.75em;color:#b0c8e0;font-weight:700;">GPA {gpa_val:.2f}</span>'
+                f'  <span style="background:{clr};color:{txt_col};padding:2px 9px;border-radius:14px;font-size:.6em;font-weight:900;letter-spacing:.8px;">{status}</span>'
+                f'  {rmp_pill}'
                 f'</div>',
                 unsafe_allow_html=True
             )
 
-            # Course STATS button + Prof button on same row
-            btn_col, prof_col, gpa_col2 = st.columns([0.18, 0.42, 0.40])
-            with btn_col:
-                st.markdown('<div class="stats-text-btn">', unsafe_allow_html=True)
-                if st.button("📊 STATS", key=f"course_btn_{idx}_{course_name}"):
-                    st.session_state.sel_course_name = course_name
-                    st.session_state.sel_course_year = int(row["year"])
-                    st.session_state.sel_prof_key    = None
+            # Buttons row — styled via .card-hidden-btns CSS to look like STATS pill + prof text
+            st.markdown('<div class="card-hidden-btns">', unsafe_allow_html=True)
+            if st.button("📊 STATS", key=f"course_btn_{idx}_{course_name}"):
+                st.session_state.sel_course_name = course_name
+                st.session_state.sel_course_year = int(row["year"])
+                st.session_state.sel_prof_key    = None
+                st.rerun()
+            if has_rmp:
+                if st.button(f"👤 {prof_name}  → RMP", key=f"prof_btn_{idx}_{jk}"):
+                    st.session_state.sel_prof_key    = jk
+                    st.session_state.sel_prof_name   = prof_name
+                    st.session_state.sel_prof_course = course_name
                     st.rerun()
-                st.markdown('</div>', unsafe_allow_html=True)
-            with prof_col:
-                if has_rmp:
-                    st.markdown('<div class="prof-text-btn">', unsafe_allow_html=True)
-                    if st.button(f"👤 {prof_name}  → RMP", key=f"prof_btn_{idx}_{jk}"):
-                        st.session_state.sel_prof_key    = jk
-                        st.session_state.sel_prof_name   = prof_name
-                        st.session_state.sel_prof_course = course_name
-                        st.rerun()
-                    st.markdown('</div>', unsafe_allow_html=True)
-                else:
-                    st.markdown(
-                        f'<div style="font-family:Rajdhani,sans-serif;font-size:.88em;'
-                        f'color:#3a5068;padding:0 0 6px 19px;">👤 {prof_name}</div>',
-                        unsafe_allow_html=True
-                    )
-
-            with gpa_col2:
-                st.markdown(
-                    f'<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:4px 0 6px;">'
-                    f'<span style="font-family:Orbitron,sans-serif;font-size:.78em;color:#b0c8e0;font-weight:700;">'
-                    f'GPA {gpa_val:.2f}</span>'
-                    f'<span style="background:{clr};color:{txt_col};padding:2px 9px;border-radius:16px;'
-                    f'font-size:.6em;font-weight:900;letter-spacing:.8px;">{status}</span>'
-                    f'{rmp_pill}</div>',
-                    unsafe_allow_html=True
-                )
+            else:
+                st.markdown(f'<span style="font-family:Rajdhani,sans-serif;font-size:.88em;color:#3a5068;">👤 {prof_name}</span>', unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
 
             # Divider
             st.markdown(
