@@ -1806,122 +1806,216 @@ let f = 0;
             f_cnt = max(0, int(row.get("f") or 0))
             total_students = a_cnt + b_cnt + c_cnt + d_cnt + f_cnt
 
-            # ── SVG mini bar chart ─────────────────────────────────────────
-            if total_students > 0:
-                grades  = ["A","B","C","D","F"]
-                counts  = [a_cnt, b_cnt, c_cnt, d_cnt, f_cnt]
-                colors  = ["#2ECC40","#0074D9","#FFDC00","#FF851B","#FF4136"]
-                max_c   = max(counts) or 1
-                CW, CH  = 160, 72
-                bar_w   = 22
-                gap     = (CW - len(grades)*bar_w) / (len(grades)+1)
-                bars_svg = ""
-                for i,(g,c,col) in enumerate(zip(grades,counts,colors)):
-                    bh = max(2, int((c/max_c)*(CH-18)))
-                    x  = int(gap + i*(bar_w+gap))
-                    y  = CH - 14 - bh
-                    bars_svg += (
-                        f'<rect x="{x}" y="{y}" width="{bar_w}" height="{bh}" '
-                        f'fill="{col}" rx="3" opacity="0.9"/>'
-                        f'<text x="{x+bar_w//2}" y="{CH-2}" text-anchor="middle" '
-                        f'font-size="9" fill="#667" font-family="Rajdhani,sans-serif">{g}</text>'
-                    )
-                chart_html = (
-                    f'<svg width="{CW}" height="{CH}" viewBox="0 0 {CW} {CH}" '
-                    f'xmlns="http://www.w3.org/2000/svg">{bars_svg}</svg>'
-                )
-            else:
-                chart_html = (
-                    f'<div style="width:160px;height:72px;display:flex;align-items:center;'
-                    f'justify-content:center;flex-direction:column;">'
-                    f'<span style="font-family:Orbitron,sans-serif;font-size:1.3em;'
-                    f'font-weight:900;color:{clr};">{gpa_val:.2f}</span>'
-                    f'<span style="font-size:.55em;color:#334;margin-top:3px;letter-spacing:1px;">AVG GPA</span></div>'
-                )
-
             rmp_pill = (
                 '<span style="font-size:.6em;color:#FFD700;background:rgba(255,215,0,.1);'
                 'border:1px solid rgba(255,215,0,.35);padding:2px 8px;border-radius:10px;'
-                'font-weight:700;letter-spacing:.5px;">RMP</span>'
+                'font-weight:700;letter-spacing:.5px;vertical-align:middle;">RMP</span>'
             ) if has_rmp else ""
 
             status_pill = (
                 f'<span style="padding:2px 10px;border-radius:20px;font-size:.6em;'
-                f'font-weight:900;letter-spacing:1px;white-space:nowrap;'
+                f'font-weight:900;letter-spacing:1px;white-space:nowrap;vertical-align:middle;'
                 f'background:{clr};color:{txt_col};">{status}</span>'
             )
 
-            prof_color = "#5bb8ff" if has_rmp else "#3a5068"
-            rmp_hint   = ' <span style="font-size:.7em;color:rgba(255,215,0,.45);">→ RMP</span>' if has_rmp else ""
+            prof_color   = "#5bb8ff" if has_rmp else "#3a5068"
+            prof_cursor  = "pointer" if has_rmp else "default"
+            prof_hover   = "color:#FFD700;" if has_rmp else ""
+            rmp_arrow    = ' <span style="font-size:.7em;color:rgba(255,215,0,.45);">→ RMP</span>' if has_rmp else ""
 
-            # ── Rich card (pure HTML, no Streamlit columns) ────────────────
-            st.markdown(f"""
-<div style="
-    background: linear-gradient(135deg, rgba(0,18,42,0.97) 0%, rgba(0,10,28,0.99) 100%);
-    border: 1px solid rgba(0,116,217,0.28);
-    border-left: 3px solid {clr};
-    border-radius: 16px;
-    padding: 14px 18px 13px 18px;
-    margin-bottom: 10px;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    box-shadow: 0 4px 28px rgba(0,0,0,0.45), inset 0 0 24px rgba(0,116,217,0.03);
-    position: relative;
-    overflow: hidden;
-">
-  <div style="position:absolute;top:0;left:0;right:0;height:1px;
-    background:linear-gradient(90deg,transparent 0%,rgba(255,215,0,0.12) 50%,transparent 100%);"></div>
+            # Safe JS strings
+            course_js = row['course'].replace("'", "\\'")
+            prof_js   = prof_name.replace("'", "\\'")
+            jk_js     = jk.replace("'", "\\'")
 
+            # ── SVG bar chart with hover tooltips ─────────────────────────
+            if total_students > 0:
+                grades = ["A","B","C","D","F"]
+                counts = [a_cnt, b_cnt, c_cnt, d_cnt, f_cnt]
+                colors = ["#2ECC40","#0074D9","#FFDC00","#FF851B","#FF4136"]
+                max_c  = max(counts) or 1
+                CW, CH = 180, 80
+                bar_w  = 24
+                gap    = (CW - len(grades)*bar_w) / (len(grades)+1)
+
+                # Build interactive bars with <g> groups for hover
+                bars_svg = ""
+                for i,(g,c,col) in enumerate(zip(grades,counts,colors)):
+                    bh  = max(3, int((c/max_c)*(CH-20)))
+                    x   = int(gap + i*(bar_w+gap))
+                    y   = CH - 16 - bh
+                    pct = f"{100*c/total_students:.1f}%" if total_students else "0%"
+                    tip = f"{g}: {c} students ({pct})"
+                    bars_svg += f"""
+<g class="bar-grp" data-tip="{tip}">
+  <rect x="{x}" y="{y}" width="{bar_w}" height="{bh}"
+        fill="{col}" rx="3" opacity="0.88"
+        style="transition:opacity .15s,transform .15s;transform-origin:{x+bar_w//2}px {y+bh}px"/>
+  <text x="{x+bar_w//2}" y="{CH-3}" text-anchor="middle"
+        font-size="9" fill="#556" font-family="Rajdhani,sans-serif">{g}</text>
+</g>"""
+
+                chart_section = f"""
+<div style="position:relative;flex-shrink:0;border-left:1px solid rgba(255,255,255,0.06);padding-left:16px;">
+  <svg id="chart-{idx}" width="{CW}" height="{CH}" viewBox="0 0 {CW} {CH}"
+       xmlns="http://www.w3.org/2000/svg" style="overflow:visible;">{bars_svg}</svg>
+  <div id="tip-{idx}" style="
+    display:none;position:absolute;
+    background:rgba(0,10,28,0.96);border:1px solid rgba(255,215,0,0.4);
+    border-radius:8px;padding:5px 10px;
+    font-family:'Rajdhani',sans-serif;font-size:.8em;color:#FFD700;
+    white-space:nowrap;pointer-events:none;z-index:99;
+    box-shadow:0 4px 16px rgba(0,0,0,.6);
+  "></div>
+</div>
+<script>
+(function(){{
+  var svg  = document.getElementById('chart-{idx}');
+  var tip  = document.getElementById('tip-{idx}');
+  if(!svg||!tip) return;
+  svg.querySelectorAll('.bar-grp').forEach(function(g){{
+    g.style.cursor='default';
+    g.addEventListener('mouseenter',function(e){{
+      g.querySelector('rect').style.opacity='1';
+      g.querySelector('rect').style.filter='brightness(1.25)';
+      tip.textContent = g.getAttribute('data-tip');
+      tip.style.display='block';
+    }});
+    g.addEventListener('mousemove',function(e){{
+      var r=svg.getBoundingClientRect();
+      tip.style.left=(e.clientX-r.left+10)+'px';
+      tip.style.top=(e.clientY-r.top-28)+'px';
+    }});
+    g.addEventListener('mouseleave',function(){{
+      g.querySelector('rect').style.opacity='0.88';
+      g.querySelector('rect').style.filter='';
+      tip.style.display='none';
+    }});
+  }});
+}})();
+</script>"""
+            else:
+                chart_section = f"""
+<div style="flex-shrink:0;border-left:1px solid rgba(255,255,255,0.06);padding-left:16px;
+            width:180px;height:80px;display:flex;align-items:center;justify-content:center;flex-direction:column;">
+  <span style="font-family:'Orbitron',sans-serif;font-size:1.3em;font-weight:900;color:{clr};">{gpa_val:.2f}</span>
+  <span style="font-size:.55em;color:#334;margin-top:3px;letter-spacing:1px;">AVG GPA</span>
+</div>"""
+
+            # ── Full card rendered in one components.html so clicks work ──
+            components.html(f"""
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@600;700&display=swap');
+*{{margin:0;padding:0;box-sizing:border-box;}}
+body{{background:transparent;overflow:hidden;}}
+.card{{
+  background:linear-gradient(135deg,rgba(0,18,42,0.97) 0%,rgba(0,10,28,0.99) 100%);
+  border:1px solid rgba(0,116,217,0.28);
+  border-left:3px solid {clr};
+  border-radius:16px;
+  padding:14px 18px 14px 18px;
+  display:flex;align-items:center;gap:16px;
+  box-shadow:0 4px 28px rgba(0,0,0,0.5),inset 0 0 24px rgba(0,116,217,0.03);
+  position:relative;overflow:visible;
+  transition:border-color .2s,box-shadow .2s;
+}}
+.card:hover{{
+  border-color:rgba(0,116,217,0.55);
+  box-shadow:0 6px 36px rgba(0,0,0,0.6),0 0 20px rgba(255,215,0,0.04);
+}}
+.shimmer{{position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,215,0,0.14),transparent);}}
+.course-name{{
+  font-family:'Orbitron',sans-serif;font-size:.95em;font-weight:900;
+  color:#e8f4ff;letter-spacing:.5px;margin-bottom:3px;
+  text-decoration:underline dotted rgba(255,215,0,.4);
+  text-underline-offset:3px;cursor:pointer;display:inline-block;
+  transition:color .15s;
+}}
+.course-name:hover{{color:#FFD700;text-decoration-color:rgba(255,215,0,.9);}}
+.term{{font-size:.64em;color:#2a3d55;letter-spacing:.5px;margin-bottom:6px;
+       font-family:'Rajdhani',sans-serif;text-transform:uppercase;}}
+.prof{{font-family:'Rajdhani',sans-serif;font-size:.86em;font-weight:600;
+       color:{prof_color};margin-bottom:9px;cursor:{prof_cursor};display:inline-block;
+       transition:color .15s;}}
+{''.join(['.prof:hover{color:#FFD700;}'] if has_rmp else [])}
+.badges{{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}}
+</style>
+<div class="card">
+  <div class="shimmer"></div>
   <div style="flex:1;min-width:0;">
-    <div style="font-family:'Orbitron',sans-serif;font-size:.95em;font-weight:900;
-                color:#e8f4ff;letter-spacing:.5px;margin-bottom:3px;
-                text-decoration:underline dotted rgba(255,215,0,.4);
-                text-underline-offset:3px;">
-      {row['course']}
-    </div>
-    <div style="font-size:.66em;color:#2a3d55;letter-spacing:.5px;margin-bottom:6px;
-                font-family:'Rajdhani',sans-serif;text-transform:uppercase;">
-      {row['quarter']} {int(row['year'])}
-    </div>
-    <div style="font-family:'Rajdhani',sans-serif;font-size:.84em;
-                color:{prof_color};margin-bottom:9px;font-weight:600;">
-      👤 {prof_name}{rmp_hint}
-    </div>
-    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+    <div class="course-name" id="cn-{idx}" onclick="clickCourse()">{row['course']}</div>
+    <div class="term">{row['quarter']} {int(row['year'])}</div>
+    <div class="prof" id="pn-{idx}" onclick="clickProf()">👤 {prof_name}{rmp_arrow}</div>
+    <div class="badges">
       <span style="font-family:'Orbitron',monospace;font-size:.8em;font-weight:700;
                    color:#b8d4ee;letter-spacing:.5px;">GPA {gpa_val:.2f}</span>
       {status_pill}
       {rmp_pill}
     </div>
   </div>
-
-  <div style="flex-shrink:0;opacity:0.88;border-left:1px solid rgba(255,255,255,0.05);
-              padding-left:16px;">
-    {chart_html}
-  </div>
+  {chart_section}
 </div>
-""", unsafe_allow_html=True)
+<script>
+function clickCourse(){{
+  try{{window.parent.postMessage({{type:'gaucho_course',course:'{course_js}'}},'*');}}catch(e){{}}
+}}
+function clickProf(){{
+  {'try{window.parent.postMessage({type:"gaucho_prof",jk:"'+jk_js+'",name:"'+prof_js+'",course:"'+course_js+'"},"*");}catch(e){}' if has_rmp else ''}
+}}
+</script>
+""", height=130, scrolling=False)
 
-            # ── Action buttons (compact, sit flush below the card) ─────────
-            btn_col1, btn_col2, _ = st.columns([2, 2, 5])
-            with btn_col1:
-                if st.button(f"📊 Open {row['course']}", key=f"course_{idx}",
-                             use_container_width=True):
+            # ── Hidden Streamlit buttons triggered by postMessage ──────────
+            col_c, col_p, _ = st.columns([1, 1, 8])
+            with col_c:
+                if st.button("c", key=f"cb_{idx}", label_visibility="collapsed"):
                     st.session_state.sel_course_name = row["course"]
                     st.session_state.sel_prof_key    = None
                     st.rerun()
-            with btn_col2:
+            with col_p:
                 if has_rmp:
-                    if st.button(f"👤 {prof_name}", key=f"prof_{idx}",
-                                 use_container_width=True):
+                    if st.button("p", key=f"pb_{idx}", label_visibility="collapsed"):
                         st.session_state.sel_prof_key    = jk
                         st.session_state.sel_prof_name   = prof_name
                         st.session_state.sel_prof_course = row["course"]
                         st.session_state.sel_course_name = None
                         st.rerun()
 
-            st.markdown('<div style="margin-bottom:4px;"></div>', unsafe_allow_html=True)
+        # ── postMessage → click hidden button ─────────────────────────────
+        components.html("""
+<script>
+window.addEventListener('message', function(e) {
+    var d = e.data;
+    if (!d || !d.type) return;
+    var btns = window.parent.document.querySelectorAll('button');
+
+    if (d.type === 'gaucho_course') {
+        // find the hidden "c" button in the same card block
+        // We store course name in data attr via a scan
+        btns.forEach(function(b) {
+            if (b.innerText.trim() === 'c') {
+                // trigger click on the first one that hasn't been used —
+                // we rely on query_params approach instead
+            }
+        });
+        // Use query params approach
+        var url = new URL(window.parent.location.href);
+        url.searchParams.set('_course', d.course);
+        window.parent.history.replaceState({}, '', url.toString());
+        window.parent.location.reload();
+    }
+    if (d.type === 'gaucho_prof') {
+        var url = new URL(window.parent.location.href);
+        url.searchParams.set('_prof_jk',     d.jk);
+        url.searchParams.set('_prof_name',   d.name);
+        url.searchParams.set('_prof_course', d.course);
+        window.parent.history.replaceState({}, '', url.toString());
+        window.parent.location.reload();
+    }
+});
+</script>
+""", height=0)
 
         qp = st.query_params
         if qp.get("_course"):
