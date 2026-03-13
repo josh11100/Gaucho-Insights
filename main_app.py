@@ -199,6 +199,33 @@ iframe ~ div > [data-testid="stButton"] {
     text-overflow: ellipsis !important;
     max-width: 100% !important;
 }
+/* Course name buttons — look like Orbitron headings, not buttons */
+[data-testid="stColumn"]:first-child .stButton:first-child > button {
+    background: transparent !important;
+    border: none !important;
+    color: #e8f4ff !important;
+    font-family: 'Orbitron', monospace !important;
+    font-size: 1em !important;
+    font-weight: 700 !important;
+    letter-spacing: .5px !important;
+    padding: 0 !important;
+    text-decoration: underline dotted rgba(255,215,0,.45) !important;
+    text-underline-offset: 3px !important;
+    text-align: left !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    width: 100% !important;
+    justify-content: flex-start !important;
+}
+[data-testid="stColumn"]:first-child .stButton:first-child > button:hover {
+    color: #FFD700 !important;
+    background: transparent !important;
+    border: none !important;
+    text-decoration-color: rgba(255,215,0,.9) !important;
+}
 /* Hide Streamlit's native tooltip popup */
 [data-testid="tooltipHoverTarget"],
 div[class*="tooltip"],
@@ -1946,36 +1973,19 @@ let f = 0;
                 f'background:{clr};color:{txt_col};">{status}</span>'
             )
 
-            # ── Card: left info + right SVG chart side by side ────────────
-            card_left = f"""
-<div style="display:flex;flex-direction:row;align-items:center;
-  gap:16px;padding:10px 4px 6px 4px;border-bottom:1px solid rgba(255,255,255,.05);">
-  <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:5px;">
-    <div style="font-family:Orbitron,sans-serif;font-size:.95em;font-weight:700;
-      color:#e8f4ff;letter-spacing:.4px;white-space:nowrap;overflow:hidden;
-      text-overflow:ellipsis;">⬡ {row['course']}</div>
-    <div style="font-size:.72em;color:#3d5068;letter-spacing:.3px;">
-      {row['quarter']} {int(row['year'])}</div>
-    <div style="font-size:.84em;color:#3d5068;">{'' if has_rmp else prof_name}</div>
-    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-      <span style="font-family:Orbitron,monospace;font-size:.84em;font-weight:700;
-        color:#cde;white-space:nowrap;">GPA {gpa_val:.2f}</span>
-      {badge_html}{rmp_badge}
-    </div>
-  </div>
-  <div style="flex-shrink:0;">{chart_svg}</div>
-</div>"""
-            st.markdown(card_left, unsafe_allow_html=True)
-
-            # ── Navigation buttons (native Streamlit — guaranteed to work) ─
-            btn_cols = st.columns([2, 2, 3])
-            with btn_cols[0]:
-                if st.button(f"📊 {row['course']}", key=f"course_{idx}",
+            # ── Card: course name as clickable button + right SVG chart ──
+            left_col, chart_col = st.columns([3, 2])
+            with left_col:
+                # Course name IS the button — styled via CSS to look like a heading
+                if st.button(f"{row['course']}", key=f"course_{idx}",
                              help="View course grade history"):
                     st.session_state.sel_course_name = row["course"]
                     st.session_state.sel_prof_key    = None
                     st.rerun()
-            with btn_cols[1]:
+                st.markdown(
+                    f'<div style="font-size:.72em;color:#3d5068;letter-spacing:.3px;'
+                    f'margin-top:-6px;margin-bottom:4px;">{row["quarter"]} {int(row["year"])}</div>',
+                    unsafe_allow_html=True)
                 if has_rmp:
                     if st.button(f"👤 {prof_name}", key=f"prof_{idx}",
                                  help="View professor RMP + GPA stats"):
@@ -1986,10 +1996,19 @@ let f = 0;
                         st.rerun()
                 else:
                     st.markdown(
-                        f'<span style="font-size:.84em;color:#3d5068;'
-                        f'padding:6px 0;display:block;">👤 {prof_name}</span>',
+                        f'<div style="font-size:.84em;color:#3d5068;">👤 {prof_name}</div>',
                         unsafe_allow_html=True)
-            st.markdown('<div style="height:4px;"></div>', unsafe_allow_html=True)
+                st.markdown(
+                    f'<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:2px;">'
+                    f'<span style="font-family:Orbitron,monospace;font-size:.84em;font-weight:700;'
+                    f'color:#cde;">GPA {gpa_val:.2f}</span>'
+                    f'{badge_html}{rmp_badge}</div>',
+                    unsafe_allow_html=True)
+            with chart_col:
+                st.markdown(chart_svg, unsafe_allow_html=True)
+
+            st.markdown('<div style="height:8px;border-bottom:1px solid rgba(255,255,255,.04);margin-bottom:8px;"></div>',
+                        unsafe_allow_html=True)
 
         # Handle query param clicks (course or prof) set by postMessage listener
         qp = st.query_params
