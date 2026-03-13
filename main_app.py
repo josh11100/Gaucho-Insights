@@ -1625,23 +1625,27 @@ let f = 0;
                 unsafe_allow_html=True
             )
 
-            # ── ROW 2: STATS + Prof buttons (between course name and GPA badge) ──
-            st.markdown('<div class="card-hidden-btns">', unsafe_allow_html=True)
-            if st.button("📊 STATS", key=f"course_btn_{idx}_{course_name}"):
-                st.session_state.sel_course_name = course_name
-                st.session_state.sel_course_year = int(row["year"])
-                st.session_state.sel_prof_key    = None
-                st.rerun()
-            if has_rmp:
-                if st.button(f"👤 {prof_name}  → RMP", key=f"prof_btn_{idx}_{jk}"):
-                    st.session_state.sel_prof_key    = jk
-                    st.session_state.sel_prof_name   = prof_name
-                    st.session_state.sel_prof_course = course_name
+            # ── ROW 2: STATS + Prof buttons side by side ──
+            btn_col1, btn_col2, btn_spacer = st.columns([1, 2, 3], gap="small")
+            with btn_col1:
+                st.markdown('<div class="card-hidden-btns" style="margin:0;">', unsafe_allow_html=True)
+                if st.button("📊 STATS", key=f"course_btn_{idx}_{course_name}"):
+                    st.session_state.sel_course_name = course_name
+                    st.session_state.sel_course_year = int(row["year"])
+                    st.session_state.sel_prof_key    = None
                     st.rerun()
-            else:
-                st.markdown(f'<span style="font-family:Rajdhani,sans-serif;font-size:.88em;color:#3a5068;">👤 {prof_name}</span>', unsafe_allow_html=True)
-            st.markdown('</div>', unsafe_allow_html=True)
-
+                st.markdown('</div>', unsafe_allow_html=True)
+            with btn_col2:
+                st.markdown('<div class="card-hidden-btns" style="margin:0;">', unsafe_allow_html=True)
+                if has_rmp:
+                    if st.button(f"👤 {prof_name}  → RMP", key=f"prof_btn_{idx}_{jk}"):
+                        st.session_state.sel_prof_key    = jk
+                        st.session_state.sel_prof_name   = prof_name
+                        st.session_state.sel_prof_course = course_name
+                        st.rerun()
+                else:
+                    st.markdown(f'<span style="font-family:Rajdhani,sans-serif;font-size:.88em;color:#3a5068;line-height:2.2;display:inline-block;">👤 {prof_name}</span>', unsafe_allow_html=True)
+                st.markdown('</div>', unsafe_allow_html=True)
             # ── ROW 3: GPA + badge + RMP pill (below buttons) ──
             st.markdown(
                 f'<div style="border-left:4px solid {clr};padding:0 0 10px 28px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">'
