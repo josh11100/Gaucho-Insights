@@ -188,6 +188,17 @@ iframe ~ div > [data-testid="stButton"] {
     box-shadow: none !important;
     border-color: rgba(0,116,217,0.5) !important;
 }
+/* Search card nav buttons — compact and inline */
+[data-testid="stHorizontalBlock"] .stButton > button {
+    padding: 2px 10px !important;
+    font-size: 0.82em !important;
+    border-radius: 8px !important;
+    height: auto !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 100% !important;
+}
 /* Hide Streamlit's native tooltip popup */
 [data-testid="tooltipHoverTarget"],
 div[class*="tooltip"],
@@ -1884,9 +1895,6 @@ let f = 0;
             jk               = row.get("join_key","")
             has_rmp          = jk in rmp_lookup
             txt_col          = "#000" if status == "EASY" else "#fff"
-            rmp_pill         = (f'<span style="font-size:.7em;color:#FFD700;background:rgba(255,215,0,.08);'
-                                f'border:1px solid rgba(255,215,0,.22);padding:2px 8px;border-radius:12px;'
-                                f'margin-left:4px;vertical-align:middle;">RMP</span>' if has_rmp else "")
 
             a_cnt = max(0, int(row.get("a") or 0))
             b_cnt = max(0, int(row.get("b") or 0))
@@ -1895,124 +1903,93 @@ let f = 0;
             f_cnt = max(0, int(row.get("f") or 0))
             total_students = a_cnt + b_cnt + c_cnt + d_cnt + f_cnt
 
-            # ── Build chart HTML ──────────────────────────────────────────
-            cid = "ch" + str(idx)
+            # ── Inline SVG bar chart (no JS, no CDN, instant) ─────────────
             if total_students > 0:
-                fig = px.bar(
-                    pd.DataFrame({"Grade":["A","B","C","D","F"],
-                                  "Count":[a_cnt,b_cnt,c_cnt,d_cnt,f_cnt]}),
-                    x="Grade", y="Count", color="Grade",
-                    color_discrete_map={"A":"#2ECC40","B":"#0074D9","C":"#FFDC00",
-                                        "D":"#FF851B","F":"#FF4136"},
-                    template="plotly_dark", height=130)
-                fig.update_layout(
-                    margin=dict(l=0,r=0,t=4,b=28), showlegend=False,
-                    xaxis_title=None, yaxis_title=None,
-                    paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                    xaxis=dict(tickfont=dict(size=11,color="#aaa")),
-                    yaxis=dict(tickfont=dict(size=9,color="#555"), rangemode="nonnegative"))
-                # Embed data directly as JS object — no JSON.parse, no escaping issues
-                fig_data_js  = str(fig.to_dict()["data"]).replace("True","true").replace("False","false").replace("None","null")
-                fig_layout_js = str(fig.to_dict()["layout"]).replace("True","true").replace("False","false").replace("None","null")
-                chart_html = (
-                    "<div class='chart' id='" + cid + "'></div>"
-                    "<script>"
-                    "(function tryPlot(n){"
-                    "if(typeof Plotly!=='undefined'){"
-                    "Plotly.newPlot('" + cid + "'," + fig_data_js + "," + fig_layout_js + ",{displayModeBar:false,responsive:true});"
-                    "}else if(n>0){setTimeout(function(){tryPlot(n-1);},80);}"
-                    "})(25);"
-                    "</script>"
+                grades  = ["A","B","C","D","F"]
+                counts  = [a_cnt, b_cnt, c_cnt, d_cnt, f_cnt]
+                colors  = ["#2ECC40","#0074D9","#FFDC00","#FF851B","#FF4136"]
+                max_c   = max(counts) or 1
+                W, H    = 200, 100
+                bar_w   = 28
+                gap     = (W - len(grades)*bar_w) / (len(grades)+1)
+                bars_svg = ""
+                for i,(g,c,col) in enumerate(zip(grades,counts,colors)):
+                    bh = int((c/max_c)*(H-20))
+                    x  = int(gap + i*(bar_w+gap))
+                    y  = H - 18 - bh
+                    bars_svg += (
+                        f'<rect x="{x}" y="{y}" width="{bar_w}" height="{bh}" '
+                        f'fill="{col}" rx="3"/>'
+                        f'<text x="{x+bar_w//2}" y="{H-4}" text-anchor="middle" '
+                        f'font-size="11" fill="#aaa" font-family="Rajdhani,sans-serif">{g}</text>'
+                    )
+                chart_svg = (
+                    f'<svg width="{W}" height="{H}" viewBox="0 0 {W} {H}" '
+                    f'xmlns="http://www.w3.org/2000/svg">{bars_svg}</svg>'
                 )
             else:
-                chart_html = (
-                    "<div class='chart' style='display:flex;flex-direction:column;"
-                    "align-items:center;justify-content:center;"
-                    "background:rgba(255,255,255,.03);border-radius:10px;'>"
-                    "<div style='font-family:Orbitron,sans-serif;font-size:1.6em;"
-                    "font-weight:900;color:" + clr + ";'>" + f"{gpa_val:.2f}" + "</div>"
-                    "<div style='font-size:.6em;color:#445;letter-spacing:1px;"
-                    "margin-top:4px;'>AVG GPA</div></div>"
+                chart_svg = (
+                    f'<div style="width:200px;height:100px;display:flex;align-items:center;'
+                    f'justify-content:center;flex-direction:column;">'
+                    f'<span style="font-family:Orbitron,sans-serif;font-size:1.4em;'
+                    f'font-weight:900;color:{clr};">{gpa_val:.2f}</span>'
+                    f'<span style="font-size:.6em;color:#445;margin-top:4px;">AVG GPA</span></div>'
                 )
 
-            # ── Build prof element ────────────────────────────────────────
-            course_js = row["course"].replace("'", "\\'").replace('"', '\\"')
-            prof_js   = prof_name.replace("'", "\\'").replace('"', '\\"')
-            if has_rmp:
-                prof_el = (
-                    "<button class='prof-btn' "
-                    "onclick=\"window.parent.postMessage("
-                    "{'type':'prof_click','jk':'" + jk + "',"
-                    "'name':'" + prof_js + "',"
-                    "'course':'" + course_js + "'},'*')\">"
-                    "👤 " + prof_name + "</button>"
-                )
-            else:
-                prof_el = "<div class='prof-plain'>" + prof_name + "</div>"
-
-            rmp_badge  = "<span class='rmp-pill'>RMP</span>" if has_rmp else ""
+            rmp_badge  = (
+                '<span style="font-size:.65em;color:#FFD700;background:rgba(255,215,0,.08);'
+                'border:1px solid rgba(255,215,0,.28);padding:2px 7px;border-radius:10px;">RMP</span>'
+            ) if has_rmp else ""
             badge_html = (
-                "<span class='badge' style='background:" + clr + ";color:" + txt_col + ";'>"
-                + status + "</span>"
+                f'<span style="padding:2px 9px;border-radius:20px;font-size:.67em;'
+                f'font-weight:900;letter-spacing:1px;white-space:nowrap;'
+                f'background:{clr};color:{txt_col};">{status}</span>'
             )
 
-            # ── Assemble full card HTML ───────────────────────────────────
-            card_html = (
-                "<!DOCTYPE html><html><head>"
-                "<script src='https://cdn.plot.ly/plotly-2.27.0.min.js'></script>"
-                "<style>"
-                "@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Rajdhani:wght@600;700&display=swap');"
-                "*{margin:0;padding:0;box-sizing:border-box}"
-                "html,body{background:transparent;overflow:hidden;font-family:Rajdhani,sans-serif}"
-                ".card{display:flex;flex-direction:row;align-items:center;gap:12px;"
-                "width:100%;min-height:130px;padding:2px 0;}"
-                ".left{flex:3;min-width:0;display:flex;flex-direction:column;"
-                "justify-content:center;gap:6px;}"
-                ".chart{flex:2;min-width:140px;max-width:44%;flex-shrink:0;}"
-                ".course-btn{background:transparent;border:none;color:#e8f4ff;"
-                "font-family:Orbitron,monospace;font-size:clamp(.82em,1.5vw,1em);"
-                "font-weight:700;letter-spacing:.5px;cursor:pointer;text-align:left;"
-                "padding:0;text-decoration:underline dotted rgba(255,215,0,.4);"
-                "text-underline-offset:4px;transition:color .15s;line-height:1.3;"
-                "width:fit-content;max-width:100%;display:block;}"
-                ".course-btn:hover{color:#FFD700;text-decoration-color:rgba(255,215,0,.9);}"
-                ".quarter{font-size:.74em;color:#445;letter-spacing:.4px;}"
-                ".prof-btn{background:rgba(0,116,217,.13);border:1px solid rgba(0,116,217,.45);"
-                "color:#5bb8ff;border-radius:9px;font-family:Rajdhani,sans-serif;font-weight:700;"
-                "font-size:.86em;padding:4px 11px;cursor:pointer;"
-                "transition:background .15s,border-color .15s,color .15s;"
-                "white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"
-                "width:fit-content;max-width:100%;display:block;}"
-                ".prof-btn:hover{background:rgba(255,215,0,.1);border-color:rgba(255,215,0,.55);color:#FFD700;}"
-                ".prof-plain{font-size:.86em;color:#445;padding:1px 0;}"
-                ".bottom{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}"
-                ".gpa{font-family:Orbitron,monospace;font-size:.86em;font-weight:700;"
-                "color:#cde;white-space:nowrap;}"
-                ".badge{padding:2px 9px;border-radius:20px;font-size:.68em;font-weight:900;"
-                "letter-spacing:1px;white-space:nowrap;}"
-                ".rmp-pill{font-size:.66em;color:#FFD700;background:rgba(255,215,0,.08);"
-                "border:1px solid rgba(255,215,0,.25);padding:2px 7px;border-radius:10px;}"
-                "</style></head><body>"
-                "<div class='card'>"
-                "  <div class='left'>"
-                "    <button class='course-btn'"
-                "      onclick=\"window.parent.postMessage("
-                "{'type':'course_click','course':'" + course_js + "'},'*')\">"
-                + row["course"] + "</button>"
-                "    <div class='quarter'>" + row["quarter"] + " " + str(row["year"]) + "</div>"
-                "    " + prof_el +
-                "    <div class='bottom'>"
-                "      <span class='gpa'>GPA " + f"{gpa_val:.2f}" + "</span>"
-                "      " + badge_html +
-                "      " + rmp_badge +
-                "    </div>"
-                "  </div>"
-                "  " + chart_html +
-                "</div>"
-                "</body></html>"
-            )
+            # ── Card: left info + right SVG chart side by side ────────────
+            card_left = f"""
+<div style="display:flex;flex-direction:row;align-items:center;
+  gap:16px;padding:10px 4px 6px 4px;border-bottom:1px solid rgba(255,255,255,.05);">
+  <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:5px;">
+    <div style="font-family:Orbitron,sans-serif;font-size:.95em;font-weight:700;
+      color:#e8f4ff;letter-spacing:.4px;white-space:nowrap;overflow:hidden;
+      text-overflow:ellipsis;">⬡ {row['course']}</div>
+    <div style="font-size:.72em;color:#3d5068;letter-spacing:.3px;">
+      {row['quarter']} {int(row['year'])}</div>
+    <div style="font-size:.84em;color:#3d5068;">{'' if has_rmp else prof_name}</div>
+    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+      <span style="font-family:Orbitron,monospace;font-size:.84em;font-weight:700;
+        color:#cde;white-space:nowrap;">GPA {gpa_val:.2f}</span>
+      {badge_html}{rmp_badge}
+    </div>
+  </div>
+  <div style="flex-shrink:0;">{chart_svg}</div>
+</div>"""
+            st.markdown(card_left, unsafe_allow_html=True)
 
-            components.html(card_html, height=160, scrolling=False)
+            # ── Navigation buttons (native Streamlit — guaranteed to work) ─
+            btn_cols = st.columns([2, 2, 3])
+            with btn_cols[0]:
+                if st.button(f"📊 {row['course']}", key=f"course_{idx}",
+                             help="View course grade history"):
+                    st.session_state.sel_course_name = row["course"]
+                    st.session_state.sel_prof_key    = None
+                    st.rerun()
+            with btn_cols[1]:
+                if has_rmp:
+                    if st.button(f"👤 {prof_name}", key=f"prof_{idx}",
+                                 help="View professor RMP + GPA stats"):
+                        st.session_state.sel_prof_key    = jk
+                        st.session_state.sel_prof_name   = prof_name
+                        st.session_state.sel_prof_course = row["course"]
+                        st.session_state.sel_course_name = None
+                        st.rerun()
+                else:
+                    st.markdown(
+                        f'<span style="font-size:.84em;color:#3d5068;'
+                        f'padding:6px 0;display:block;">👤 {prof_name}</span>',
+                        unsafe_allow_html=True)
+            st.markdown('<div style="height:4px;"></div>', unsafe_allow_html=True)
 
         # Handle query param clicks (course or prof) set by postMessage listener
         qp = st.query_params
@@ -2028,23 +2005,6 @@ let f = 0;
             st.session_state.sel_course_name = None
             st.query_params.clear()
             st.rerun()
-
-        # Shared postMessage → query param listener (height=0, invisible)
-        components.html("""<script>
-window.addEventListener('message', function(e) {
-    if (!e.data || !e.data.type) return;
-    var url = new URL(window.parent.location.href);
-    if (e.data.type === 'course_click') {
-        url.searchParams.set('_course', e.data.course);
-        window.parent.location.href = url.toString();
-    } else if (e.data.type === 'prof_click') {
-        url.searchParams.set('_prof_jk',     e.data.jk);
-        url.searchParams.set('_prof_name',   e.data.name);
-        url.searchParams.set('_prof_course', e.data.course);
-        window.parent.location.href = url.toString();
-    }
-});
-</script>""", height=0)
 
     # ── MY QUARTER ──────────────────────────────────────────────────────────
     with tab_quarter:
