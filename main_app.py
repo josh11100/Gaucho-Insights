@@ -173,204 +173,91 @@ div[data-baseweb="tooltip"],
     pointer-events: none !important;
 }
 
-/* ── Card action buttons row — rendered below the HTML visual card ── */
-.card-hidden-btns {
-    margin: -2px 0 0 18px !important;
-    padding: 0 0 8px 0 !important;
+/* ── Prof name buttons — look like plain blue text, no box ── */
+.prof-text-btn { padding: 0 4px !important; margin: 0 !important; }
+.prof-text-btn > div[data-testid="stButton"] > button {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+    color: #5bb8ff !important;
+    font-family: 'Rajdhani', sans-serif !important;
+    font-size: .88em !important;
+    font-weight: 700 !important;
+    padding: 0 0 2px 3px !important;
+    margin: 0 !important;
+    min-height: 0 !important;
+    height: auto !important;
+    line-height: 1.4 !important;
+    border-radius: 0 !important;
+    text-align: left !important;
+    justify-content: flex-start !important;
+    cursor: pointer !important;
+    width: auto !important;
+}
+.prof-text-btn > div[data-testid="stButton"] > button:hover {
+    color: #FFD700 !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+.prof-text-btn > div[data-testid="stButton"] > button:focus,
+.prof-text-btn > div[data-testid="stButton"] > button:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+    border: none !important;
+}
+
+/* ── Course STATS buttons — small pill style ── */
+.stats-text-btn { padding: 0 4px !important; margin: 0 !important; }
+.stats-text-btn > div[data-testid="stButton"] > button {
+    background: rgba(0,180,255,0.08) !important;
+    border: 1px solid rgba(0,180,255,0.3) !important;
+    box-shadow: none !important;
+    outline: none !important;
+    color: #00ccff !important;
+    font-family: 'Orbitron', sans-serif !important;
+    font-size: .6em !important;
+    font-weight: 700 !important;
+    padding: 2px 10px !important;
+    margin: 0 !important;
+    min-height: 0 !important;
+    height: auto !important;
+    line-height: 1.6 !important;
+    border-radius: 8px !important;
+    letter-spacing: 1px !important;
+    cursor: pointer !important;
+    width: auto !important;
+}
+.stats-text-btn > div[data-testid="stButton"] > button:hover {
+    background: rgba(0,180,255,0.18) !important;
+    color: #fff !important;
+    border-color: rgba(0,180,255,0.6) !important;
+    box-shadow: none !important;
+}
+.stats-text-btn > div[data-testid="stButton"] > button:focus,
+.stats-text-btn > div[data-testid="stButton"] > button:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+/* ── Side-by-side button row columns — remove padding/gap so they sit flush ── */
+.btn-row-col > div[data-testid="stColumn"] {
+    padding-left: 4px !important;
+    padding-right: 4px !important;
+    flex: 0 0 auto !important;
+    width: auto !important;
+    min-width: 0 !important;
+}
+.btn-row-col {
     display: flex !important;
-    flex-direction: row !important;
     align-items: center !important;
-    gap: 10px !important;
-}
-.card-hidden-btns > div[data-testid="stButton"] {
-    flex-shrink: 0 !important;
-}
-/* STATS button */
-.card-hidden-btns > div[data-testid="stButton"]:first-child > button {
-    background: rgba(0,180,255,0.1) !important;
-    border: 1px solid rgba(0,180,255,0.35) !important;
-    box-shadow: none !important;
-    color: #00ccff !important;
-    font-family: 'Orbitron', sans-serif !important;
-    font-size: .6em !important;
-    font-weight: 700 !important;
-    padding: 3px 10px !important;
-    min-height: 0 !important;
-    height: auto !important;
-    line-height: 1.6 !important;
-    border-radius: 7px !important;
-    letter-spacing: .8px !important;
-    white-space: nowrap !important;
-}
-.card-hidden-btns > div[data-testid="stButton"]:first-child > button:hover {
-    background: rgba(0,180,255,0.22) !important;
-    color: #fff !important;
-    border-color: rgba(0,180,255,0.6) !important;
-    box-shadow: none !important;
-}
-/* Prof button (second button) */
-.card-hidden-btns > div[data-testid="stButton"]:nth-child(2) > button {
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    color: #5bb8ff !important;
-    font-family: 'Rajdhani', sans-serif !important;
-    font-size: .88em !important;
-    font-weight: 700 !important;
-    padding: 0 4px !important;
-    min-height: 0 !important;
-    height: auto !important;
-    line-height: 1.5 !important;
-    border-radius: 0 !important;
-    white-space: nowrap !important;
-}
-.card-hidden-btns > div[data-testid="stButton"]:nth-child(2) > button:hover {
-    color: #FFD700 !important;
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-}
-.card-hidden-btns > div[data-testid="stButton"] > button:focus,
-.card-hidden-btns > div[data-testid="stButton"] > button:focus-visible {
-    outline: none !important;
-    box-shadow: none !important;
+    gap: 0 !important;
+    flex-wrap: nowrap !important;
+    padding: 0 0 8px 18px !important;
+    margin: -2px 0 0 0 !important;
 }
 
-/* ── Prof name buttons — look like plain blue text, no box ── */
-.prof-text-btn { padding: 0 16px 0 16px !important; margin: 0 !important; }
-.prof-text-btn > div[data-testid="stButton"] > button {
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    outline: none !important;
-    color: #5bb8ff !important;
-    font-family: 'Rajdhani', sans-serif !important;
-    font-size: .88em !important;
-    font-weight: 700 !important;
-    padding: 0 0 2px 3px !important;
-    margin: 0 !important;
-    min-height: 0 !important;
-    height: auto !important;
-    line-height: 1.4 !important;
-    border-radius: 0 !important;
-    text-align: left !important;
-    justify-content: flex-start !important;
-    cursor: pointer !important;
-    width: auto !important;
-}
-.prof-text-btn > div[data-testid="stButton"] > button:hover {
-    color: #FFD700 !important;
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-}
-.prof-text-btn > div[data-testid="stButton"] > button:focus,
-.prof-text-btn > div[data-testid="stButton"] > button:focus-visible {
-    outline: none !important;
-    box-shadow: none !important;
-    border: none !important;
-}
-
-/* ── Course STATS buttons — small pill style ── */
-.stats-text-btn { padding: 0 4px !important; margin: 0 !important; }
-.stats-text-btn > div[data-testid="stButton"] > button {
-    background: rgba(0,180,255,0.08) !important;
-    border: 1px solid rgba(0,180,255,0.3) !important;
-    box-shadow: none !important;
-    outline: none !important;
-    color: #00ccff !important;
-    font-family: 'Orbitron', sans-serif !important;
-    font-size: .6em !important;
-    font-weight: 700 !important;
-    padding: 2px 10px !important;
-    margin: 0 !important;
-    min-height: 0 !important;
-    height: auto !important;
-    line-height: 1.6 !important;
-    border-radius: 8px !important;
-    letter-spacing: 1px !important;
-    cursor: pointer !important;
-    width: auto !important;
-}
-.stats-text-btn > div[data-testid="stButton"] > button:hover {
-    background: rgba(0,180,255,0.18) !important;
-    color: #fff !important;
-    border-color: rgba(0,180,255,0.6) !important;
-    box-shadow: none !important;
-}
-.stats-text-btn > div[data-testid="stButton"] > button:focus,
-.stats-text-btn > div[data-testid="stButton"] > button:focus-visible {
-    outline: none !important;
-    box-shadow: none !important;
-}
-
-/* ── Prof name buttons — look like plain blue text, no box ── */
-.prof-text-btn { padding: 0 16px 0 16px !important; margin: 0 !important; }
-.prof-text-btn > div[data-testid="stButton"] > button {
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    outline: none !important;
-    color: #5bb8ff !important;
-    font-family: 'Rajdhani', sans-serif !important;
-    font-size: .88em !important;
-    font-weight: 700 !important;
-    padding: 0 0 2px 3px !important;
-    margin: 0 !important;
-    min-height: 0 !important;
-    height: auto !important;
-    line-height: 1.4 !important;
-    border-radius: 0 !important;
-    text-align: left !important;
-    justify-content: flex-start !important;
-    cursor: pointer !important;
-    width: auto !important;
-}
-.prof-text-btn > div[data-testid="stButton"] > button:hover {
-    color: #FFD700 !important;
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-}
-.prof-text-btn > div[data-testid="stButton"] > button:focus,
-.prof-text-btn > div[data-testid="stButton"] > button:focus-visible {
-    outline: none !important;
-    box-shadow: none !important;
-    border: none !important;
-}
-
-/* ── Course STATS buttons — small pill style ── */
-.stats-text-btn { padding: 0 4px !important; margin: 0 !important; }
-.stats-text-btn > div[data-testid="stButton"] > button {
-    background: rgba(0,180,255,0.08) !important;
-    border: 1px solid rgba(0,180,255,0.3) !important;
-    box-shadow: none !important;
-    outline: none !important;
-    color: #00ccff !important;
-    font-family: 'Orbitron', sans-serif !important;
-    font-size: .6em !important;
-    font-weight: 700 !important;
-    padding: 2px 10px !important;
-    margin: 0 !important;
-    min-height: 0 !important;
-    height: auto !important;
-    line-height: 1.6 !important;
-    border-radius: 8px !important;
-    letter-spacing: 1px !important;
-    cursor: pointer !important;
-    width: auto !important;
-}
-.stats-text-btn > div[data-testid="stButton"] > button:hover {
-    background: rgba(0,180,255,0.18) !important;
-    color: #fff !important;
-    border-color: rgba(0,180,255,0.6) !important;
-    box-shadow: none !important;
-}
-.stats-text-btn > div[data-testid="stButton"] > button:focus,
-.stats-text-btn > div[data-testid="stButton"] > button:focus-visible {
-    outline: none !important;
-    box-shadow: none !important;
-}
 /* ── Inputs ── */
 .stTextInput > div > div > input, .stSelectbox > div > div {
     background: rgba(0,20,50,0.8) !important;
@@ -400,6 +287,34 @@ div[data-baseweb="tooltip"],
 }
 [data-testid="stColumn"] { min-width: 0 !important; overflow: hidden !important; }
 [data-testid="stColumn"] > div { min-width: 0 !important; overflow: hidden !important; word-break: break-word !important; }
+
+/* ── Sidebar toggle button (floating) ── */
+#sidebar-toggle-btn {
+    position: fixed;
+    top: 14px;
+    left: 14px;
+    z-index: 999999;
+    width: 40px;
+    height: 40px;
+    border-radius: 11px;
+    background: rgba(0,10,30,0.92);
+    border: 1.5px solid rgba(255,215,0,0.45);
+    color: #FFD700;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.5), 0 0 12px rgba(255,215,0,0.08);
+    transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+    font-family: monospace;
+    user-select: none;
+}
+#sidebar-toggle-btn:hover {
+    background: rgba(255,215,0,0.12);
+    border-color: rgba(255,215,0,0.8);
+    box-shadow: 0 4px 24px rgba(255,215,0,0.15);
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -475,20 +390,17 @@ def load_data():
     df = pd.read_csv(grades_path)
     df.columns = [c.strip().lower() for c in df.columns]
 
-    # ── FIX: Detect grade columns flexibly ──────────────────────────────────
-    # courseGrades.csv may use: a/b/c/d/f  OR  gradeacount/gradebcount etc.
-    # OR  a_count/b_count  OR  count_a etc.
     grade_col_map = {}
     for grade in ["a", "b", "c", "d", "f"]:
         candidates = [
-            grade,                        # "a"
-            f"grade{grade}count",         # "gradeacount"
-            f"grade_{grade}_count",       # "grade_a_count"
-            f"{grade}_count",             # "a_count"
-            f"count_{grade}",             # "count_a"
-            f"n{grade}",                  # "na"
-            f"num_{grade}",               # "num_a"
-            f"{grade}grade",              # "agrade"
+            grade,
+            f"grade{grade}count",
+            f"grade_{grade}_count",
+            f"{grade}_count",
+            f"count_{grade}",
+            f"n{grade}",
+            f"num_{grade}",
+            f"{grade}grade",
         ]
         found = None
         for c in candidates:
@@ -497,12 +409,10 @@ def load_data():
                 break
         grade_col_map[grade] = found
 
-    # Rename found grade cols to standard a/b/c/d/f for uniform access
     rename_map = {v: k for k, v in grade_col_map.items() if v and v != k}
     if rename_map:
         df = df.rename(columns=rename_map)
 
-    # Ensure grade columns exist (fill 0 if not found anywhere)
     for g in ["a", "b", "c", "d", "f"]:
         if g not in df.columns:
             df[g] = 0
@@ -592,7 +502,6 @@ def load_data():
 
     gpa_col  = next((c for c in ["avggpa", "avg_gpa", "avg gpa", "gpa"] if c in df.columns), None)
     if gpa_col is None:
-        # Try to compute it from letter grades
         df["avggpa"] = (df["a"]*4.0 + df["b"]*3.0 + df["c"]*2.0 + df["d"]*1.0) / \
                        (df[["a","b","c","d","f"]].sum(axis=1).replace(0, float("nan")))
         gpa_col = "avggpa"
@@ -688,6 +597,97 @@ hero.addEventListener('mousemove',e=>{
 hero.addEventListener('mouseleave',()=>{title.style.transform='rotateY(0) rotateX(0) translateZ(0)';});
 </script>
 """, height=170)
+
+
+# ─────────────────────────────────────────────
+#  SIDEBAR TOGGLE BUTTON (floating)
+# ─────────────────────────────────────────────
+def render_sidebar_toggle():
+    components.html("""
+<script>
+(function() {
+    // Wait for the parent DOM to be ready
+    function init() {
+        if (document.getElementById('sidebar-toggle-btn')) return;
+
+        const btn = document.parent ? null : null; // scope to parent
+        const parentDoc = window.parent.document;
+
+        if (parentDoc.getElementById('sidebar-toggle-btn')) return;
+
+        const toggle = parentDoc.createElement('button');
+        toggle.id = 'sidebar-toggle-btn';
+        toggle.title = 'Toggle Filters';
+        toggle.innerHTML = '&#9776;'; // hamburger ≡
+        toggle.style.cssText = `
+            position: fixed;
+            top: 14px;
+            left: 14px;
+            z-index: 999999;
+            width: 40px;
+            height: 40px;
+            border-radius: 11px;
+            background: rgba(0,10,30,0.92);
+            border: 1.5px solid rgba(255,215,0,0.45);
+            color: #FFD700;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 18px rgba(0,0,0,0.5), 0 0 12px rgba(255,215,0,0.08);
+            transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+            font-family: monospace;
+            user-select: none;
+            line-height: 1;
+        `;
+
+        toggle.addEventListener('mouseenter', () => {
+            toggle.style.background = 'rgba(255,215,0,0.12)';
+            toggle.style.borderColor = 'rgba(255,215,0,0.8)';
+            toggle.style.boxShadow = '0 4px 24px rgba(255,215,0,0.15)';
+        });
+        toggle.addEventListener('mouseleave', () => {
+            toggle.style.background = 'rgba(0,10,30,0.92)';
+            toggle.style.borderColor = 'rgba(255,215,0,0.45)';
+            toggle.style.boxShadow = '0 4px 18px rgba(0,0,0,0.5)';
+        });
+
+        let sidebarOpen = true;
+
+        toggle.addEventListener('click', () => {
+            // Find Streamlit's sidebar collapse button and click it
+            const collapseBtn = parentDoc.querySelector('[data-testid="collapsedControl"]') ||
+                                parentDoc.querySelector('button[kind="secondary"][data-testid="baseButton-secondary"]') ||
+                                parentDoc.querySelector('[data-testid="stSidebarNav"] button') ||
+                                parentDoc.querySelector('[data-testid="stSidebarHeader"] button');
+
+            // The most reliable: find the sidebar and toggle its collapsed state
+            const sidebar = parentDoc.querySelector('[data-testid="stSidebar"]');
+            if (sidebar) {
+                const isExpanded = sidebar.getAttribute('aria-expanded') !== 'false';
+                // Find any button inside stSidebarHeader
+                const sidebarBtn = parentDoc.querySelector('[data-testid="stSidebarHeader"] button');
+                if (sidebarBtn) {
+                    sidebarBtn.click();
+                    sidebarOpen = !sidebarOpen;
+                    toggle.innerHTML = sidebarOpen ? '&#9776;' : '&#9776;';
+                    toggle.style.borderColor = sidebarOpen
+                        ? 'rgba(255,215,0,0.45)'
+                        : 'rgba(0,180,255,0.6)';
+                    toggle.style.color = sidebarOpen ? '#FFD700' : '#00ccff';
+                }
+            }
+        });
+
+        parentDoc.body.appendChild(toggle);
+    }
+
+    // Try immediately and after small delays to ensure DOM is ready
+    [0, 100, 300, 600, 1000, 1800].forEach(ms => setTimeout(init, ms));
+})();
+</script>
+""", height=0)
 
 
 # ─────────────────────────────────────────────
@@ -1122,7 +1122,6 @@ def render_course_card(course_name: str, course_df: pd.DataFrame, gpa_col: str, 
     status_4yr, clr_4yr, _ = gpa_badge(avg_4yr) if avg_4yr else ("N/A", "#888", "")
     txt_col = "#000" if status_4yr == "EASY" else "#fff"
 
-    # Grade distribution across 4yr
     a_t = int(df4.get("a", pd.Series(dtype=int)).sum()) if "a" in df4.columns else 0
     b_t = int(df4.get("b", pd.Series(dtype=int)).sum()) if "b" in df4.columns else 0
     c_t = int(df4.get("c", pd.Series(dtype=int)).sum()) if "c" in df4.columns else 0
@@ -1132,7 +1131,6 @@ def render_course_card(course_name: str, course_df: pd.DataFrame, gpa_col: str, 
 
     def pct(n): return f"{100*n/total_graded:.0f}%" if total_graded > 0 else "N/A"
 
-    # Top instructors by avg GPA
     if not df4.empty and "instructor" in df4.columns:
         top_profs = (df4.groupby("instructor")[gpa_col]
                      .mean().sort_values(ascending=False).head(5).reset_index())
@@ -1140,7 +1138,6 @@ def render_course_card(course_name: str, course_df: pd.DataFrame, gpa_col: str, 
     else:
         top_profs = pd.DataFrame()
 
-    # GPA trend by year (all time)
     if not df_all.empty:
         trend = df_all.groupby("year")[gpa_col].mean().reset_index()
         trend.columns = ["Year", "Avg GPA"]
@@ -1151,7 +1148,6 @@ def render_course_card(course_name: str, course_df: pd.DataFrame, gpa_col: str, 
     avg_str = f"{avg_4yr:.2f}" if avg_4yr else "N/A"
     all_str = f"{avg_all:.2f}" if avg_all else "N/A"
 
-    # ── Card header ──
     st.markdown(f"""
 <div style="background:linear-gradient(135deg,#001428 0%,#001e3a 100%);
     border-radius:16px;border:1.5px solid rgba(0,180,255,0.3);
@@ -1194,7 +1190,6 @@ def render_course_card(course_name: str, course_df: pd.DataFrame, gpa_col: str, 
   </div>
 </div>""", unsafe_allow_html=True)
 
-    # ── GPA Trend chart ──
     if not trend.empty and len(trend) > 1:
         fig = go.Figure()
         fig.add_trace(go.Scatter(
@@ -1220,7 +1215,6 @@ def render_course_card(course_name: str, course_df: pd.DataFrame, gpa_col: str, 
         )
         st.plotly_chart(fig, use_container_width=True)
 
-    # ── Top instructors ──
     if not top_profs.empty:
         st.markdown('<div style="font-family:Orbitron,sans-serif;font-size:.72em;color:#00ccff;'
                     'letter-spacing:2px;margin:8px 0 6px;">TOP INSTRUCTORS (4 YR AVG GPA)</div>',
@@ -1341,6 +1335,9 @@ def main():
     _KNOWN_LASTNAMES = known_lastnames
     render_hero()
 
+    # ── Floating sidebar toggle button ──────────────────────────────────────
+    render_sidebar_toggle()
+
     components.html("""
 <script>
 (function() {
@@ -1428,7 +1425,6 @@ function wire(GeoClass, args, color, x, y, z, op) {
         new THREE.MeshBasicMaterial({ color, wireframe:true, transparent:true, opacity:op }));
     m.position.set(x,y,z); return m;
 }
-// Colors matching the site vibe — gold, cyan, blue accents
 const geo1 = wire(THREE.IcosahedronGeometry, [12, 0], 0xffd700,  60, -25, -80, 0.45);
 const geo2 = wire(THREE.OctahedronGeometry,  [5,  0], 0x00ccff, -70,  40, -60, 0.50);
 const geo3 = wire(THREE.TetrahedronGeometry, [9,  0], 0xffd700,  15,  60, -50, 0.42);
@@ -1579,12 +1575,11 @@ let f = 0;
 
     # ── SEARCH TOOL ──────────────────────────────────────────────────────────
     with tab_search:
-        # ── PROFESSOR CARD (shown when a prof is selected) ───────────────────
+        # ── PROFESSOR CARD ───────────────────────────────────────────────────
         if st.session_state.sel_prof_key:
             lk        = st.session_state.sel_prof_key
             info      = rmp_lookup.get(lk, {})
             prof_hist = full_df[full_df["join_key"] == lk].copy()
-            # Close button at the TOP
             if st.button("(シ_ _)シ  Close Professor Card", key="close_prof"):
                 st.session_state.sel_prof_key  = None
                 st.session_state.sel_prof_name = None
@@ -1611,7 +1606,6 @@ let f = 0;
             render_course_card(cn, course_hist, gpa_col, cy)
             st.markdown("---")
 
-
         df = full_df.copy()
         if selected_dept:
             df = df[df["dept"] == selected_dept]
@@ -1624,7 +1618,6 @@ let f = 0;
             st.warning("No results found. Try adjusting the filters.")
             return
 
-        # ── Handle prof click via postMessage from card anchors ──
         qp = st.query_params
         if qp.get("_prof_jk"):
             st.session_state.sel_prof_key    = qp.get("_prof_jk", "")
@@ -1667,7 +1660,6 @@ let f = 0;
                 'font-weight:700;letter-spacing:.5px;vertical-align:middle;margin-left:4px;">RMP</span>'
             ) if has_rmp else ""
 
-            # Inline SVG mini bar chart — bigger
             if total_students > 0:
                 counts     = [a_cnt, b_cnt, c_cnt, d_cnt, f_cnt]
                 bar_colors = ["#2ECC40","#0074D9","#FFDC00","#FF851B","#FF4136"]
@@ -1694,7 +1686,7 @@ let f = 0;
                              f'<span style="font-size:.6em;color:#445;letter-spacing:1px;margin-top:2px;">AVG GPA</span>'
                              f'</div>')
 
-            # ── Full card: top row is pure HTML (course name + date + chart), bottom row is real buttons ──
+            # Card HTML: course name + date + chart
             st.markdown(
                 f'<div style="display:flex;align-items:stretch;border-left:4px solid {clr};margin-bottom:0;padding-bottom:0;">'
                 f'<div style="width:14px;flex-shrink:0;"></div>'
@@ -1708,8 +1700,7 @@ let f = 0;
                 f'{chart_svg}'
                 f'</div>'
                 f'</div>'
-                # GPA + badge row below, still in the colored left-border zone
-                f'<div style="border-left:4px solid {clr};padding:0 0 8px 28px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">'
+                f'<div style="border-left:4px solid {clr};padding:0 0 4px 28px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">'
                 f'  <span style="font-family:Orbitron,sans-serif;font-size:.75em;color:#b0c8e0;font-weight:700;">GPA {gpa_val:.2f}</span>'
                 f'  <span style="background:{clr};color:{txt_col};padding:2px 9px;border-radius:14px;font-size:.6em;font-weight:900;letter-spacing:.8px;">{status}</span>'
                 f'  {rmp_pill}'
@@ -1717,26 +1708,35 @@ let f = 0;
                 unsafe_allow_html=True
             )
 
-            # Buttons row — styled via .card-hidden-btns CSS to look like STATS pill + prof text
-            st.markdown('<div class="card-hidden-btns">', unsafe_allow_html=True)
-            if st.button("📊 STATS", key=f"course_btn_{idx}_{course_name}"):
-                st.session_state.sel_course_name = course_name
-                st.session_state.sel_course_year = int(row["year"])
-                st.session_state.sel_prof_key    = None
-                st.rerun()
-            if has_rmp:
-                if st.button(f"👤 {prof_name}  → RMP", key=f"prof_btn_{idx}_{jk}"):
-                    st.session_state.sel_prof_key    = jk
-                    st.session_state.sel_prof_name   = prof_name
-                    st.session_state.sel_prof_course = course_name
+            # ── Side-by-side STATS + Prof buttons using columns ──────────────
+            btn_c1, btn_c2, _ = st.columns([1, 2, 3])
+            with btn_c1:
+                st.markdown('<div class="stats-text-btn">', unsafe_allow_html=True)
+                if st.button("📊 STATS", key=f"course_btn_{idx}_{course_name}"):
+                    st.session_state.sel_course_name = course_name
+                    st.session_state.sel_course_year = int(row["year"])
+                    st.session_state.sel_prof_key    = None
                     st.rerun()
-            else:
-                st.markdown(f'<span style="font-family:Rajdhani,sans-serif;font-size:.88em;color:#3a5068;">👤 {prof_name}</span>', unsafe_allow_html=True)
-            st.markdown('</div>', unsafe_allow_html=True)
+                st.markdown('</div>', unsafe_allow_html=True)
+            with btn_c2:
+                if has_rmp:
+                    st.markdown('<div class="prof-text-btn">', unsafe_allow_html=True)
+                    if st.button(f"👤 {prof_name}  → RMP", key=f"prof_btn_{idx}_{jk}"):
+                        st.session_state.sel_prof_key    = jk
+                        st.session_state.sel_prof_name   = prof_name
+                        st.session_state.sel_prof_course = course_name
+                        st.rerun()
+                    st.markdown('</div>', unsafe_allow_html=True)
+                else:
+                    st.markdown(
+                        f'<span style="font-family:Rajdhani,sans-serif;font-size:.88em;'
+                        f'color:#3a5068;display:inline-block;padding:4px 0 4px 3px;">👤 {prof_name}</span>',
+                        unsafe_allow_html=True
+                    )
 
             # Divider
             st.markdown(
-                '<hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:0;">',
+                '<hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:2px 0 0 0;">',
                 unsafe_allow_html=True
             )
 
