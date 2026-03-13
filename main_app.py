@@ -173,7 +173,70 @@ div[data-baseweb="tooltip"],
     pointer-events: none !important;
 }
 
-/* ── Card action buttons row — rendered below course name, above GPA badge ── */
+/* ── Card row-2 button styling: STATS (first col) and Prof (second col) ── */
+/* These buttons sit inside st.columns, so we target them by their wrapper classes */
+
+/* STATS button — small cyan pill */
+.result-stats-btn > div[data-testid="stButton"] > button,
+.result-stats-btn button {
+    background: rgba(0,180,255,0.1) !important;
+    border: 1px solid rgba(0,180,255,0.35) !important;
+    box-shadow: none !important;
+    color: #00ccff !important;
+    font-family: 'Orbitron', sans-serif !important;
+    font-size: .6em !important;
+    font-weight: 700 !important;
+    padding: 3px 10px !important;
+    min-height: 0 !important;
+    height: auto !important;
+    line-height: 1.6 !important;
+    border-radius: 7px !important;
+    letter-spacing: .8px !important;
+    white-space: nowrap !important;
+    width: auto !important;
+}
+.result-stats-btn button:hover {
+    background: rgba(0,180,255,0.22) !important;
+    color: #fff !important;
+    border-color: rgba(0,180,255,0.6) !important;
+    box-shadow: none !important;
+}
+
+/* Prof → RMP button — transparent text link style */
+.result-prof-btn > div[data-testid="stButton"] > button,
+.result-prof-btn button {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: #5bb8ff !important;
+    font-family: 'Rajdhani', sans-serif !important;
+    font-size: .88em !important;
+    font-weight: 700 !important;
+    padding: 0 4px !important;
+    min-height: 0 !important;
+    height: auto !important;
+    line-height: 1.5 !important;
+    border-radius: 0 !important;
+    white-space: nowrap !important;
+    width: auto !important;
+    text-align: left !important;
+    justify-content: flex-start !important;
+}
+.result-prof-btn button:hover {
+    color: #FFD700 !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+.result-stats-btn button:focus,
+.result-stats-btn button:focus-visible,
+.result-prof-btn button:focus,
+.result-prof-btn button:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+/* ── Card action buttons row ── */
 .card-hidden-btns {
     margin: 0 0 0 18px !important;
     padding: 4px 0 4px 0 !important;
@@ -1625,18 +1688,18 @@ let f = 0;
                 unsafe_allow_html=True
             )
 
-            # ── ROW 2: STATS + Prof buttons side by side ──
-            btn_col1, btn_col2, btn_spacer = st.columns([1, 2, 3], gap="small")
-            with btn_col1:
-                st.markdown('<div class="card-hidden-btns" style="margin:0;">', unsafe_allow_html=True)
+            # ── ROW 2: STATS + Prof buttons truly side by side in one columns row ──
+            _bc1, _bc2, _bc3 = st.columns([1, 2, 3])
+            with _bc1:
+                st.markdown('<div class="result-stats-btn">', unsafe_allow_html=True)
                 if st.button("📊 STATS", key=f"course_btn_{idx}_{course_name}"):
                     st.session_state.sel_course_name = course_name
                     st.session_state.sel_course_year = int(row["year"])
                     st.session_state.sel_prof_key    = None
                     st.rerun()
                 st.markdown('</div>', unsafe_allow_html=True)
-            with btn_col2:
-                st.markdown('<div class="card-hidden-btns" style="margin:0;">', unsafe_allow_html=True)
+            with _bc2:
+                st.markdown('<div class="result-prof-btn">', unsafe_allow_html=True)
                 if has_rmp:
                     if st.button(f"👤 {prof_name}  → RMP", key=f"prof_btn_{idx}_{jk}"):
                         st.session_state.sel_prof_key    = jk
@@ -1644,7 +1707,7 @@ let f = 0;
                         st.session_state.sel_prof_course = course_name
                         st.rerun()
                 else:
-                    st.markdown(f'<span style="font-family:Rajdhani,sans-serif;font-size:.88em;color:#3a5068;line-height:2.2;display:inline-block;">👤 {prof_name}</span>', unsafe_allow_html=True)
+                    st.markdown(f'<span style="font-family:Rajdhani,sans-serif;font-size:.88em;color:#3a5068;padding-top:6px;display:inline-block;">👤 {prof_name}</span>', unsafe_allow_html=True)
                 st.markdown('</div>', unsafe_allow_html=True)
             # ── ROW 3: GPA + badge + RMP pill (below buttons) ──
             st.markdown(
