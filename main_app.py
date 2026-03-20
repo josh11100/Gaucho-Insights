@@ -1591,10 +1591,12 @@ def ml_course_similarity(df_full: pd.DataFrame, gpa_col: str):
 
 # ── RENDER ML INSIGHTS TAB ────────────────────────────────────────────────────
 def render_ml_insights(df_full: pd.DataFrame, gpa_col: str, rmp_lookup: dict):
+    st.write("🔬 ML Insights loading...")  # debug marker — remove once confirmed working
     if not _ML_AVAILABLE:
         st.error("⚠ ML packages not installed. Add scikit-learn, scipy, and numpy to requirements.txt and redeploy.")
         st.code("scikit-learn>=1.4.0\nscipy>=1.12.0\nnumpy>=1.26.0")
         return
+    st.write(f"✅ ML available. DataFrame shape: {df_full.shape}, gpa_col: {gpa_col}")  # debug
 
     st.markdown("""
 <div style="font-family:Orbitron,sans-serif;font-size:1.1em;font-weight:900;
@@ -1990,8 +1992,8 @@ let f = 0;
 
     tab_home, tab_search, tab_quarter, tab_ml = st.tabs(["HOME", "SEARCH TOOL", "MY QUARTER", "⬡ ML INSIGHTS"])
 
-    # ── Auto-switch to Search Tool tab whenever a sidebar filter changes ─────
-    if st.session_state.get("force_search_tab") or st.session_state.active_tab == 1:
+    # ── Auto-switch to Search Tool tab when a sidebar filter changes ──────────
+    if st.session_state.get("force_search_tab"):
         components.html("""
 <script>
 (function() {
@@ -2015,14 +2017,16 @@ let f = 0;
         }
     }
     tryClick();
-    [50, 200, 400, 800, 1200].forEach(function(ms) {
+    [50, 200, 400].forEach(function(ms) {
         setTimeout(clickSearchTab, ms);
     });
 })();
 </script>
 """, height=0)
-        st.session_state.active_tab = 0
         st.session_state.force_search_tab = False
+        st.session_state.active_tab = 1
+    else:
+        st.session_state.active_tab = 0
 
     # ── HOME ────────────────────────────────────────────────────────────────
     with tab_home:
@@ -2692,7 +2696,12 @@ sc.addEventListener('mouseleave',()=>{cd.style.transform='';});
 
     # ── ML INSIGHTS ──────────────────────────────────────────────────────────
     with tab_ml:
-        render_ml_insights(full_df, gpa_col, rmp_lookup)
+        try:
+            render_ml_insights(full_df, gpa_col, rmp_lookup)
+        except Exception as _ml_err:
+            st.error(f"ML tab crashed: {_ml_err}")
+            import traceback
+            st.code(traceback.format_exc())
 
 
 if __name__ == "__main__":
