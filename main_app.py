@@ -1338,13 +1338,17 @@ def parse_schedule_from_image(image_bytes: bytes) -> list[dict]:
 # ═════════════════════════════════════════════════════════════════════════════
 #  ML MODULE
 # ═════════════════════════════════════════════════════════════════════════════
-import numpy as np
-from sklearn.linear_model import LinearRegression
-from sklearn.preprocessing import StandardScaler
-from sklearn.cluster import KMeans
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
-from scipy.stats import entropy as kl_entropy
+try:
+    import numpy as np
+    from sklearn.linear_model import LinearRegression
+    from sklearn.preprocessing import StandardScaler
+    from sklearn.cluster import KMeans
+    from sklearn.feature_extraction.text import TfidfVectorizer
+    from sklearn.metrics.pairwise import cosine_similarity
+    from scipy.stats import entropy as kl_entropy
+    _ML_AVAILABLE = True
+except ImportError:
+    _ML_AVAILABLE = False
 
 
 # ── Quarter encoding ──────────────────────────────────────────────────────────
@@ -1592,6 +1596,10 @@ def ml_course_similarity(df_full: pd.DataFrame, gpa_col: str):
 
 # ── RENDER ML INSIGHTS TAB ────────────────────────────────────────────────────
 def render_ml_insights(df_full: pd.DataFrame, gpa_col: str, rmp_lookup: dict):
+    if not _ML_AVAILABLE:
+        st.error("⚠ ML packages not installed. Add `scikit-learn`, `scipy`, and `numpy` to requirements.txt and redeploy.")
+        st.code("scikit-learn>=1.4.0\nscipy>=1.12.0\nnumpy>=1.26.0")
+        return
     st.markdown("""
 <div style="font-family:Orbitron,sans-serif;font-size:1.1em;font-weight:900;
     color:#FFD700;letter-spacing:3px;margin-bottom:4px;">⬡ ML INSIGHTS</div>
