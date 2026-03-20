@@ -1360,7 +1360,6 @@ def _time_val(row) -> float:
 
 
 # ── 1. GPA FORECASTING ────────────────────────────────────────────────────────
-@st.cache_data(show_spinner=False)
 def ml_gpa_forecast(course_name: str, df_full: pd.DataFrame, gpa_col: str):
     """
     Fits a linear regression on historical avg GPA for a course and
@@ -1418,7 +1417,6 @@ def ml_gpa_forecast(course_name: str, df_full: pd.DataFrame, gpa_col: str):
 
 
 # ── 3. PROF-COURSE FIT SCORE ──────────────────────────────────────────────────
-@st.cache_data(show_spinner=False)
 def ml_prof_course_fit(df_full: pd.DataFrame, gpa_col: str):
     """
     For every (instructor, course) pair, compute a fit score:
@@ -1441,7 +1439,6 @@ def ml_prof_course_fit(df_full: pd.DataFrame, gpa_col: str):
 
 
 # ── 5. GRADE DISTRIBUTION ANOMALY ─────────────────────────────────────────────
-@st.cache_data(show_spinner=False)
 def ml_anomaly_score(course_name: str, df_full: pd.DataFrame):
     """
     For each section of a course, computes KL-divergence from the course's
@@ -1486,7 +1483,6 @@ def ml_anomaly_score(course_name: str, df_full: pd.DataFrame):
 
 
 # ── 6. NLP TAG CLUSTERING ─────────────────────────────────────────────────────
-@st.cache_data(show_spinner=False)
 def ml_tag_clusters(rmp_lookup: dict, n_clusters: int = 5):
     """
     TF-IDF vectorizes RMP tags for each prof, then KMeans clusters them
@@ -1545,7 +1541,6 @@ def ml_tag_clusters(rmp_lookup: dict, n_clusters: int = 5):
 
 
 # ── 7. COLLABORATIVE FILTERING ────────────────────────────────────────────────
-@st.cache_data(show_spinner=False)
 def ml_course_similarity(df_full: pd.DataFrame, gpa_col: str):
     """
     Builds a course-course similarity matrix. Feature vector per course:
@@ -1597,107 +1592,96 @@ def ml_course_similarity(df_full: pd.DataFrame, gpa_col: str):
 # ── RENDER ML INSIGHTS TAB ────────────────────────────────────────────────────
 def render_ml_insights(df_full: pd.DataFrame, gpa_col: str, rmp_lookup: dict):
     if not _ML_AVAILABLE:
-        st.error("⚠ ML packages not installed. Add `scikit-learn`, `scipy`, and `numpy` to requirements.txt and redeploy.")
+        st.error("⚠ ML packages not installed. Add scikit-learn, scipy, and numpy to requirements.txt and redeploy.")
         st.code("scikit-learn>=1.4.0\nscipy>=1.12.0\nnumpy>=1.26.0")
         return
+
     st.markdown("""
 <div style="font-family:Orbitron,sans-serif;font-size:1.1em;font-weight:900;
     color:#FFD700;letter-spacing:3px;margin-bottom:4px;">⬡ ML INSIGHTS</div>
 <div style="font-family:Rajdhani,sans-serif;font-size:.85em;color:#4a7a9b;
-    letter-spacing:1px;margin-bottom:20px;">
-Machine learning analysis of UCSB grade data — forecasts, anomalies, and patterns.
+    letter-spacing:1px;margin-bottom:16px;">
+Machine learning analysis of UCSB grade data — forecasts, anomalies, and hidden patterns.
 </div>""", unsafe_allow_html=True)
 
-    ml_tab1, ml_tab2, ml_tab3, ml_tab4, ml_tab5 = st.tabs([
-        "📈 GPA FORECAST",
-        "🎯 PROF-COURSE FIT",
-        "⚠ ANOMALIES",
-        "🏷 TEACHING STYLES",
-        "🔗 SIMILAR COURSES",
-    ])
+    section = st.selectbox(
+        "Choose analysis",
+        ["📈 GPA Forecast", "🎯 Prof-Course Fit", "⚠ Grade Anomalies", "🏷 Teaching Styles", "🔗 Similar Courses"],
+        key="ml_section"
+    )
+    st.markdown("---")
 
-    # ── Tab 1: GPA Forecast ──────────────────────────────────────────────────
-    with ml_tab1:
+    # ── 1. GPA Forecast ─────────────────────────────────────────────────────
+    if section == "📈 GPA Forecast":
         st.markdown('<div style="font-family:Rajdhani,sans-serif;font-size:.82em;color:#4a7a9b;'
                     'margin-bottom:12px;">Linear regression on historical avg GPA per course. '
                     'Forecasts the next 3 quarters.</div>', unsafe_allow_html=True)
+        try:
+            all_courses = sorted(df_full["course"].unique())
+            sel_course = st.selectbox("Select course to forecast", all_courses, key="ml_fc_course")
+            with st.spinner("Running forecast..."):
+                result = ml_gpa_forecast(sel_course, df_full, gpa_col)
 
-        all_courses = sorted(df_full["course"].unique())
-        sel_course = st.selectbox("Select course to forecast", all_courses, key="ml_fc_course")
-        result = ml_gpa_forecast(sel_course, df_full, gpa_col)
+            if result is None:
+                st.info("Not enough historical data for this course (need ≥ 4 data points).")
+            else:
+                trend_df, forecast_df, (slope_lbl, slope_clr), r2 = result
+                c1, c2, c3 = st.columns(3)
+                next_gpa = float(forecast_df["forecast_gpa"].iloc[0])
+                c1.metric("Next Quarter Forecast", f"{next_gpa:.2f}")
+                c2.metric("Model Fit (R²)", f"{r2:.2f}")
+                c3.markdown(f'<div style="font-family:Orbitron,sans-serif;font-size:.85em;'
+                            f'font-weight:700;color:{slope_clr};padding-top:18px;">{slope_lbl}</div>',
+                            unsafe_allow_html=True)
+                fig = go.Figure()
+                fig.add_trace(go.Scatter(
+                    x=trend_df["_t"], y=trend_df[gpa_col],
+                    mode="markers+lines", name="Actual GPA",
+                    line=dict(color="#5bb8ff", width=2), marker=dict(size=6)
+                ))
+                fig.add_trace(go.Scatter(
+                    x=trend_df["_t"], y=trend_df["predicted"],
+                    mode="lines", name="Regression Fit",
+                    line=dict(color="#FFD700", width=1.5, dash="dot")
+                ))
+                fig.add_trace(go.Scatter(
+                    x=forecast_df["_t"], y=forecast_df["forecast_gpa"],
+                    mode="markers+lines+text", name="Forecast",
+                    text=forecast_df["label"], textposition="top center",
+                    line=dict(color="#FF851B", width=2, dash="dash"),
+                    marker=dict(size=9, symbol="diamond", color="#FF851B"),
+                    textfont=dict(family="Rajdhani", size=10, color="#FF851B")
+                ))
+                fig.add_hline(y=3.3, line_dash="dot", line_color="rgba(46,204,64,0.35)",
+                              annotation_text="EASY 3.3", annotation_font_color="rgba(46,204,64,0.5)")
+                fig.add_hline(y=3.1, line_dash="dot", line_color="rgba(0,116,217,0.35)",
+                              annotation_text="CHILL 3.1", annotation_font_color="rgba(0,116,217,0.5)")
+                fig.update_layout(
+                    paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,10,30,0.6)",
+                    font=dict(color="#b0c8e0", family="Rajdhani"),
+                    height=340, margin=dict(l=40, r=20, t=30, b=50),
+                    legend=dict(orientation="h", y=-0.25),
+                    xaxis=dict(title="Year", gridcolor="rgba(255,255,255,0.05)", tickformat=".2f"),
+                    yaxis=dict(title="Avg GPA", gridcolor="rgba(255,255,255,0.05)", range=[0, 4.2])
+                )
+                st.plotly_chart(fig, use_container_width=True)
+                st.caption(f"R² = {r2:.2f} — {'strong' if r2>0.6 else 'moderate' if r2>0.3 else 'weak'} trend signal. Forecasts assume the historical trend continues linearly.")
+        except Exception as e:
+            st.error(f"Forecast error: {e}")
 
-        if result is None:
-            st.info("Not enough historical data for this course (need ≥ 4 data points).")
-        else:
-            trend_df, forecast_df, (slope_lbl, slope_clr), r2 = result
-
-            # Metric row
-            c1, c2, c3 = st.columns(3)
-            next_gpa = forecast_df["forecast_gpa"].iloc[0]
-            _, next_clr, _ = gpa_badge(next_gpa)
-            c1.metric("Next Quarter Forecast", f"{next_gpa:.2f}")
-            c2.metric("Model Fit (R²)", f"{r2:.2f}")
-            c3.markdown(f'<div style="font-family:Orbitron,sans-serif;font-size:.85em;'
-                        f'font-weight:700;color:{slope_clr};padding-top:18px;">{slope_lbl}</div>',
-                        unsafe_allow_html=True)
-
-            # Chart
-            fig = go.Figure()
-            fig.add_trace(go.Scatter(
-                x=trend_df["_t"], y=trend_df[gpa_col],
-                mode="markers+lines", name="Actual GPA",
-                line=dict(color="#5bb8ff", width=2),
-                marker=dict(size=6)
-            ))
-            fig.add_trace(go.Scatter(
-                x=trend_df["_t"], y=trend_df["predicted"],
-                mode="lines", name="Regression Fit",
-                line=dict(color="#FFD700", width=1.5, dash="dot")
-            ))
-            fig.add_trace(go.Scatter(
-                x=forecast_df["_t"], y=forecast_df["forecast_gpa"],
-                mode="markers+lines+text", name="Forecast",
-                text=forecast_df["label"],
-                textposition="top center",
-                line=dict(color="#FF851B", width=2, dash="dash"),
-                marker=dict(size=9, symbol="diamond", color="#FF851B"),
-                textfont=dict(family="Rajdhani", size=10, color="#FF851B")
-            ))
-            fig.add_hline(y=3.3, line_dash="dot", line_color="rgba(46,204,64,0.35)",
-                          annotation_text="EASY 3.3", annotation_font_color="rgba(46,204,64,0.5)")
-            fig.add_hline(y=3.1, line_dash="dot", line_color="rgba(0,116,217,0.35)",
-                          annotation_text="CHILL 3.1", annotation_font_color="rgba(0,116,217,0.5)")
-            fig.update_layout(
-                paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,10,30,0.6)",
-                font=dict(color="#b0c8e0", family="Rajdhani"),
-                height=320, margin=dict(l=40, r=20, t=30, b=30),
-                legend=dict(orientation="h", y=-0.2),
-                xaxis=dict(title="Year", gridcolor="rgba(255,255,255,0.05)", tickformat=".2f"),
-                yaxis=dict(title="Avg GPA", gridcolor="rgba(255,255,255,0.05)", range=[0, 4.2])
-            )
-            st.plotly_chart(fig, use_container_width=True)
-
-            st.markdown(
-                f'<div style="font-family:Rajdhani,sans-serif;font-size:.78em;color:#334;'
-                f'margin-top:4px;">R² = {r2:.2f} — {"strong" if r2>0.6 else "moderate" if r2>0.3 else "weak"} '
-                f'trend signal. Forecasts assume the historical trend continues linearly.</div>',
-                unsafe_allow_html=True
-            )
-
-    # ── Tab 2: Prof-Course Fit ───────────────────────────────────────────────
-    with ml_tab2:
+    # ── 2. Prof-Course Fit ──────────────────────────────────────────────────
+    elif section == "🎯 Prof-Course Fit":
         st.markdown('<div style="font-family:Rajdhani,sans-serif;font-size:.82em;color:#4a7a9b;'
-                    'margin-bottom:12px;">How does each professor compare to their own average '
+                    'margin-bottom:12px;">How does each professor grade compared to their own average '
                     'when teaching a specific course? Positive = grades easier here. Negative = harder.</div>',
                     unsafe_allow_html=True)
-
-        fit_df = ml_prof_course_fit(df_full, gpa_col)
-        if fit_df.empty:
-            st.info("Not enough data to compute fit scores.")
-        else:
+        try:
+            with st.spinner("Computing fit scores..."):
+                fit_df = ml_prof_course_fit(df_full, gpa_col)
             fit_reset = fit_df.reset_index()
+            jk_to_name = df_full[["join_key","instructor"]].drop_duplicates().set_index("join_key")["instructor"].to_dict()
+            fit_reset["instructor"] = fit_reset["join_key"].map(jk_to_name).fillna(fit_reset["join_key"])
 
-            # Filter by course or prof
             fc1, fc2 = st.columns(2)
             with fc1:
                 fit_course = st.selectbox("Filter by course", ["All"] + sorted(df_full["course"].unique()), key="ml_fit_course")
@@ -1708,140 +1692,128 @@ Machine learning analysis of UCSB grade data — forecasts, anomalies, and patte
             if fit_course != "All":
                 disp = disp[disp["course"] == fit_course]
             if fit_prof:
-                # Map join_key back to instructor name
-                jk_to_name = df_full[["join_key","instructor"]].drop_duplicates().set_index("join_key")["instructor"].to_dict()
-                disp["instructor"] = disp["join_key"].map(jk_to_name).fillna(disp["join_key"])
                 disp = disp[disp["instructor"].str.contains(fit_prof.upper(), na=False)]
-            else:
-                jk_to_name = df_full[["join_key","instructor"]].drop_duplicates().set_index("join_key")["instructor"].to_dict()
-                disp["instructor"] = disp["join_key"].map(jk_to_name).fillna(disp["join_key"])
 
             disp = disp.sort_values("fit_score", ascending=False)
-            disp_show = disp[["instructor","course","course_avg","prof_mean","fit_score"]].head(30)
-            disp_show.columns = ["Instructor","Course","Course Avg GPA","Prof Overall Avg","Fit Score (σ)"]
-
-            # Color-coded bar chart
             top20 = disp.head(20)
             bar_colors = ["#2ECC40" if s >= 0 else "#FF4136" for s in top20["fit_score"]]
             fig2 = go.Figure(go.Bar(
                 x=top20["fit_score"],
                 y=(top20["instructor"] + " / " + top20["course"]),
-                orientation="h",
-                marker_color=bar_colors,
-                text=top20["fit_score"].map("{:+.2f}σ".format),
-                textposition="outside",
+                orientation="h", marker_color=bar_colors,
+                text=top20["fit_score"].map("{:+.2f}σ".format), textposition="outside",
             ))
             fig2.update_layout(
                 paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,10,30,0.6)",
                 font=dict(color="#b0c8e0", family="Rajdhani"),
-                height=max(300, len(top20)*28), margin=dict(l=200, r=60, t=20, b=20),
-                xaxis=dict(title="Fit Score (σ)", gridcolor="rgba(255,255,255,0.05)", zeroline=True,
-                           zerolinecolor="rgba(255,255,255,0.2)"),
+                height=max(300, len(top20)*28), margin=dict(l=200, r=80, t=20, b=20),
+                xaxis=dict(title="Fit Score (σ)", gridcolor="rgba(255,255,255,0.05)",
+                           zeroline=True, zerolinecolor="rgba(255,255,255,0.2)"),
                 yaxis=dict(autorange="reversed")
             )
             st.plotly_chart(fig2, use_container_width=True)
+            disp_show = disp[["instructor","course","course_avg","prof_mean","fit_score"]].head(30).copy()
+            disp_show.columns = ["Instructor","Course","Course Avg GPA","Prof Overall Avg","Fit Score (σ)"]
             st.dataframe(disp_show, hide_index=True, use_container_width=True)
+        except Exception as e:
+            st.error(f"Fit score error: {e}")
 
-    # ── Tab 3: Anomaly Detection ─────────────────────────────────────────────
-    with ml_tab3:
+    # ── 3. Anomaly Detection ────────────────────────────────────────────────
+    elif section == "⚠ Grade Anomalies":
         st.markdown('<div style="font-family:Rajdhani,sans-serif;font-size:.82em;color:#4a7a9b;'
                     'margin-bottom:12px;">Detects quarters where grade distributions deviated '
                     'significantly from a course\'s historical norm (KL-divergence).</div>',
                     unsafe_allow_html=True)
+        try:
+            anom_courses = sorted(df_full["course"].unique())
+            sel_anom = st.selectbox("Select course", anom_courses, key="ml_anom_course")
+            with st.spinner("Detecting anomalies..."):
+                anom_df = ml_anomaly_score(sel_anom, df_full)
 
-        anom_courses = sorted(df_full["course"].unique())
-        sel_anom = st.selectbox("Select course", anom_courses, key="ml_anom_course")
-        anom_df = ml_anomaly_score(sel_anom, df_full)
+            if anom_df is None:
+                st.info("Not enough sections to detect anomalies (need ≥ 3 sections with ≥ 5 students).")
+            else:
+                colors = ["#FF4136" if r["label"] == "⚠ UNUSUAL" else "#2ECC40" for _, r in anom_df.iterrows()]
+                labels = [f"{r['quarter']} {r['year']} — {r['instructor']}" for _, r in anom_df.iterrows()]
+                fig3 = go.Figure(go.Bar(
+                    x=labels, y=anom_df["anomaly_score"],
+                    marker_color=colors,
+                    text=anom_df["label"], textposition="outside",
+                ))
+                fig3.update_layout(
+                    paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,10,30,0.6)",
+                    font=dict(color="#b0c8e0", family="Rajdhani"),
+                    height=340, margin=dict(l=30, r=30, t=20, b=100),
+                    xaxis=dict(tickangle=-40, gridcolor="rgba(255,255,255,0.05)"),
+                    yaxis=dict(title="Anomaly Score (KL divergence)", gridcolor="rgba(255,255,255,0.05)")
+                )
+                st.plotly_chart(fig3, use_container_width=True)
+                unusual = anom_df[anom_df["label"] == "⚠ UNUSUAL"]
+                if not unusual.empty:
+                    st.markdown('<div style="font-family:Orbitron,sans-serif;font-size:.7em;'
+                                'color:#FF4136;letter-spacing:2px;margin:8px 0 4px;">⚠ FLAGGED SECTIONS</div>',
+                                unsafe_allow_html=True)
+                    st.dataframe(unusual[["quarter","year","instructor","anomaly_score"]], hide_index=True, use_container_width=True)
+        except Exception as e:
+            st.error(f"Anomaly detection error: {e}")
 
-        if anom_df is None:
-            st.info("Not enough sections to detect anomalies (need ≥ 3 sections with ≥ 5 students).")
-        else:
-            fig3 = go.Figure()
-            colors = ["#FF4136" if r["label"] == "⚠ UNUSUAL" else "#2ECC40"
-                      for _, r in anom_df.iterrows()]
-            labels = [f"{r['quarter']} {r['year']}<br>{r['instructor']}" for _, r in anom_df.iterrows()]
-            fig3.add_trace(go.Bar(
-                x=labels, y=anom_df["anomaly_score"],
-                marker_color=colors,
-                text=anom_df["label"], textposition="outside",
-                textfont=dict(size=10)
-            ))
-            fig3.update_layout(
-                paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,10,30,0.6)",
-                font=dict(color="#b0c8e0", family="Rajdhani"),
-                height=320, margin=dict(l=30, r=30, t=20, b=80),
-                xaxis=dict(tickangle=-35, gridcolor="rgba(255,255,255,0.05)"),
-                yaxis=dict(title="Anomaly Score (KL)", gridcolor="rgba(255,255,255,0.05)")
-            )
-            st.plotly_chart(fig3, use_container_width=True)
-
-            unusual = anom_df[anom_df["label"] == "⚠ UNUSUAL"]
-            if not unusual.empty:
-                st.markdown('<div style="font-family:Orbitron,sans-serif;font-size:.7em;'
-                            'color:#FF4136;letter-spacing:2px;margin:8px 0 4px;">⚠ FLAGGED SECTIONS</div>',
-                            unsafe_allow_html=True)
-                st.dataframe(unusual[["quarter","year","instructor","anomaly_score"]],
-                             hide_index=True, use_container_width=True)
-
-    # ── Tab 4: Teaching Style Clusters ──────────────────────────────────────
-    with ml_tab4:
+    # ── 4. Teaching Style Clusters ──────────────────────────────────────────
+    elif section == "🏷 Teaching Styles":
         st.markdown('<div style="font-family:Rajdhani,sans-serif;font-size:.82em;color:#4a7a9b;'
                     'margin-bottom:12px;">KMeans clustering of professors by their RMP student tags. '
                     'Professors with similar teaching styles are grouped together.</div>',
                     unsafe_allow_html=True)
+        try:
+            n_clust = st.slider("Number of style groups", 3, 7, 5, key="ml_clust_k")
+            with st.spinner("Clustering professors..."):
+                clusters = ml_tag_clusters(rmp_lookup, n_clusters=n_clust)
 
-        n_clust = st.slider("Number of style groups", 3, 7, 5, key="ml_clust_k")
-        clusters = ml_tag_clusters(rmp_lookup, n_clusters=n_clust)
+            if not clusters:
+                st.info("Not enough RMP tag data to cluster professors (need tags for ≥ 10 professors).")
+            else:
+                from collections import defaultdict
+                by_cluster = defaultdict(list)
+                for jk, info in clusters.items():
+                    by_cluster[info["cluster_id"]].append(info)
+                jk_to_name = df_full[["join_key","instructor"]].drop_duplicates().set_index("join_key")["instructor"].to_dict()
+                for ci in sorted(by_cluster.keys()):
+                    members = by_cluster[ci]
+                    lbl   = members[0]["cluster_label"]
+                    color = members[0]["cluster_color"]
+                    terms = members[0]["top_terms"]
+                    names = [jk_to_name.get(m.get("join_key",""), m.get("full_name","?")) for m in members]
+                    st.markdown(
+                        f'<div style="background:rgba(255,255,255,0.03);border-left:3px solid {color};'
+                        f'border-radius:8px;padding:12px 16px;margin-bottom:12px;">'
+                        f'<div style="font-family:Orbitron,sans-serif;font-size:.8em;font-weight:700;'
+                        f'color:{color};letter-spacing:1px;margin-bottom:6px;">{lbl} '
+                        f'<span style="color:#445;font-size:.8em;">({len(members)} profs)</span></div>'
+                        f'<div style="font-family:Rajdhani,sans-serif;font-size:.75em;color:#5577aa;margin-bottom:6px;">'
+                        f'Top tags: {", ".join(terms)}</div>'
+                        f'<div style="font-family:Rajdhani,sans-serif;font-size:.8em;color:#7a9ab8;">'
+                        f'{" · ".join(names[:12])}{"..." if len(names)>12 else ""}</div>'
+                        f'</div>', unsafe_allow_html=True
+                    )
+        except Exception as e:
+            st.error(f"Clustering error: {e}")
 
-        if not clusters:
-            st.info("Not enough RMP tag data to cluster professors (need tags for ≥ 10 professors).")
-        else:
-            # Group by cluster
-            from collections import defaultdict
-            by_cluster = defaultdict(list)
-            for jk, info in clusters.items():
-                by_cluster[info["cluster_id"]].append(info)
-
-            jk_to_name = df_full[["join_key","instructor"]].drop_duplicates().set_index("join_key")["instructor"].to_dict()
-
-            for ci in sorted(by_cluster.keys()):
-                members = by_cluster[ci]
-                lbl   = members[0]["cluster_label"]
-                color = members[0]["cluster_color"]
-                terms = members[0]["top_terms"]
-                names = [jk_to_name.get(m.get("join_key", ""), m.get("full_name", "?")) for m in members]
-
-                st.markdown(
-                    f'<div style="background:rgba(255,255,255,0.03);border-left:3px solid {color};'
-                    f'border-radius:8px;padding:12px 16px;margin-bottom:12px;">'
-                    f'<div style="font-family:Orbitron,sans-serif;font-size:.8em;font-weight:700;'
-                    f'color:{color};letter-spacing:1px;margin-bottom:6px;">{lbl} '
-                    f'<span style="color:#334;font-size:.8em;">({len(members)} profs)</span></div>'
-                    f'<div style="font-family:Rajdhani,sans-serif;font-size:.75em;color:#5577aa;margin-bottom:6px;">'
-                    f'Top tags: {", ".join(terms)}</div>'
-                    f'<div style="font-family:Rajdhani,sans-serif;font-size:.8em;color:#7a9ab8;">'
-                    f'{" · ".join(names[:12])}{"..." if len(names)>12 else ""}</div>'
-                    f'</div>',
-                    unsafe_allow_html=True
-                )
-
-    # ── Tab 5: Similar Courses ───────────────────────────────────────────────
-    with ml_tab5:
+    # ── 5. Similar Courses ──────────────────────────────────────────────────
+    elif section == "🔗 Similar Courses":
         st.markdown('<div style="font-family:Rajdhani,sans-serif;font-size:.82em;color:#4a7a9b;'
                     'margin-bottom:12px;">Cosine similarity across grade distributions and RMP data. '
                     '"Students who survived this course also managed these."</div>',
                     unsafe_allow_html=True)
+        try:
+            with st.spinner("Building similarity matrix..."):
+                sim_map = ml_course_similarity(df_full, gpa_col)
 
-        sim_map = ml_course_similarity(df_full, gpa_col)
+            sc1, sc2 = st.columns([1, 2])
+            with sc1:
+                sim_course = st.selectbox("Select course", sorted(sim_map.keys()), key="ml_sim_course")
+            with sc2:
+                dept_filter = st.text_input("Filter results by dept prefix (e.g. PSTAT)", key="ml_sim_dept")
 
-        sc1, sc2 = st.columns([1, 2])
-        with sc1:
-            sim_course = st.selectbox("Select course", sorted(sim_map.keys()), key="ml_sim_course")
-        with sc2:
-            dept_filter = st.text_input("Filter similar by dept (e.g. PSTAT)", key="ml_sim_dept")
-
-        if sim_course in sim_map:
-            similars = sim_map[sim_course]
+            similars = sim_map.get(sim_course, [])
             if dept_filter:
                 similars = [(c, s) for c, s in similars if c.startswith(dept_filter.upper())]
 
@@ -1851,10 +1823,9 @@ Machine learning analysis of UCSB grade data — forecasts, anomalies, and patte
                 st.markdown(f'<div style="font-family:Orbitron,sans-serif;font-size:.75em;'
                             f'color:#FFD700;letter-spacing:2px;margin:8px 0 10px;">'
                             f'COURSES SIMILAR TO {sim_course}</div>', unsafe_allow_html=True)
-
                 for sim_c, score in similars:
                     sim_hist = df_full[df_full["course"] == sim_c]
-                    sim_gpa  = sim_hist[gpa_col].mean() if not sim_hist.empty else 0
+                    sim_gpa  = float(sim_hist[gpa_col].mean()) if not sim_hist.empty else 0
                     _, sim_clr, _ = gpa_badge(sim_gpa)
                     bar_w = int(score * 100)
                     st.markdown(
@@ -1865,13 +1836,15 @@ Machine learning analysis of UCSB grade data — forecasts, anomalies, and patte
                         f'<div style="flex:1;background:rgba(255,255,255,0.05);border-radius:4px;height:8px;">'
                         f'<div style="width:{bar_w}%;background:{sim_clr};height:8px;border-radius:4px;"></div>'
                         f'</div>'
-                        f'<span style="font-family:Rajdhani,sans-serif;font-size:.78em;'
-                        f'color:#5577aa;min-width:60px;">{score:.1%} match</span>'
-                        f'<span style="font-family:Orbitron,sans-serif;font-size:.72em;'
-                        f'color:{sim_clr};">GPA {sim_gpa:.2f}</span>'
-                        f'</div>',
-                        unsafe_allow_html=True
+                        f'<span style="font-family:Rajdhani,sans-serif;font-size:.78em;color:#5577aa;min-width:60px;">'
+                        f'{score:.1%} match</span>'
+                        f'<span style="font-family:Orbitron,sans-serif;font-size:.72em;color:{sim_clr};">'
+                        f'GPA {sim_gpa:.2f}</span>'
+                        f'</div>', unsafe_allow_html=True
                     )
+        except Exception as e:
+            st.error(f"Similarity error: {e}")
+
 
 
 def main():
