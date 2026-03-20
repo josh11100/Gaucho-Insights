@@ -2256,6 +2256,15 @@ let f = 0;
                 unsafe_allow_html=True
             )
 
+    # ── ML INSIGHTS ──────────────────────────────────────────────────────────
+    with tab_ml:
+        try:
+            render_ml_insights(full_df, gpa_col, rmp_lookup)
+        except Exception as _ml_err:
+            st.error(f"ML tab crashed: {_ml_err}")
+            import traceback
+            st.code(traceback.format_exc())
+
     # ── MY QUARTER ──────────────────────────────────────────────────────────
     with tab_quarter:
         components.html("""
@@ -2692,16 +2701,6 @@ sc.addEventListener('mouseleave',()=>{cd.style.transform='';});
                                        .sort_values("Avg GPA", ascending=False))
                             summary["Avg GPA"] = summary["Avg GPA"].map("{:.2f}".format)
                             st.dataframe(summary, hide_index=True, use_container_width=True)
-
-
-    # ── ML INSIGHTS ──────────────────────────────────────────────────────────
-    with tab_ml:
-        try:
-            render_ml_insights(full_df, gpa_col, rmp_lookup)
-        except Exception as _ml_err:
-            st.error(f"ML tab crashed: {_ml_err}")
-            import traceback
-            st.code(traceback.format_exc())
 
 
 if __name__ == "__main__":
