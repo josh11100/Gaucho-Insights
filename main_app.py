@@ -527,6 +527,22 @@ def load_data():
             df[g] = 0
         df[g] = pd.to_numeric(df[g], errors="coerce").fillna(0).astype(int)
 
+    # ── Load plus/minus sub-grade columns and nLetterStudents ────────────────
+    for sub in ["ap", "am", "bp", "bm", "cp", "cm", "dp", "dm"]:
+        if sub in df.columns:
+            df[sub] = pd.to_numeric(df[sub], errors="coerce").fillna(0).astype(int)
+        else:
+            df[sub] = 0
+    if "nletterstudents" in df.columns:
+        df["nletterstudents"] = pd.to_numeric(df["nletterstudents"], errors="coerce").fillna(0).astype(int)
+    else:
+        all_grade_cols = [c for c in ["a","ap","am","b","bp","bm","c","cp","cm","d","dp","dm","f"] if c in df.columns]
+        df["nletterstudents"] = df[all_grade_cols].sum(axis=1).astype(int)
+    # Build full letter-tier totals (A includes A, A+, A-)
+    for g, plus, minus in [("a","ap","am"),("b","bp","bm"),("c","cp","cm"),("d","dp","dm")]:
+        df[f"{g}_total"] = df[g] + df[plus] + df[minus]
+    df["f_total"] = df["f"]
+
     def extract_num(s):
         m = re.search(r"(\d+)", str(s))
         return int(m.group(1)) if m else None
@@ -617,14 +633,60 @@ def load_data():
         gpa_col = "avggpa"
 
     grp_cols = ["instructor", "quarter", "year", "course", "dept", "join_key"]
-    agg = {gpa_col: "mean", "a": "sum", "b": "sum", "c": "sum", "d": "sum", "f": "sum"}
+    agg = {gpa_col: "mean", "a": "sum", "b": "sum", "c": "sum", "d": "sum", "f": "sum",
+           "a_total": "sum", "b_total": "sum", "c_total": "sum", "d_total": "sum", "f_total": "sum",
+           "nletterstudents": "sum"}
     for ec in ["rmp_url", "rmp_rating", "rmp_difficulty", "rmp_take_again",
                "rmp_tags", "rmp_num_ratings", "rmp_full_name"]:
         if ec in df.columns:
             agg[ec] = "first"
 
     df = df.groupby(grp_cols).agg(agg).reset_index()
-    return df, gpa_col, rmp_lookup, known_lastnames
+
+    # ── Load GE data ─────────────────────────────────────────────────────────
+    ge_lookup = {}   # course_name -> list of GE category strings
+    for ge_fname in ["ges_long_form.csv", os.path.join("data","ges_long_form.csv"),
+                     "ges.csv", os.path.join("data","ges.csv")]:
+        ge_path = ge_fname if os.path.exists(ge_fname) else None
+        if ge_path:
+            try:
+                ge_df = pd.read_csv(ge_path)
+                ge_df.columns = [c.strip() for c in ge_df.columns]
+                if "Category" in ge_df.columns and "Course" in ge_df.columns:
+                    # long form: Category, Course
+                    for _, gr in ge_df.iterrows():
+                        cname = str(gr["Course"]).strip().upper()
+                        cat   = str(gr["Category"]).strip()
+                        ge_lookup.setdefault(cname, [])
+                        if cat not in ge_lookup[cname]:
+                            ge_lookup[cname].append(cat)
+                else:
+                    # wide form: Course, AHI, Area B, ...
+                    cat_cols = [c for c in ge_df.columns if c != "Course"]
+                    for _, gr in ge_df.iterrows():
+                        cname = str(gr["Course"]).strip().upper()
+                        cats  = [c for c in cat_cols if gr[c] == 1]
+                        if cats:
+                            ge_lookup[cname] = cats
+            except Exception:
+                pass
+            break   # use first file found
+
+    # Add GE tags to df
+    def match_ge(course_str):
+        # Try exact match first, then strip extra spaces
+        c = str(course_str).strip().upper()
+        if c in ge_lookup:
+            return ge_lookup[c]
+        # Try normalizing spaces: "CMPSC  24" -> "CMPSC 24"
+        c_norm = re.sub(r'\s+', ' ', c)
+        if c_norm in ge_lookup:
+            return ge_lookup[c_norm]
+        return []
+    df["ge_areas"] = df["course"].apply(match_ge)
+    all_ge_areas = sorted({cat for cats in ge_lookup.values() for cat in cats})
+
+    return df, gpa_col, rmp_lookup, known_lastnames, all_ge_areas
 
 
 # ─────────────────────────────────────────────
@@ -633,7 +695,7 @@ def load_data():
 for key in ["sel_prof_key", "sel_prof_name", "sel_prof_course", "sel_course_name", "sel_course_year"]:
     if key not in st.session_state:
         st.session_state[key] = None
-for key in ["dept_q", "course_q", "prof_q"]:
+for key in ["dept_q", "course_q", "prof_q", "ge_area_q"]:
     if key not in st.session_state:
         st.session_state[key] = ""
 if "parsed_schedule" not in st.session_state:
@@ -650,6 +712,7 @@ def clear_filters():
     st.session_state.dept_q = ""
     st.session_state.course_q = ""
     st.session_state.prof_q = ""
+    st.session_state.ge_area_q = ""
     st.session_state.sel_prof_key = None
     st.session_state.sel_prof_name = None
 
@@ -1869,7 +1932,7 @@ Machine learning analysis of UCSB grade data — forecasts, anomalies, and hidde
 
 
 def main():
-    full_df, gpa_col, rmp_lookup, known_lastnames = load_data()
+    full_df, gpa_col, rmp_lookup, known_lastnames, all_ge_areas = load_data()
     global _KNOWN_LASTNAMES
     _KNOWN_LASTNAMES = known_lastnames
     render_hero()
@@ -2095,11 +2158,16 @@ let f = 0;
                                  key="course_q", on_change=filter_changed).strip().upper()
         prof_q   = st.text_input("Professor Name",
                                  key="prof_q", on_change=filter_changed).strip().upper()
+        ge_options = [""] + all_ge_areas
+        selected_ge = st.selectbox("GE Area", options=ge_options, index=0,
+                                   key="ge_area_q", on_change=filter_changed,
+                                   format_func=lambda x: "All GE Areas" if x == "" else x)
         st.button("(シ_ _)シ  Clear Filters", on_click=clear_filters, use_container_width=True)
         st.markdown("---")
         st.markdown('<div style="font-family:Rajdhani,sans-serif;font-size:.88em;color:#556;line-height:1.7;">'
                     '<b style="color:#FFD700;">RMP</b> badge = click professor name to view '
-                    'RateMyProfessors data + GPA history.</div>', unsafe_allow_html=True)
+                    'RateMyProfessors data + GPA history.<br>'
+                    '<b style="color:#00CCFF;">GE</b> pills on each card show which GE areas the course satisfies.</div>', unsafe_allow_html=True)
         st.markdown("""
 <div style="margin-top:16px;background:rgba(255,215,0,0.05);border:1px solid rgba(255,215,0,0.15);
             border-radius:12px;padding:12px 14px;font-family:'Rajdhani',sans-serif;">
@@ -2154,6 +2222,8 @@ let f = 0;
             df = df[df["course"].str.contains(r"(?<!\d)" + re.escape(course_q) + r"(?!\w)", na=False, regex=True)]
         if prof_q:
             df = df[df["instructor"].str.contains(prof_q, na=False)]
+        if selected_ge:
+            df = df[df["ge_areas"].apply(lambda cats: selected_ge in cats)]
 
         if df.empty:
             st.warning("No results found. Try adjusting the filters.")
@@ -2189,12 +2259,16 @@ let f = 0;
             txt_col          = "#000" if status == "EASY" else "#fff"
             course_name      = row["course"]
 
-            a_cnt = int(row.get("a", 0) or 0)
-            b_cnt = int(row.get("b", 0) or 0)
-            c_cnt = int(row.get("c", 0) or 0)
-            d_cnt = int(row.get("d", 0) or 0)
-            f_cnt = int(row.get("f", 0) or 0)
-            total_students = a_cnt + b_cnt + c_cnt + d_cnt + f_cnt
+            # Use full letter-tier totals (A includes A+/A/A-, etc.) for the bar chart
+            a_cnt = int(row.get("a_total", row.get("a", 0)) or 0)
+            b_cnt = int(row.get("b_total", row.get("b", 0)) or 0)
+            c_cnt = int(row.get("c_total", row.get("c", 0)) or 0)
+            d_cnt = int(row.get("d_total", row.get("d", 0)) or 0)
+            f_cnt = int(row.get("f_total", row.get("f", 0)) or 0)
+            # Use nLetterStudents as authoritative enrolled count
+            total_students = int(row.get("nletterstudents", 0) or 0)
+            if total_students == 0:
+                total_students = a_cnt + b_cnt + c_cnt + d_cnt + f_cnt
 
             rmp_pill = (
                 '<span style="font-size:.62em;color:#FFD700;background:rgba(255,215,0,.08);'
@@ -2237,6 +2311,17 @@ let f = 0;
                              f'<span style="font-size:.6em;color:#445;letter-spacing:1px;margin-top:2px;">AVG GPA</span>'
                              f'</div>')
 
+            # GE pills for this course
+            ge_areas = row.get("ge_areas", [])
+            if not isinstance(ge_areas, list):
+                ge_areas = []
+            ge_pills_html = "".join(
+                f'<span style="font-size:.55em;color:#00CCFF;background:rgba(0,204,255,.08);'
+                f'border:1px solid rgba(0,204,255,.25);padding:1px 7px;border-radius:10px;'
+                f'font-family:Rajdhani,sans-serif;font-weight:700;white-space:nowrap;">{g}</span>'
+                for g in ge_areas
+            )
+
             # ── Full card: top row is pure HTML (course name + date + chart), bottom row is real buttons ──
             st.markdown(
                 f'<div style="display:flex;align-items:stretch;border-left:4px solid {clr};margin-bottom:0;padding-bottom:0;">'
@@ -2251,11 +2336,12 @@ let f = 0;
                 f'{chart_svg}'
                 f'</div>'
                 f'</div>'
-                # GPA + badge row below, still in the colored left-border zone
+                # GPA + badge + GE pills row
                 f'<div style="border-left:4px solid {clr};padding:0 0 8px 28px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">'
                 f'  <span style="font-family:Orbitron,sans-serif;font-size:.75em;color:#b0c8e0;font-weight:700;">GPA {gpa_val:.2f}</span>'
                 f'  <span style="background:{clr};color:{txt_col};padding:2px 9px;border-radius:14px;font-size:.6em;font-weight:900;letter-spacing:.8px;">{status}</span>'
                 f'  {rmp_pill}'
+                f'  {ge_pills_html}'
                 f'</div>',
                 unsafe_allow_html=True
             )
