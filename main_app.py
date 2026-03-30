@@ -173,6 +173,25 @@ div[data-baseweb="tooltip"],
     pointer-events: none !important;
 }
 
+/* ── Card action row — horizontal STATS + prof name ── */
+.card-action-row {
+    margin: -2px 0 0 18px !important;
+    padding: 0 0 6px 0 !important;
+}
+.card-action-row [data-testid="stHorizontalBlock"] {
+    gap: 0 !important;
+    align-items: center !important;
+    flex-wrap: nowrap !important;
+}
+.card-action-row [data-testid="stColumn"] {
+    padding: 0 2px !important;
+    min-width: 0 !important;
+    overflow: visible !important;
+}
+.card-action-row [data-testid="stColumn"] > div {
+    padding: 0 !important;
+}
+
 /* ── Card action buttons row — rendered below the HTML visual card ── */
 .card-hidden-btns {
     margin: -2px 0 0 18px !important;
@@ -2183,27 +2202,35 @@ let f = 0;
                 'font-weight:700;letter-spacing:.5px;vertical-align:middle;margin-left:4px;">RMP</span>'
             ) if has_rmp else ""
 
-            # Inline SVG mini bar chart — bigger
+            # Inline SVG mini bar chart — with student counts above bars + total enrolled label
             if total_students > 0:
                 counts     = [a_cnt, b_cnt, c_cnt, d_cnt, f_cnt]
                 bar_colors = ["#2ECC40","#0074D9","#FFDC00","#FF851B","#FF4136"]
                 max_c      = max(counts) or 1
-                CW, CH, BW = 250, 90, 36
+                CW, CH, BW = 280, 110, 36
                 gap        = (CW - 5 * BW) / 6
                 bars       = ""
                 for gi, (c, bc) in enumerate(zip(counts, bar_colors)):
-                    bh = max(4, int((c / max_c) * (CH - 20)))
-                    x  = int(gap + gi * (BW + gap))
-                    y  = CH - 16 - bh
-                    lbl= ["A","B","C","D","F"][gi]
+                    bh  = max(4, int((c / max_c) * (CH - 34)))
+                    x   = int(gap + gi * (BW + gap))
+                    y   = CH - 18 - bh
+                    lbl = ["A","B","C","D","F"][gi]
+                    # count label above bar (skip if 0)
+                    cnt_lbl = f'<text x="{x+BW//2}" y="{y-3}" text-anchor="middle" font-size="9" fill="{bc}" font-family="sans-serif" opacity="0.9">{c}</text>' if c > 0 else ""
                     bars += (f'<rect x="{x}" y="{y}" width="{BW}" height="{bh}" '
-                             f'fill="{bc}" rx="3" opacity="0.9"/>'
-                             f'<text x="{x+BW//2}" y="{CH-3}" text-anchor="middle" '
-                             f'font-size="11" fill="#667" font-family="sans-serif">{lbl}</text>')
+                             f'fill="{bc}" rx="3" opacity="0.85"/>'
+                             + cnt_lbl +
+                             f'<text x="{x+BW//2}" y="{CH-4}" text-anchor="middle" '
+                             f'font-size="11" fill="#778" font-family="sans-serif">{lbl}</text>')
+                # total enrolled label bottom-right
+                enrolled_lbl = (f'<text x="{CW-2}" y="10" text-anchor="end" font-size="9" '
+                                f'fill="rgba(255,215,0,0.5)" font-family="sans-serif" font-style="italic">'
+                                f'n={total_students}</text>')
                 chart_svg = (f'<svg width="{CW}" height="{CH}" viewBox="0 0 {CW} {CH}" '
-                             f'xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;">{bars}</svg>')
+                             f'xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;">'
+                             f'{enrolled_lbl}{bars}</svg>')
             else:
-                chart_svg = (f'<div style="flex-shrink:0;width:250px;display:flex;flex-direction:column;'
+                chart_svg = (f'<div style="flex-shrink:0;width:280px;display:flex;flex-direction:column;'
                              f'align-items:center;justify-content:center;">'
                              f'<span style="font-family:Orbitron,sans-serif;font-size:1.6em;'
                              f'font-weight:900;color:{clr};">{gpa_val:.2f}</span>'
@@ -2233,21 +2260,30 @@ let f = 0;
                 unsafe_allow_html=True
             )
 
-            # Buttons row — styled via .card-hidden-btns CSS to look like STATS pill + prof text
-            st.markdown('<div class="card-hidden-btns">', unsafe_allow_html=True)
-            if st.button("📊 STATS", key=f"course_btn_{idx}_{course_name}"):
-                st.session_state.sel_course_name = course_name
-                st.session_state.sel_course_year = int(row["year"])
-                st.session_state.sel_prof_key    = None
-                st.rerun()
-            if has_rmp:
-                if st.button(f"👤 {prof_name}  → RMP", key=f"prof_btn_{idx}_{jk}"):
-                    st.session_state.sel_prof_key    = jk
-                    st.session_state.sel_prof_name   = prof_name
-                    st.session_state.sel_prof_course = course_name
+            # Action row — horizontal: STATS pill + separator + prof name, all inline
+            st.markdown('<div class="card-action-row">', unsafe_allow_html=True)
+            col_stats, col_sep, col_prof = st.columns([1.1, 0.05, 5])
+            with col_stats:
+                st.markdown('<div class="stats-text-btn">', unsafe_allow_html=True)
+                if st.button("📊 STATS", key=f"course_btn_{idx}_{course_name}"):
+                    st.session_state.sel_course_name = course_name
+                    st.session_state.sel_course_year = int(row["year"])
+                    st.session_state.sel_prof_key    = None
                     st.rerun()
-            else:
-                st.markdown(f'<span style="font-family:Rajdhani,sans-serif;font-size:.88em;color:#3a5068;">👤 {prof_name}</span>', unsafe_allow_html=True)
+                st.markdown('</div>', unsafe_allow_html=True)
+            with col_sep:
+                st.markdown('<div style="color:rgba(255,255,255,0.12);font-size:.9em;padding-top:4px;">│</div>', unsafe_allow_html=True)
+            with col_prof:
+                st.markdown('<div class="prof-text-btn">', unsafe_allow_html=True)
+                if has_rmp:
+                    if st.button(f"👤 {prof_name}  → RMP", key=f"prof_btn_{idx}_{jk}"):
+                        st.session_state.sel_prof_key    = jk
+                        st.session_state.sel_prof_name   = prof_name
+                        st.session_state.sel_prof_course = course_name
+                        st.rerun()
+                else:
+                    st.markdown(f'<span style="font-family:Rajdhani,sans-serif;font-size:.88em;color:#3a5068;padding-left:3px;">👤 {prof_name}</span>', unsafe_allow_html=True)
+                st.markdown('</div>', unsafe_allow_html=True)
             st.markdown('</div>', unsafe_allow_html=True)
 
             # Divider
