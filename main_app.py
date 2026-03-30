@@ -645,10 +645,9 @@ def load_data():
 
     # ── Load GE data ─────────────────────────────────────────────────────────
     ge_lookup = {}   # course_name -> list of GE category strings
-    for ge_fname in ["ges_long_form.csv", os.path.join("data","ges_long_form.csv"),
-                     "ges.csv", os.path.join("data","ges.csv")]:
-        ge_path = ge_fname if os.path.exists(ge_fname) else None
-        if ge_path:
+    ge_path = find("ges_long_form.csv") or find("ges.csv")
+    if ge_path:
+        if True:
             try:
                 ge_df = pd.read_csv(ge_path)
                 ge_df.columns = [c.strip() for c in ge_df.columns]
@@ -670,7 +669,6 @@ def load_data():
                             ge_lookup[cname] = cats
             except Exception:
                 pass
-            break   # use first file found
 
     # Add GE tags to df
     def match_ge(course_str):
