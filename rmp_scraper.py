@@ -21,7 +21,7 @@ def get_graphql_query(cursor):
     return {
         "query": """
         query TeacherSearchPaginationQuery($count: Int!, $cursor: String, $query: TeacherSearchQuery!) {
-          newSearch {
+          newSearch {pip
             teachers(query: $query, first: $count, after: $cursor) {
               pageInfo { hasNextPage, endCursor }
               edges {
@@ -44,7 +44,7 @@ def get_graphql_query(cursor):
 def fetch_base_data():
     all_profs = []
     has_next_page, cursor = True, ""
-    print("🚀 Stage 1: Fetching all professors (Fixing URLs and Limits)...")
+    print("Stage 1: Fetching all professors (Fixing URLs and Limits)...")
     
     while has_next_page:
         resp = requests.post(API_URL, json=get_graphql_query(cursor), headers=HEADERS)
@@ -73,7 +73,7 @@ def fetch_base_data():
         
         has_next_page = data['pageInfo']['hasNextPage']
         cursor = data['pageInfo']['endCursor']
-        print(f"✅ Collected {len(all_profs)} professors...")
+        print(f"Collected {len(all_profs)} professors...")
         time.sleep(1)
         
     return pd.DataFrame(all_profs).drop_duplicates(subset=['rmp_url'])
@@ -106,7 +106,7 @@ async def main():
     # --force refresh if site crashes
     df = fetch_base_data()
     
-    print(f"\n🚀 Stage 2: Scraping Tags for {len(df)} professors...")
+    print(f"\nStage 2: Scraping Tags for {len(df)} professors...")
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
         semaphore = asyncio.Semaphore(CONCURRENT_PAGES)
@@ -122,7 +122,7 @@ async def main():
             print(f"💾 Saved chunk {i + len(chunk)}/{len(rows)}")
             
         await browser.close()
-    print(f"🎉 Success! Total Professors saved: {len(rows)}")
+    print(f"Success! Total Professors saved: {len(rows)}")
 
 if __name__ == "__main__":
     asyncio.run(main())
