@@ -7,9 +7,9 @@ import base64
 from playwright.async_api import async_playwright
 
 #cinfigs
-UCSB_ID = "U2Nob29sLTEwNzc=" 
+UCSB_ID = "U2Nob29sLTEwNzc="  #base64 encoded id for UCSB
 CSV_FILE = "rmp_final_data.csv"
-CONCURRENT_PAGES = 5 
+CONCURRENT_PAGES = 5 #limits browser instances to prevent cpu throttling
 API_URL = "https://www.ratemyprofessors.com/graphql"
 HEADERS = {
     "Authorization": "Basic dGVzdDp0ZXN0",
@@ -86,10 +86,12 @@ async def get_tags_for_row(browser, row_data, semaphore):
             return row_data
 
         page = await browser.new_page()
+        #optimize, disable images and fonts to speed up load times
         await page.route("**/*", lambda r: r.abort() if r.request.resource_type in ["image", "font"] else r.continue_())
         
         try:
             await page.goto(url, timeout=30000)
+            #evaluate script in browser context to find all the unique tags elements that professors have under them
             unique_tags = await page.evaluate("""() => {
                 const tagEls = document.querySelectorAll('[class*="Tag-"]');
                 const tagsSet = new Set(Array.from(tagEls).map(t => t.innerText.trim()));
@@ -103,9 +105,9 @@ async def get_tags_for_row(browser, row_data, semaphore):
             return row_data
 
 async def main():
-    # --force refresh if site crashes
+    #stage 1 api collection
     df = fetch_base_data()
-    
+      #stage 2 of deep scraping with playwrite
     print(f"\nStage 2: Scraping Tags for {len(df)} professors...")
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
